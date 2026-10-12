@@ -29,6 +29,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make test` | Run pytest |
 | `make lint` | Run Ruff lint checks |
 | `make format` | Apply Ruff formatting |
@@ -65,3 +66,6 @@ Invalid values raise `ValueError`; incorrect runtime types raise `TypeError`.
 Construction never trims, coerces, or silently normalizes inputs. Categories and
 subcategories remain open text values; taxonomy loading and validation, config
 loading, persistence identity, and publication transitions remain later work.
+
+The [Classic design spike](docs/classic-design.md) records the visual target for
+future renderer work and includes an intentional SVG reference.
