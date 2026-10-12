@@ -2,7 +2,7 @@
 
 Ask Every Day is a local-first Python automation project for the Instagram account
 @ask.every.day. This foundation provides an installable package and development
-tools. Application features will be added in later tickets.
+tools, plus validated domain models. Application workflows will be added in later tickets.
 
 ## Prerequisites
 
@@ -43,3 +43,25 @@ setup, testing, or application commands change.
 
 Package code lives in `src/ask_every_day/` and tests in `tests/`.
 Commit `uv.lock` to keep dependency versions reproducible.
+
+## Domain models
+
+`ask_every_day.domain` provides frozen dataclasses with no storage or API access:
+
+- `Post`: editorial content, with IDs from `AED-0001` to `AED-9999`. Category,
+  subcategory, prompt, and template must be nonblank. An optional highlight must
+  be a nonblank, exact, case-sensitive substring of the prompt.
+- `Publication`: a post reference, typed attempt status (`Publishing`, `Published`,
+  or `Failed`), an aware attempt timestamp, and optional result details. Published
+  results require an aware publication timestamp no earlier than the attempt and
+  cannot contain an error. Errors are valid only for failed attempts.
+- `QueueEntry`: a post reference and positive, one-based position. Queue-wide
+  uniqueness and lifecycle state belong to later queue and state-machine work.
+- `AppConfig` and `RendererConfig`: explicit local paths and account handle, plus
+  template and positive image dimensions (default `Classic`, 1080 × 1350).
+  Paths are values only; construction does not access the filesystem.
+
+Invalid values raise `ValueError`; incorrect runtime types raise `TypeError`.
+Construction never trims, coerces, or silently normalizes inputs. Categories and
+subcategories remain open text values; taxonomy loading and validation, config
+loading, persistence identity, and publication transitions remain later work.
