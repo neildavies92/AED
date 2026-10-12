@@ -38,3 +38,6 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+# Machine-local application configuration
+/aed.toml

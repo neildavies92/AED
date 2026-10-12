@@ -63,5 +63,8 @@ Commit `uv.lock` to keep dependency versions reproducible.
 
 Invalid values raise `ValueError`; incorrect runtime types raise `TypeError`.
 Construction never trims, coerces, or silently normalizes inputs. Categories and
-subcategories remain open text values; taxonomy loading and validation, config
-loading, persistence identity, and publication transitions remain later work.
+subcategories remain open text values; taxonomy loading and validation,
+persistence identity, and publication transitions remain later work.
+
+See [local configuration](docs/local-configuration.md) for TOML settings and the
+`load_config()` API.
