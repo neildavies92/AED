@@ -1,0 +1,52 @@
+# Local SQLite schema (AED-004)
+
+`ask_every_day.schema.initialize_schema(connection)` initializes an empty SQLite
+connection and enables **and verifies** foreign-key enforcement. Call it on every
+connection, before any transaction. Use `sqlite3.connect(':memory:')` for an
+in-memory database or pass a local filename to `sqlite3.connect`. SQLite 3.37+
+is required for STRICT tables; no additional Python dependencies are needed.
+
+Initialization is atomic, records `PRAGMA user_version = 1`, and is repeatable.
+An existing version 1 is trusted and left intact. Unknown versions and nonempty
+unversioned databases are rejected; migration and schema repair are future work.
+Active caller transactions are rejected without committing their changes. The
+initializer owns only its transaction, never the connection or filesystem paths.
+It emits a standard-library log record with `event` and `schema_version` fields
+only after creating the schema; logging configuration belongs to the application.
+
+| Table | Purpose and identity |
+| --- | --- |
+| `posts` | Exact Post fields; immutable-pattern `AED-0001`–`AED-9999` primary key |
+| `publication_queue` | Post primary key and unique positive one-based position |
+| `publications` | Attempt history; independent integer `id`, many attempts per post |
+| `performance_metrics` | Count snapshots keyed by `(publication_id, recorded_at)` |
+
+Foreign keys use SQLite's default NO ACTION behavior, so referenced content or
+attempt history cannot be deleted while dependent rows exist. The publications
+post index supports the relationship; queue position and snapshot keys have unique
+indexes. No destructive cascades are installed.
+
+All timestamps (`attempted_at`, `published_at`, `recorded_at`) are **signed integer
+microseconds since 1970-01-01 00:00:00 UTC**. AED-005 must reject naive datetimes,
+convert aware inputs to UTC, and use exact timedelta arithmetic (days, seconds,
+microseconds), not floating-point `timestamp()` multiplication. Decode using the
+UTC epoch plus a timedelta. Original offsets are not preserved. Integer comparison
+therefore compares instants, including daylight-saving transitions; offset-bearing
+strings cannot enter these STRICT integer columns. The repository must enforce
+Python datetime's representable range during conversion.
+
+Published attempts require `published_at >= attempted_at`. Other statuses forbid
+`published_at`; only Failed permits an error, and Failed does not require one,
+matching the domain. External IDs are optional. Metrics require all five
+nonnegative integer counts; zero means measured zero, not missing data. Multiple
+snapshots are allowed, but duplicate publication/time pairs are rejected. No
+status restriction is imposed on snapshot insertion before metrics workflows exist.
+
+SQL enforces required text, ASCII whitespace-only rejection and case-sensitive
+highlight inclusion. Domain validation remains responsible for Python runtime
+types and the complete Unicode whitespace definition; SQLite STRICT may coerce
+losslessly convertible values. Category/subcategory taxonomy is not duplicated.
+
+Run `make setup` and `make check`; schema tests use isolated in-memory databases.
+No command initializes a production database yet. Repository CRUD (AED-005),
+queue algorithms, analytics queries and state transitions are deliberately deferred.
