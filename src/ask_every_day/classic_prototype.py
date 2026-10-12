@@ -11,7 +11,7 @@ from ask_every_day.domain import Post
 SAMPLE_POST = Post(
     id="AED-0001",
     prompt="Who are you when no one needs anything from you?",
-    category="Self & Identity",
+    category="Self-awareness",
     subcategory="Identity",
     template="Classic",
     highlight_text="no one needs anything from you",
