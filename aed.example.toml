@@ -1,0 +1,10 @@
+# Copy to aed.toml; relative paths are based on that file's directory.
+database_path = "data/aed.sqlite3"
+assets_path = "assets/generated"
+account_handle = "@ask.every.day"
+
+# This table is optional; these are the defaults.
+[renderer]
+template = "Classic"
+width = 1080
+height = 1350
