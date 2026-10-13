@@ -72,3 +72,6 @@ persistence identity, and publication transitions remain later work.
 
 See [local configuration](docs/local-configuration.md) for TOML settings and the
 `load_config()` API.
+
+The [SVG renderer](docs/renderer.md) accepts `Post` and `RendererConfig` and returns
+deterministic SVG. `make prototype` exercises it with the hand-set Classic specimen.

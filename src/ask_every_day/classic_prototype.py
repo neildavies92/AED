@@ -4,9 +4,8 @@ import json
 import logging
 from pathlib import Path
 
-from jinja2 import Environment, PackageLoader, StrictUndefined
-
-from ask_every_day.domain import Post
+from ask_every_day import renderer
+from ask_every_day.domain import Post, RendererConfig
 
 SAMPLE_POST = Post(
     id="AED-0001",
@@ -26,16 +25,7 @@ SAMPLE_LINES = (
 
 def render_prototype(post: Post, lines: tuple[tuple[str, str, str], ...]) -> str:
     """Render explicitly art-directed lines, with no wrapping or font measuring."""
-    if " ".join("".join(line) for line in lines) != post.prompt:
-        raise ValueError("Hand-set lines must reproduce the exact prompt")
-    if " ".join(line[1] for line in lines if line[1]) != (post.highlight_text or ""):
-        raise ValueError("Hand-set highlight must reproduce highlight_text")
-    environment = Environment(
-        loader=PackageLoader("ask_every_day", "templates"),
-        autoescape=True,
-        undefined=StrictUndefined,
-    )
-    return environment.get_template("classic.svg.jinja").render(post=post, lines=lines)
+    return renderer.render_svg(post, RendererConfig(), lines=lines)
 
 
 def main() -> None:
