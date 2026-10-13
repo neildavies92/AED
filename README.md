@@ -45,6 +45,9 @@ setup, testing, or application commands change.
 Package code lives in `src/ask_every_day/` and tests in `tests/`.
 Commit `uv.lock` to keep dependency versions reproducible.
 
+The [Classic design spike](docs/classic-design.md) records the visual target for
+future renderer work and includes an intentional SVG reference.
+
 ## Domain models
 
 `ask_every_day.domain` provides frozen dataclasses with no storage or API access:
@@ -66,6 +69,3 @@ Invalid values raise `ValueError`; incorrect runtime types raise `TypeError`.
 Construction never trims, coerces, or silently normalizes inputs. Categories and
 subcategories remain open text values; taxonomy loading and validation, config
 loading, persistence identity, and publication transitions remain later work.
-
-The [Classic design spike](docs/classic-design.md) records the visual target for
-future renderer work and includes an intentional SVG reference.
