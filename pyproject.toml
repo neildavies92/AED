@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "Local-first automation for Ask Every Day."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "jinja2>=3.1.6,<4",
+]
 
 [dependency-groups]
 dev = [

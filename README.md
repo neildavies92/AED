@@ -29,6 +29,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make test` | Run pytest |
 | `make lint` | Run Ruff lint checks |
 | `make format` | Apply Ruff formatting |
@@ -43,6 +44,9 @@ setup, testing, or application commands change.
 
 Package code lives in `src/ask_every_day/` and tests in `tests/`.
 Commit `uv.lock` to keep dependency versions reproducible.
+
+The [Classic design spike](docs/classic-design.md) records the visual target for
+future renderer work and includes an intentional SVG reference.
 
 ## Domain models
 

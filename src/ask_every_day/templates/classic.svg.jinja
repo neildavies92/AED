@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title description">
+  <title id="title">{{ post.prompt }}</title>
+  <desc id="description">Ask Every Day. A question to sit with.</desc>
+  <rect width="1080" height="1350" fill="#F4F0E8"/>
+  <g fill="#343B35" font-family="Arial, Helvetica, sans-serif">
+    <text x="112" y="147" font-size="21" letter-spacing="5">ASK EVERY DAY</text>
+    <path d="M112 190 H168" stroke="#8D957F" stroke-width="2"/>
+  </g>
+  <g font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="#292E29" letter-spacing="-2">
+{% for prefix, highlight, suffix in lines %}
+    <text x="112" y="{{ 586 + loop.index0 * 102 }}">{{ prefix }}<tspan fill="#717A60">{{ highlight }}</tspan>{{ suffix }}</text>
+{% endfor %}
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#62695F">
+    <text x="112" y="1138" font-size="20" letter-spacing="1.5">A QUESTION TO SIT WITH.</text>
+    <text x="112" y="1214" font-size="23">@ask.every.day</text>
+  </g>
+</svg>

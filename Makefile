@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup test lint format format-check typecheck check
+.PHONY: help setup test lint format format-check typecheck check prototype
 
 help:
+	@echo "make prototype     Render the Classic SVG design specimen"
 	@echo "make setup         Install dependencies into .venv"
 	@echo "make test          Run tests"
 	@echo "make lint          Run Ruff lint checks"
@@ -30,3 +31,6 @@ typecheck:
 	uv run pyright
 
 check: test lint format-check typecheck
+
+prototype:
+	uv run python -m ask_every_day.classic_prototype
