@@ -29,7 +29,8 @@ changes to the design; refresh the visual reference after reviewing it.
 
 ## Prototype boundary
 
-`classic_prototype.py` uses an existing `Post` domain object and supplies explicit
+`classic_prototype.py` now delegates to the [SVG renderer](renderer.md). It uses
+an existing `Post` domain object and supplies explicit
 (prefix, highlight, suffix) triples for each line to a Jinja SVG template. It
 verifies those triples reproduce the exact prompt and highlight before rendering.
 The specimen's ID/category are illustrative domain metadata, not an editorial
@@ -38,14 +39,14 @@ Sheet import or an assertion about the current row with that ID.
 Jinja2 is the only new direct dependency: it provides template substitution,
 strict undefined values, and XML escaping. MarkupSafe is its transitive dependency.
 Browser SVG display satisfies this prototype; neither CairoSVG nor Pillow is
-needed. Logging uses standard-library logging with one structured JSON event for
-the output write; the pure rendering function/template have no logs.
+needed. The helper logs one structured JSON event for the output write; the
+shared renderer adds structured success/failure records. Templates have no logs.
 
-This intentionally has no automatic wrapping, text measurement, font embedding,
-production renderer API, PNG exporter, batch rendering, configuration integration,
+This design specimen intentionally has no automatic wrapping, text measurement,
+font embedding, PNG exporter, batch rendering, configuration-file integration,
 or final highlight engine. Different content requires new hand-set lines and
-visual review; there is no claim that arbitrary prompts fit. AED-010 should use
-this as its visual target, with robust wrapping deferred to AED-011 and final
+visual review; there is no claim that arbitrary prompts fit. AED-010 preserves
+this visual target, with robust wrapping deferred to AED-011 and final
 highlight handling to AED-012.
 
 Tests cover well-formed SVG, canvas dimensions, content/highlight preservation,
