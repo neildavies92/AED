@@ -37,7 +37,7 @@ def test_prompts_are_distinct_and_concise() -> None:
 
 def test_metadata_and_highlights_are_valid() -> None:
     for row in _rows("prompts.csv"):
-        assert row["status"] == "Draft"
+        assert row["status"] == "Approved"
         assert row["template"] == "Classic"
         post = Post(
             id=row["id"],
