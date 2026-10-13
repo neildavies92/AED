@@ -1,0 +1,290 @@
+"""Small persistence contract with one SQLite connection per managed session."""
+
+import logging
+import sqlite3
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Protocol
+
+from ask_every_day.domain import (
+    AppConfig,
+    Post,
+    Publication,
+    PublicationStatus,
+    QueueEntry,
+)
+from ask_every_day.schema import initialize_schema
+
+_LOGGER = logging.getLogger(__name__)
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+
+
+def to_microseconds(value: datetime) -> int:
+    """Encode an aware instant without floating-point rounding."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("timestamp must be timezone-aware")
+    delta = value.astimezone(UTC) - _EPOCH
+    return (delta.days * 86400 + delta.seconds) * 1_000_000 + delta.microseconds
+
+
+def from_microseconds(value: int) -> datetime:
+    """Decode to UTC, rejecting values outside Python's datetime range."""
+    return _EPOCH + timedelta(microseconds=value)
+
+
+@dataclass(frozen=True)
+class PublicationRecord:
+    """Database attempt identity paired with its domain snapshot."""
+
+    id: int
+    publication: Publication
+
+
+class Repository(Protocol):
+    """Persistence primitives; workflows and transition policy belong to callers."""
+
+    def create_post(self, post: Post) -> None: ...
+    def get_post(self, post_id: str) -> Post | None: ...
+    def post_exists(self, post_id: str) -> bool: ...
+    def list_posts(self) -> list[Post]: ...
+    def update_post(self, post: Post) -> None: ...
+    def delete_post(self, post_id: str) -> bool: ...
+    def create_publication(self, publication: Publication) -> PublicationRecord: ...
+    def get_publication(self, publication_id: int) -> PublicationRecord | None: ...
+    def publication_history(self, post_id: str) -> list[PublicationRecord]: ...
+    def update_publication(
+        self, publication_id: int, publication: Publication
+    ) -> None: ...
+    def replace_queue(self, entries: Sequence[QueueEntry]) -> None: ...
+    def list_queue(self) -> list[QueueEntry]: ...
+    def next_queue_entry(self) -> QueueEntry | None: ...
+    def remove_queue_entry(self, post_id: str) -> bool: ...
+    def clear_queue(self) -> None: ...
+
+
+def _post(row: sqlite3.Row) -> Post:
+    return Post(**dict(row))
+
+
+def _publication(row: sqlite3.Row) -> PublicationRecord:
+    return PublicationRecord(
+        id=row["id"],
+        publication=Publication(
+            post_id=row["post_id"],
+            status=PublicationStatus(row["status"]),
+            attempted_at=from_microseconds(row["attempted_at"]),
+            published_at=(
+                from_microseconds(row["published_at"])
+                if row["published_at"] is not None
+                else None
+            ),
+            external_id=row["external_id"],
+            error=row["error"],
+        ),
+    )
+
+
+def _publication_values(publication: Publication) -> tuple[object, ...]:
+    return (
+        publication.post_id,
+        publication.status.value,
+        to_microseconds(publication.attempted_at),
+        to_microseconds(publication.published_at)
+        if publication.published_at is not None
+        else None,
+        publication.external_id,
+        publication.error,
+    )
+
+
+class SQLiteRepository:
+    """Use open_repository to own initialization and connection lifetime.
+
+    Each mutation commits independently. Queue replacement is one atomic write.
+    No implicit outer transaction spans a repository session.
+    """
+
+    def __init__(self, connection: sqlite3.Connection) -> None:
+        initialize_schema(connection)
+        connection.row_factory = sqlite3.Row
+        self._connection = connection
+
+    @contextmanager
+    def _write(self, operation: str, **context: object) -> Iterator[None]:
+        if self._connection.in_transaction:
+            raise ValueError(
+                "Repository operations require no active caller transaction"
+            )
+        self._connection.execute("BEGIN IMMEDIATE")
+        try:
+            yield
+            self._connection.execute("COMMIT")
+        except Exception as exc:
+            if self._connection.in_transaction:
+                self._connection.execute("ROLLBACK")
+            _LOGGER.warning(
+                "Repository operation failed",
+                extra={
+                    "event": "repository_write_failed",
+                    "operation": operation,
+                    "error_type": type(exc).__name__,
+                    **context,
+                },
+            )
+            raise
+        _LOGGER.info(
+            "Repository operation committed",
+            extra={
+                "event": "repository_write_committed",
+                "operation": operation,
+                **context,
+            },
+        )
+
+    def create_post(self, post: Post) -> None:
+        with self._write("create_post", post_id=post.id):
+            self._connection.execute(
+                "INSERT INTO posts (id, prompt, category, subcategory, template, "
+                "highlight_text) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    post.id,
+                    post.prompt,
+                    post.category,
+                    post.subcategory,
+                    post.template,
+                    post.highlight_text,
+                ),
+            )
+
+    def get_post(self, post_id: str) -> Post | None:
+        row = self._connection.execute(
+            "SELECT * FROM posts WHERE id = ?", (post_id,)
+        ).fetchone()
+        return _post(row) if row is not None else None
+
+    def post_exists(self, post_id: str) -> bool:
+        return (
+            self._connection.execute(
+                "SELECT 1 FROM posts WHERE id = ?", (post_id,)
+            ).fetchone()
+            is not None
+        )
+
+    def list_posts(self) -> list[Post]:
+        return [
+            _post(row)
+            for row in self._connection.execute("SELECT * FROM posts ORDER BY id")
+        ]
+
+    def update_post(self, post: Post) -> None:
+        with self._write("update_post", post_id=post.id):
+            cursor = self._connection.execute(
+                "UPDATE posts SET prompt = ?, category = ?, subcategory = ?, "
+                "template = ?, highlight_text = ? WHERE id = ?",
+                (
+                    post.prompt,
+                    post.category,
+                    post.subcategory,
+                    post.template,
+                    post.highlight_text,
+                    post.id,
+                ),
+            )
+            if cursor.rowcount == 0:
+                raise KeyError(post.id)
+
+    def delete_post(self, post_id: str) -> bool:
+        with self._write("delete_post", post_id=post_id):
+            cursor = self._connection.execute(
+                "DELETE FROM posts WHERE id = ?", (post_id,)
+            )
+        return cursor.rowcount != 0
+
+    def create_publication(self, publication: Publication) -> PublicationRecord:
+        with self._write("create_publication", post_id=publication.post_id):
+            cursor = self._connection.execute(
+                "INSERT INTO publications (post_id, status, attempted_at, published_at, "
+                "external_id, error) VALUES (?, ?, ?, ?, ?, ?)",
+                _publication_values(publication),
+            )
+            publication_id = cursor.lastrowid
+            if publication_id is None:
+                raise RuntimeError("SQLite did not return an attempt ID")
+        return PublicationRecord(publication_id, publication)
+
+    def get_publication(self, publication_id: int) -> PublicationRecord | None:
+        row = self._connection.execute(
+            "SELECT * FROM publications WHERE id = ?", (publication_id,)
+        ).fetchone()
+        return _publication(row) if row is not None else None
+
+    def publication_history(self, post_id: str) -> list[PublicationRecord]:
+        return [
+            _publication(row)
+            for row in self._connection.execute(
+                "SELECT * FROM publications WHERE post_id = ? ORDER BY attempted_at, id",
+                (post_id,),
+            )
+        ]
+
+    def update_publication(self, publication_id: int, publication: Publication) -> None:
+        with self._write("update_publication", publication_id=publication_id):
+            # Attempt identity stays attached to its original post.
+            cursor = self._connection.execute(
+                "UPDATE publications SET status = ?, attempted_at = ?, published_at = ?, "
+                "external_id = ?, error = ? WHERE id = ? AND post_id = ?",
+                (
+                    *_publication_values(publication)[1:],
+                    publication_id,
+                    publication.post_id,
+                ),
+            )
+            if cursor.rowcount == 0:
+                raise KeyError("Unknown publication ID or mismatched post ID")
+
+    def replace_queue(self, entries: Sequence[QueueEntry]) -> None:
+        with self._write("replace_queue", row_count=len(entries)):
+            self._connection.execute("DELETE FROM publication_queue")
+            self._connection.executemany(
+                "INSERT INTO publication_queue (post_id, position) VALUES (?, ?)",
+                [(entry.post_id, entry.position) for entry in entries],
+            )
+
+    def list_queue(self) -> list[QueueEntry]:
+        return [
+            QueueEntry(**dict(row))
+            for row in self._connection.execute(
+                "SELECT post_id, position FROM publication_queue ORDER BY position"
+            )
+        ]
+
+    def next_queue_entry(self) -> QueueEntry | None:
+        row = self._connection.execute(
+            "SELECT post_id, position FROM publication_queue ORDER BY position LIMIT 1"
+        ).fetchone()
+        return QueueEntry(**dict(row)) if row is not None else None
+
+    def remove_queue_entry(self, post_id: str) -> bool:
+        with self._write("remove_queue_entry", post_id=post_id):
+            cursor = self._connection.execute(
+                "DELETE FROM publication_queue WHERE post_id = ?", (post_id,)
+            )
+        return cursor.rowcount != 0
+
+    def clear_queue(self) -> None:
+        self.replace_queue(())
+
+
+@contextmanager
+def open_repository(config: AppConfig) -> Iterator[SQLiteRepository]:
+    """Open the configured database; its parent directory must already exist."""
+    connection = sqlite3.connect(config.database_path)
+    try:
+        repository = SQLiteRepository(connection)
+        _LOGGER.info("Repository opened", extra={"event": "repository_opened"})
+        yield repository
+    finally:
+        connection.close()
+        _LOGGER.info("Repository closed", extra={"event": "repository_closed"})
