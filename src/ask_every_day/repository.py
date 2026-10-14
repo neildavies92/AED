@@ -3,7 +3,7 @@
 import logging
 import sqlite3
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -57,6 +57,7 @@ class ContentDriftError(ValueError):
 class Repository(Protocol):
     """Persistence primitives; workflows and transition policy belong to callers."""
 
+    def transaction(self) -> AbstractContextManager[None]: ...
     def create_post(self, post: Post) -> None: ...
     def import_posts(self, posts: Sequence[Post]) -> ImportResult: ...
     def get_post(self, post_id: str) -> Post | None: ...
@@ -115,17 +116,41 @@ def _publication_values(publication: Publication) -> tuple[object, ...]:
 class SQLiteRepository:
     """Use open_repository to own initialization and connection lifetime.
 
-    Each mutation commits independently. Queue replacement is one atomic write.
-    No implicit outer transaction spans a repository session.
+    Standalone mutations commit independently; transaction() explicitly groups
+    reads and writes. No implicit transaction spans a repository session.
     """
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         initialize_schema(connection)
         connection.row_factory = sqlite3.Row
         self._connection = connection
+        self._transaction_active = False
+        self._transaction_failed = False
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """Serialize a read/modify/write operation and commit all its writes together."""
+        if self._transaction_active:
+            raise ValueError("Nested repository transactions are not supported")
+        with self._write("transaction"):
+            self._transaction_active = True
+            self._transaction_failed = False
+            try:
+                yield
+                if self._transaction_failed:
+                    raise RuntimeError("Repository transaction is marked for rollback")
+            finally:
+                self._transaction_active = False
 
     @contextmanager
     def _write(self, operation: str, **context: object) -> Iterator[None]:
+        if self._transaction_active:
+            try:
+                yield
+            except BaseException:
+                self._transaction_failed = True
+                raise
+            return
         if self._connection.in_transaction:
             raise ValueError(
                 "Repository operations require no active caller transaction"
@@ -134,7 +159,7 @@ class SQLiteRepository:
         try:
             yield
             self._connection.execute("COMMIT")
-        except Exception as exc:
+        except BaseException as exc:
             if self._connection.in_transaction:
                 self._connection.execute("ROLLBACK")
             _LOGGER.warning(
