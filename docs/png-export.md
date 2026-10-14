@@ -29,21 +29,41 @@ Instagram-ready upload. JPEG export belongs to AED-034.
 
 ## Installation and failure behavior
 
-Run `make setup`. CairoSVG is an explicit runtime dependency because it performs
-the requested rasterization. Its native Cairo runtime is a separate prerequisite:
-on macOS the official instructions specify `brew install cairo libffi`; other
-platform requirements are in [CairoSVG installation](https://cairosvg.org/documentation/).
-On this Apple Silicon host, uv's Python also needs the Homebrew library path:
+CairoSVG is a Python dependency installed in the project `.venv` by `make setup`.
+Cairo and libffi are native host dependencies, installed separately. On macOS,
+development expects Homebrew and these packages:
 
 ```sh
-make check DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib"
-DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib" uv run python your_script.py
+brew install cairo libffi
+make setup
+make check
 ```
 
-Pass the variable to Make itself: macOS may strip loader environment variables
-when invoking system executables. This is host setup, not a hard-coded application
-library path. Linux/other installations that discover Cairo normally can use
-plain `make check`.
+Canonical `make setup` and `make test` (therefore `make check`) use
+`scripts/with-cairo.sh`. On Darwin it obtains `brew --prefix cairo` and
+`brew --prefix libffi`, verifies their library directories, and prepends their
+keg-specific `lib` paths to `DYLD_FALLBACK_LIBRARY_PATH` immediately before
+executing `uv`. No Intel/Apple Silicon installation path is hard-coded. Existing
+fallback paths are appended; Make carries its supplied value through a temporary
+non-DYLD variable because macOS protected process boundaries can strip DYLD
+variables. The temporary transport variable is removed before the command runs.
+No caller-supplied DYLD setting is needed. Missing prerequisites stop before
+Python runs with the installation command above; nothing is installed automatically.
+
+For a direct diagnostic or another local Cairo command, reuse the same helper:
+
+```sh
+sh scripts/with-cairo.sh uv run python -c "import cairosvg; print('CairoSVG OK')"
+```
+
+Future PNG/JPEG Make targets can use the same `CAIRO_RUN` command prefix.
+`make prototype` produces SVG and needs no Cairo setup. Lint, formatting and
+Pyright commands also retain their existing execution. On non-Darwin platforms,
+the helper executes the supplied command without invoking Homebrew or setting
+DYLD variables. Install native Cairo as appropriate for that platform; see
+[official installation requirements](https://cairosvg.org/documentation/).
+This helper configures development commands, not application runtime or global
+shell settings. Cross-machine font/rasterization caveats below still apply.
 
 Pillow appears transitively through CairoSVG's raster-image support; this project
 adds no direct Pillow dependency or Pillow-based processing.

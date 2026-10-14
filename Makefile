@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := help
 
+# Carry any Make-supplied fallback through macOS's protected shell boundary.
+CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-cairo.sh
+
 .PHONY: help setup test lint format format-check typecheck check prototype import-content
 
 help:
@@ -14,10 +17,10 @@ help:
 	@echo "make check         Run all development checks"
 
 setup:
-	uv sync
+	$(CAIRO_RUN) uv sync
 
 test:
-	uv run pytest
+	$(CAIRO_RUN) uv run pytest
 
 lint:
 	uv run ruff check .
