@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 from jinja2 import Environment, PackageLoader, StrictUndefined, TemplateError
 
 from ask_every_day.domain import Post, RendererConfig
+from ask_every_day.highlight import HighlightError, highlight_span, segment_line
 from ask_every_day.layout import LayoutError, layout_prompt
 
 logger = logging.getLogger(__name__)
@@ -38,11 +39,12 @@ def render_svg(
             raise RenderError(f"Unsupported template: {config.template!r}")
         if post.template != config.template:
             raise RenderError("Post template must match RendererConfig.template")
+        span = highlight_span(post.prompt, post.highlight_text)
         automatic = lines is None
         if lines is None:
             layout = layout_prompt(post.prompt)
             rendered_lines = tuple(
-                (line.text, "", "", line.baseline) for line in layout
+                (*segment_line(line, span), line.baseline) for line in layout
             )
         else:
             if " ".join("".join(line) for line in lines) != post.prompt:
@@ -55,6 +57,9 @@ def render_svg(
                 (*line, 586 + index * 102) for index, line in enumerate(lines)
             )
         context["line_count"] = len(rendered_lines)
+        context["highlight_segment_count"] = sum(
+            bool(line[1]) for line in rendered_lines
+        )
         environment = Environment(
             loader=PackageLoader("ask_every_day", "templates"),
             autoescape=True,
@@ -66,7 +71,13 @@ def render_svg(
         root = ElementTree.fromstring(svg)
         if root.tag != "{http://www.w3.org/2000/svg}svg":
             raise RenderError("Template must produce an SVG root element")
-    except (TemplateError, ElementTree.ParseError, RenderError, LayoutError) as error:
+    except (
+        TemplateError,
+        ElementTree.ParseError,
+        RenderError,
+        LayoutError,
+        HighlightError,
+    ) as error:
         logger.warning(
             "svg_render_failed",
             extra={
@@ -77,6 +88,8 @@ def render_svg(
         )
         if isinstance(error, RenderError):
             raise
+        if isinstance(error, HighlightError):
+            raise RenderError(f"Classic highlight failed: {error}") from error
         if isinstance(error, LayoutError):
             raise RenderError(f"Classic layout failed: {error}") from error
         raise RenderError(
