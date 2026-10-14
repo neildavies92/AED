@@ -9,6 +9,7 @@ description = "Local-first automation for Ask Every Day."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "cairosvg>=2.8.2,<3",
     "jinja2>=3.1.6,<4",
 ]
 
