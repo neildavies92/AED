@@ -4,7 +4,9 @@
 from ask_every_day.domain import Post, RendererConfig
 from ask_every_day.renderer import render_svg
 
-post = Post("AED-0001", "What feels like home?", "Self-awareness", "Identity", "Classic")
+post = Post(
+    "AED-0001", "What feels like home?", "Self-awareness", "Identity", "Classic"
+)
 svg = render_svg(post, RendererConfig())
 ```
 
