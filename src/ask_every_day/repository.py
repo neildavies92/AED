@@ -42,10 +42,23 @@ class PublicationRecord:
     publication: Publication
 
 
+@dataclass(frozen=True)
+class ImportResult:
+    """Counts for an atomic import that never overwrites existing content."""
+
+    imported_count: int
+    unchanged_count: int
+
+
+class ContentDriftError(ValueError):
+    """Stored editorial content differs from the supplied snapshot."""
+
+
 class Repository(Protocol):
     """Persistence primitives; workflows and transition policy belong to callers."""
 
     def create_post(self, post: Post) -> None: ...
+    def import_posts(self, posts: Sequence[Post]) -> ImportResult: ...
     def get_post(self, post_id: str) -> Post | None: ...
     def post_exists(self, post_id: str) -> bool: ...
     def list_posts(self) -> list[Post]: ...
@@ -163,6 +176,39 @@ class SQLiteRepository:
             "SELECT * FROM posts WHERE id = ?", (post_id,)
         ).fetchone()
         return _post(row) if row is not None else None
+
+    def import_posts(self, posts: Sequence[Post]) -> ImportResult:
+        """Create missing posts atomically; reject conflicts and extra stored IDs."""
+        incoming = {post.id: post for post in posts}
+        if len(incoming) != len(posts):
+            raise ValueError("Import contains duplicate post IDs")
+        with self._write("import_posts", row_count=len(posts)):
+            stored = {post.id: post for post in self.list_posts()}
+            extra = stored.keys() - incoming.keys()
+            if extra:
+                raise ContentDriftError(f"Unexpected stored post ID: {min(extra)}")
+            for post_id, post in incoming.items():
+                if post_id in stored and stored[post_id] != post:
+                    raise ContentDriftError(
+                        f"Editorial conflict for post ID: {post_id}"
+                    )
+            missing = [incoming[key] for key in sorted(incoming.keys() - stored.keys())]
+            self._connection.executemany(
+                "INSERT INTO posts (id, prompt, category, subcategory, template, "
+                "highlight_text) VALUES (?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        p.id,
+                        p.prompt,
+                        p.category,
+                        p.subcategory,
+                        p.template,
+                        p.highlight_text,
+                    )
+                    for p in missing
+                ],
+            )
+        return ImportResult(len(missing), len(stored))
 
     def post_exists(self, post_id: str) -> bool:
         return (
