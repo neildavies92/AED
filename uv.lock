@@ -9,6 +9,7 @@ source = { editable = "." }
 dependencies = [
     { name = "cairosvg" },
     { name = "jinja2" },
+    { name = "pillow" },
 ]
 
 [package.dev-dependencies]
@@ -22,6 +23,7 @@ dev = [
 requires-dist = [
     { name = "cairosvg", specifier = ">=2.8.2,<3" },
     { name = "jinja2", specifier = ">=3.1.6,<4" },
+    { name = "pillow", specifier = ">=12.3,<13" },
 ]
 
 [package.metadata.requires-dev]
