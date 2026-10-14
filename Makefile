@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup test lint format format-check typecheck check prototype
+.PHONY: help setup test lint format format-check typecheck check prototype import-content
 
 help:
+	@echo "make import-content Import approved CSV content using aed.toml"
 	@echo "make prototype     Render the Classic SVG design specimen"
 	@echo "make setup         Install dependencies into .venv"
 	@echo "make test          Run tests"
@@ -34,3 +35,6 @@ check: test lint format-check typecheck
 
 prototype:
 	uv run python -m ask_every_day.classic_prototype
+
+import-content:
+	uv run python -m ask_every_day.content_import

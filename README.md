@@ -29,6 +29,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make test` | Run pytest |
 | `make lint` | Run Ruff lint checks |
@@ -75,3 +76,5 @@ See [local configuration](docs/local-configuration.md) for TOML settings and the
 
 The [SVG renderer](docs/renderer.md) accepts `Post` and `RendererConfig` and returns
 deterministic SVG. `make prototype` exercises it with the hand-set Classic specimen.
+
+See [content importing](docs/content-import.md) for validation and safe rerun semantics.
