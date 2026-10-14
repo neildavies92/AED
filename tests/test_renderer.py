@@ -69,7 +69,7 @@ def test_missing_or_broken_template(
 
 
 def test_invalid_xml_character_rejected() -> None:
-    with pytest.raises(RenderError, match="could not be rendered"):
+    with pytest.raises(RenderError, match="Classic layout failed"):
         render_svg(
             replace(SAMPLE_POST, prompt="A\x00B", highlight_text=None), RendererConfig()
         )
