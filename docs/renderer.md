@@ -29,16 +29,52 @@ Configuration width and height set the SVG viewport. Classic retains its
 scales it proportionally, letterboxing if a different aspect ratio is requested.
 This preserves typography and spacing without inventing responsive layouts.
 
-## Temporary layout boundary
+## Automatic Classic layout — AED-011
 
-Without `lines`, the prompt is a single unhighlighted line. This preserves all
-content but does **not** promise visual fit or highlight styling. No automatic
-wrapping or fitting is implemented here.
+Without `lines`, `layout_prompt` automatically wraps the prompt using fixed,
+conservative character advances at the unchanged 76px type size. The usable
+advance width is 856 design pixels from x=112. Up to six 102px-spaced baselines
+are centered on y=688. There is no shrinking, truncation, hyphenation or manual
+per-prompt break list. All 400 Approved prompts in the versioned corpus fit.
+
+The pure layout function returns immutable `LayoutLine` values with exact `text`,
+zero-based half-open `start`/`end` source offsets, estimated `width`, and `baseline`.
+Concatenating the text reproduces the prompt exactly, including leading,
+multiple and trailing spaces. Breaks occur only at spaces; punctuation remains
+attached to words, including separate punctuation-only tokens. SVG `xml:space`
+preserves those spaces. These source offsets are the seam for AED-012; automatic
+lines deliberately remain unhighlighted until that ticket.
+
+The current supported alphabet is printable ASCII, matching the whole approved
+corpus. Non-ASCII, tabs/newlines/control characters, blank text, overwide words
+(including their spacing) and more than six lines fail with `LayoutError`.
+`render_svg` reports these as actionable `RenderError` values retaining the cause.
+Explicit manual specimen lines retain the previous renderer contract.
+
+### Metrics and portability
+
+The estimates use fixed hundredths of an em: spaces 32, narrow glyphs 35,
+wide glyphs 100, remaining uppercase 80, and other glyphs 60. They deliberately
+ignore the width savings from Classic's negative letter spacing. No local fonts
+are queried, so line breaks and SVG output are reproducible across environments.
+These are conservative heuristics, not precise font measurements or a guarantee
+for arbitrary installed serif fallbacks. Changing the font, font size or spacing
+requires recalibration; production font portability remains a separate decision.
+
+On 14 October 2026, all 400 SVGs were measured in local Chrome with macOS Georgia:
+maximum actual line width 704.75px; all ink fit x=104..968 and y=350..970. The 8px
+left allowance covers normal serif glyph overhang around the x=112 anchor, well
+inside the canvas. Line counts: 1 two-line, 50 three-line, 232 four-line,
+113 five-line, and 4 six-line prompts. The representative prompt and longest
+prompt (AED-0236) were visually inspected at 1080×1350. Browser/font-dependent
+measurements are manual validation evidence, not brittle pixel tests.
+
+## Explicit specimen compatibility
 
 The keyword-only `lines` argument accepts a tuple of `(prefix, highlight, suffix)`
 string triples. Their space-joined text must reproduce the exact prompt, and the
 space-joined highlighted fragments must reproduce its optional highlight. This
-is the existing hand-set specimen convention, a temporary seam for AED-011/012,
+is the existing hand-set specimen convention, retained for design review,
 not a general layout engine. Callers using manual lines must review visual fit.
 
 `make prototype` uses this same renderer with the original three-line specimen,
@@ -47,9 +83,10 @@ approved SVG in `docs/design/`. Output paths and directory creation belong only
 to the helper, not the core renderer. The existing Makefile remains sufficient.
 
 The standard-library logger emits success/failure records with structured `extra`
-fields: `event`, `post_id`, `template`, `width`, `height`, and failure `error_type`.
+fields: `event`, `post_id`, `template`, `width`, `height`, `line_count` after layout,
+and failure `error_type`. Pure layout functions do not log.
 The caller controls logging handlers/formatting. Full prompt text and exception
 payloads are not logged. No dependencies were added.
 
-Deferred: deterministic wrapping (AED-011), robust highlight integration
-(AED-012), SVG-to-PNG export (AED-013), and batch/output orchestration.
+Deferred: robust highlight integration (AED-012), SVG-to-PNG export (AED-013),
+and batch/output orchestration.

@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 from jinja2 import Environment, PackageLoader, StrictUndefined, TemplateError
 
 from ask_every_day.domain import Post, RendererConfig
+from ask_every_day.layout import LayoutError, layout_prompt
 
 logger = logging.getLogger(__name__)
 _TEMPLATES = {"Classic": "classic.svg.jinja"}
@@ -19,10 +20,10 @@ class RenderError(ValueError):
 def render_svg(
     post: Post, config: RendererConfig, *, lines: ManualLines | None = None
 ) -> str:
-    """Return SVG without writes; optional hand-set lines bridge AED-011/012.
+    """Return SVG without writes; optional hand-set lines preserve the specimen.
 
-    Without explicit lines the entire prompt is one unhighlighted line. No fit
-    guarantee is made. Config selects the template and must match the Post.
+    Without explicit lines, supported Classic text wraps automatically.
+    Config selects the template and must match the Post.
     """
     if not isinstance(post, Post) or not isinstance(config, RendererConfig):
         raise TypeError("render_svg requires Post and RendererConfig values")
@@ -37,8 +38,12 @@ def render_svg(
             raise RenderError(f"Unsupported template: {config.template!r}")
         if post.template != config.template:
             raise RenderError("Post template must match RendererConfig.template")
+        automatic = lines is None
         if lines is None:
-            lines = ((post.prompt, "", ""),)
+            layout = layout_prompt(post.prompt)
+            rendered_lines = tuple(
+                (line.text, "", "", line.baseline) for line in layout
+            )
         else:
             if " ".join("".join(line) for line in lines) != post.prompt:
                 raise RenderError("Hand-set lines must reproduce the exact prompt")
@@ -46,18 +51,22 @@ def render_svg(
                 post.highlight_text or ""
             ):
                 raise RenderError("Hand-set highlight must reproduce highlight_text")
+            rendered_lines = tuple(
+                (*line, 586 + index * 102) for index, line in enumerate(lines)
+            )
+        context["line_count"] = len(rendered_lines)
         environment = Environment(
             loader=PackageLoader("ask_every_day", "templates"),
             autoescape=True,
             undefined=StrictUndefined,
         )
         svg = environment.get_template(_TEMPLATES[config.template]).render(
-            post=post, config=config, lines=lines
+            post=post, config=config, lines=rendered_lines, automatic=automatic
         )
         root = ElementTree.fromstring(svg)
         if root.tag != "{http://www.w3.org/2000/svg}svg":
             raise RenderError("Template must produce an SVG root element")
-    except (TemplateError, ElementTree.ParseError, RenderError) as error:
+    except (TemplateError, ElementTree.ParseError, RenderError, LayoutError) as error:
         logger.warning(
             "svg_render_failed",
             extra={
@@ -68,6 +77,8 @@ def render_svg(
         )
         if isinstance(error, RenderError):
             raise
+        if isinstance(error, LayoutError):
+            raise RenderError(f"Classic layout failed: {error}") from error
         raise RenderError(
             "SVG template could not be rendered; check template/content"
         ) from error
