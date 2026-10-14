@@ -37,8 +37,10 @@ repository operations. Prefer the managed factory.
   reports whether a row existed. Removal preserves the other positions, including
   gaps. Uniqueness and foreign-key errors remain `sqlite3.IntegrityError`.
 
-Each mutating method is one committed operation; a session is **not** a transaction
-around all its calls. Queue replacement deletes/inserts inside one transaction,
+Each standalone mutating method is one committed operation; a session is **not** a
+transaction around all its calls. An explicit `repository.transaction()` groups
+state reads and writes atomically; methods inside it join the outer transaction.
+Nested transactions are rejected, and a failed write marks the group for rollback. Queue replacement deletes/inserts inside one transaction,
 so a duplicate or missing post rolls the entire replacement back to the old queue.
 A caller exception after a successful operation does not undo its earlier commit.
 Other database exceptions retain their SQLite types. Public reads return domain
