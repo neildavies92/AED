@@ -1,11 +1,15 @@
 """Hand-set design spike; automatic text layout belongs to later tickets."""
 
-import json
 import logging
 from pathlib import Path
 
 from ask_every_day import renderer
 from ask_every_day.domain import Post, RendererConfig
+from ask_every_day.logging_config import configure_logging
+
+logger = logging.getLogger(
+    "ask_every_day.classic_prototype" if __name__ == "__main__" else __name__
+)
 
 SAMPLE_POST = Post(
     id="AED-0001",
@@ -30,20 +34,31 @@ def render_prototype(post: Post, lines: tuple[tuple[str, str, str], ...]) -> str
 
 def main() -> None:
     """Write the deliberate reference specimen to the ignored output directory."""
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    configure_logging()
     output = Path("output/classic-prototype.svg")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render_prototype(SAMPLE_POST, SAMPLE_LINES), encoding="utf-8")
-    logging.getLogger(__name__).info(
-        json.dumps(
-            {
-                "event": "classic_prototype_written",
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(render_prototype(SAMPLE_POST, SAMPLE_LINES), encoding="utf-8")
+    except (OSError, ValueError) as error:
+        logger.error(
+            "Classic prototype failed",
+            extra={
+                "event": "classic_prototype_failed",
                 "post_id": SAMPLE_POST.id,
-                "path": str(output),
-                "width": 1080,
-                "height": 1350,
-            }
+                "output_path": str(output),
+                "error_type": type(error).__name__,
+            },
         )
+        raise SystemExit(1) from None
+    logger.info(
+        "Classic prototype written",
+        extra={
+            "event": "classic_prototype_written",
+            "post_id": SAMPLE_POST.id,
+            "output_path": str(output),
+            "width": 1080,
+            "height": 1350,
+        },
     )
 
 
