@@ -25,6 +25,10 @@ the project `.venv`; manual activation is unnecessary.
 
 ## Development checks
 
+Local canonical validation remains `make setup` followed by `make check`.
+GitHub Actions runs these same targets on Ubuntu for pull requests targeting
+`main` and pushes to `main`, including the real PNG/JPEG integration tests.
+
 Run `make` or `make help` to list the available commands.
 
 | Command | Action |
