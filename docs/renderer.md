@@ -42,8 +42,8 @@ zero-based half-open `start`/`end` source offsets, estimated `width`, and `basel
 Concatenating the text reproduces the prompt exactly, including leading,
 multiple and trailing spaces. Breaks occur only at spaces; punctuation remains
 attached to words, including separate punctuation-only tokens. SVG `xml:space`
-preserves those spaces. These source offsets are the seam for AED-012; automatic
-lines deliberately remain unhighlighted until that ticket.
+preserves those spaces. These source offsets drive exact highlight intersections
+without changing line breaks or positions (AED-012).
 
 The current supported alphabet is printable ASCII, matching the whole approved
 corpus. Non-ASCII, tabs/newlines/control characters, blank text, overwide words
@@ -88,5 +88,37 @@ and failure `error_type`. Pure layout functions do not log.
 The caller controls logging handlers/formatting. Full prompt text and exception
 payloads are not logged. No dependencies were added.
 
-Deferred: robust highlight integration (AED-012), SVG-to-PNG export (AED-013),
-and batch/output orchestration.
+Deferred: renderer regression suite (AED-014) and batch/output orchestration.
+SVG-to-PNG export is documented separately in [PNG export](png-export.md).
+
+## Exact highlight styling — AED-012
+
+Normal `render_svg(post, config)` locates `post.highlight_text` once in the
+original prompt, then intersects that source range with each automatic line's
+unchanged half-open offsets. Prefix, highlighted fragment, and suffix concatenate
+to the exact original line, including spaces and punctuation. Highlight fragments
+across lines concatenate to the exact configured phrase. No line-local searches,
+word normalization, extra spaces or per-prompt definitions are used.
+
+Matching is case-sensitive and exact. `None` means no highlight. Missing or blank
+values are rejected by the domain and highlight helper; multiple occurrences,
+including overlapping matches, are rejected as ambiguous. This stricter rendering
+policy leaves the existing domain contract unchanged. All 400 Approved prompts
+pass it without editorial changes. Renderer failures raise `RenderError`, with a
+`HighlightError` cause; errors contain no prompt or highlight payload.
+
+The existing sage `#717A60` tspan changes fill only. The charcoal prompt, left
+anchor x=112, centered baseline block, font, line spacing, footer and canvas remain
+unchanged. XML escaping stays in Jinja. Pure highlight helpers do not log; renderer
+records add `highlight_segment_count` (including any space-only intersections).
+
+The explicit `lines` seam remains solely for the existing historical specimen
+byte-compatibility contract. It still requires exact prompt/highlight reproduction
+and now obeys the same unique-match policy. Production callers use automatic
+layout; the specimen helper and template need no separate highlight algorithm.
+
+Focused tests cover line boundaries/crossings, offsets, whitespace, punctuation,
+XML-sensitive text, ambiguity (including overlaps), absent highlights, deterministic
+output, all 400 prompts' geometry, and a real SVG-to-PNG integration. Short, sample
+and longest-post PNGs were visually checked on macOS using the supported Cairo
+wrapper; no clipping or alignment change was observed. No dependencies added.
