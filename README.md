@@ -78,3 +78,7 @@ The [SVG renderer](docs/renderer.md) accepts `Post` and `RendererConfig` and ret
 deterministic SVG. `make prototype` exercises it with the hand-set Classic specimen.
 
 See [content importing](docs/content-import.md) for validation and safe rerun semantics.
+
+Local commands emit timestamped JSON operational logs to stderr and keep functional
+output on stdout. See [application logging](docs/logging.md) for the schema,
+failure diagnostics and safe context rules.

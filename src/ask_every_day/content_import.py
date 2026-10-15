@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ask_every_day.config import load_config
 from ask_every_day.domain import Post
+from ask_every_day.logging_config import configure_logging
 from ask_every_day.repository import (
     ContentDriftError,
     ImportResult,
@@ -16,7 +17,9 @@ from ask_every_day.repository import (
     open_repository,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(
+    "ask_every_day.content_import" if __name__ == "__main__" else __name__
+)
 _COLUMNS = {
     "id",
     "prompt",
@@ -140,7 +143,7 @@ def main() -> None:
     parser.add_argument("--source", type=Path, default=Path("data/prompts.csv"))
     parser.add_argument("--taxonomy", type=Path, default=Path("data/taxonomy.csv"))
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    configure_logging()
     try:
         # Invalid files must not even create an empty database.
         posts = load_snapshot(args.source, args.taxonomy)
