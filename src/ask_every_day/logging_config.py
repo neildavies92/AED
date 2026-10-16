@@ -26,6 +26,7 @@ _TEXT_FIELDS = frozenset(
 _INTEGER_FIELDS = frozenset(
     {
         "publication_id",
+        "http_status",
         "width",
         "height",
         "line_count",
