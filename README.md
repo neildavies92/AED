@@ -35,6 +35,7 @@ Run `make` or `make help` to list the available commands.
 | --- | --- |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
+| `make render-assets` | Render SQLite Posts to configured PNG/JPEG assets |
 | `make test` | Run pytest |
 | `make lint` | Run Ruff lint checks |
 | `make format` | Apply Ruff formatting |
@@ -43,7 +44,6 @@ Run `make` or `make help` to list the available commands.
 | `make check` | Run tests, lint, formatting checks, and type checking |
 
 The underlying `uv` commands remain available in the Makefile.
-There is no application entry point yet; add a `make run` target when one exists.
 Keep the Makefile and this command list up to date whenever frequently used
 setup, testing, or application commands change.
 
@@ -88,3 +88,9 @@ See [content importing](docs/content-import.md) for validation and safe rerun se
 Local commands emit timestamped JSON operational logs to stderr and keep functional
 output on stdout. See [application logging](docs/logging.md) for the schema,
 failure diagnostics and safe context rules.
+
+## Generate local assets
+
+After `make import-content`, run `make render-assets` to render persisted SQLite
+Posts into the configured assets directory as `AED-NNNN.png` and `AED-NNNN.jpg`.
+See [batch rendering](docs/batch-rendering.md) for rerun and failure semantics.
