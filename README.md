@@ -59,7 +59,9 @@ future renderer work and includes an intentional SVG reference.
 
 - `Post`: editorial content, with IDs from `AED-0001` to `AED-9999`. Category,
   subcategory, prompt, and template must be nonblank. An optional highlight must
-  be a nonblank, exact, case-sensitive substring of the prompt.
+  be a nonblank, exact, case-sensitive substring of the prompt. Optional
+  `caption_override` preserves nonblank text exactly; `hashtag_set_id` stores a
+  stable TAG-001–TAG-999 reference, validated against active sets on import.
 - `Publication`: a post reference, typed attempt status (`Publishing`, `Published`,
   or `Failed`), an aware attempt timestamp, and optional result details. Published
   results require an aware publication timestamp no earlier than the attempt and

@@ -1,401 +1,401 @@
-id,prompt,category,subcategory,highlight_text,template,status
-AED-0001,Who are you when no one needs anything from you?,Self-awareness,Identity,no one needs anything from you,Classic,Approved
-AED-0002,What do you say matters to you that your calendar suggests otherwise?,Self-awareness,Values,your calendar suggests otherwise,Classic,Approved
-AED-0003,Which belief about yourself have you never seriously questioned?,Self-awareness,Beliefs,never seriously questioned,Classic,Approved
-AED-0004,"What situation keeps repeating in your life, and what part do you play in it?",Self-awareness,Patterns,what part do you play,Classic,Approved
-AED-0005,"What are you ready to outgrow, even if it once served you?",Growth,Change,ready to outgrow,Classic,Approved
-AED-0006,Which small habit would make your days noticeably better if you kept it for a year?,Growth,Habits,kept it for a year,Classic,Approved
-AED-0007,What difficult experience proved you were more capable than you thought?,Growth,Resilience,more capable than you thought,Classic,Approved
-AED-0008,What are you avoiding because being a beginner feels uncomfortable?,Growth,Discomfort,being a beginner,Classic,Approved
-AED-0009,"Who makes you feel most like yourself, and why?",Relationships,Connection,most like yourself,Classic,Approved
-AED-0010,Where are you saying yes because you are afraid of disappointing someone?,Relationships,Boundaries,afraid of disappointing someone,Classic,Approved
-AED-0011,What conversation would become easier if you said what you actually meant?,Relationships,Communication,what you actually meant,Classic,Approved
-AED-0012,What does someone consistently do that makes you feel safe with them?,Relationships,Trust,feel safe with them,Classic,Approved
-AED-0013,Which ordinary memory from your past do you wish you could experience once more?,Past & Healing,Memories,experience once more,Classic,Approved
-AED-0014,What lesson did you learn much later than you wish you had?,Past & Healing,Lessons,learn much later,Classic,Approved
-AED-0015,What would you forgive your younger self for if you could?,Past & Healing,Regret,forgive your younger self,Classic,Approved
-AED-0016,What are you still carrying that an apology may never resolve?,Past & Healing,Forgiveness,an apology may never resolve,Classic,Approved
-AED-0017,What goal would still matter to you if nobody ever knew you achieved it?,Future,Goals,if nobody ever knew,Classic,Approved
-AED-0018,"If you kept living exactly as you are now, where would you be in three years?",Future,Direction,in three years,Classic,Approved
-AED-0019,What would your future self thank you for starting today?,Future,Future Self,thank you for starting today,Classic,Approved
-AED-0020,What would you attempt if you knew you were allowed to change your mind later?,Future,Possibility,allowed to change your mind,Classic,Approved
-AED-0021,Which risk feels worth taking even while the outcome is uncertain?,Confidence,Courage,worth taking,Classic,Approved
-AED-0022,"Whose life are you comparing yours to, and what are you not seeing?",Confidence,Comparison,what are you not seeing,Classic,Approved
-AED-0023,When was the last time you ignored your instincts and wished you hadn't?,Confidence,Self-trust,ignored your instincts,Classic,Approved
-AED-0024,What do you believe you have to prove before you can feel proud of yourself?,Confidence,Self-worth,have to prove,Classic,Approved
-AED-0025,Which parts of your week make you feel that your time is well spent?,Purpose & Work,Meaning,time is well spent,Classic,Approved
-AED-0026,"If status and salary were equal, what kind of work would you choose?",Purpose & Work,Career,what kind of work would you choose,Classic,Approved
-AED-0027,"Which goal are you chasing because you want it, and which because you think you should?",Purpose & Work,Ambition,because you want it,Classic,Approved
-AED-0028,What does a successful day look like when productivity is not the measure?,Purpose & Work,Fulfilment,productivity is not the measure,Classic,Approved
-AED-0029,What part of your current life would an earlier version of you be amazed to have?,Gratitude & Perspective,Appreciation,amazed to have,Classic,Approved
-AED-0030,What do you already have enough of?,Gratitude & Perspective,Contentment,enough,Classic,Approved
-AED-0031,What problem feels enormous now but may look very different in a year?,Gratitude & Perspective,Perspective,different in a year,Classic,Approved
-AED-0032,Where could choosing enough create more space in your life?,Gratitude & Perspective,Enough,choosing enough,Classic,Approved
-AED-0033,What have you been waiting to feel ready to begin?,Life Audit,Start,waiting to feel ready,Classic,Approved
-AED-0034,What are you doing out of habit that no longer deserves your time?,Life Audit,Stop,no longer deserves your time,Classic,Approved
-AED-0035,What is quietly working in your life that you should protect?,Life Audit,Continue,you should protect,Classic,Approved
-AED-0036,"If you could change one recurring part of your week, what would it be?",Life Audit,Change,one recurring part,Classic,Approved
-AED-0037,What deserves more of your time than it currently gets?,Everyday Life,Time,more of your time,Classic,Approved
-AED-0038,What has been taking your attention without giving much back?,Everyday Life,Attention,taking your attention,Classic,Approved
-AED-0039,Which people or activities reliably leave you with more energy?,Everyday Life,Energy,more energy,Classic,Approved
-AED-0040,"If you could only accomplish three things this month, what would matter most?",Everyday Life,Priorities,three things this month,Classic,Approved
-AED-0041,Which part of yourself feels hardest to explain to people who know you well?,Self-awareness,Identity,hardest to explain,Classic,Approved
-AED-0042,What do you do differently when you stop worrying about how you come across?,Self-awareness,Identity,how you come across,Classic,Approved
-AED-0043,What did you love before you learned whether it was impressive?,Self-awareness,Identity,before you learned,Classic,Approved
-AED-0044,Which label once helped you but now feels too small?,Self-awareness,Identity,too small,Classic,Approved
-AED-0045,How are you different in a room where nobody knows your history?,Self-awareness,Identity,nobody knows your history,Classic,Approved
-AED-0046,Whose description of you have you mistaken for a fact?,Self-awareness,Identity,mistaken for a fact,Classic,Approved
-AED-0047,What private pleasure feels unmistakably yours?,Self-awareness,Identity,unmistakably yours,Classic,Approved
-AED-0048,Which contradiction in yourself are you learning to make room for?,Self-awareness,Identity,contradiction in yourself,Classic,Approved
-AED-0049,How would you introduce yourself without mentioning work or family roles?,Self-awareness,Identity,work or family roles,Classic,Approved
-AED-0050,Which inconvenience are you willing to accept to live by a principle?,Self-awareness,Values,live by a principle,Classic,Approved
-AED-0051,What do your spending choices reveal that your words leave out?,Self-awareness,Values,words leave out,Classic,Approved
-AED-0052,When has following a principle put you at odds with someone you respect?,Self-awareness,Values,someone you respect,Classic,Approved
-AED-0053,Which quality do you admire but rarely practise yourself?,Self-awareness,Values,practise yourself,Classic,Approved
-AED-0054,What would you refuse to trade for an easier life?,Self-awareness,Values,refuse to trade,Classic,Approved
-AED-0055,Where do two things you value pull in opposite directions?,Self-awareness,Values,pull in opposite directions,Classic,Approved
-AED-0056,Whose values are you defending without checking whether they are still yours?,Self-awareness,Values,still yours,Classic,Approved
-AED-0057,Which value is hardest to practise when nobody will notice?,Self-awareness,Values,nobody will notice,Classic,Approved
-AED-0058,Which small choice today could reflect something you care about?,Self-awareness,Values,something you care about,Classic,Approved
-AED-0059,What do you call impossible because you have never seen it done?,Self-awareness,Beliefs,never seen it done,Classic,Approved
-AED-0060,Which family saying still shapes a choice you make as an adult?,Self-awareness,Beliefs,family saying,Classic,Approved
-AED-0061,When did evidence last persuade you to change your mind?,Self-awareness,Beliefs,evidence,Classic,Approved
-AED-0062,What assumption do you make about people who disagree with you?,Self-awareness,Beliefs,disagree with you,Classic,Approved
-AED-0063,Which rule about success have you kept without deciding whether it suits you?,Self-awareness,Beliefs,whether it suits you,Classic,Approved
-AED-0064,Where might you be treating a fear as a prediction?,Self-awareness,Beliefs,fear as a prediction,Classic,Approved
-AED-0065,What belief helps you belong but makes it harder to be honest?,Self-awareness,Beliefs,be honest,Classic,Approved
-AED-0066,Which opinion feels borrowed when you try to explain it in your own words?,Self-awareness,Beliefs,explain it in your own words,Classic,Approved
-AED-0067,What would count as evidence against a story you keep telling yourself?,Self-awareness,Beliefs,keep telling yourself,Classic,Approved
-AED-0068,What usually happens just before you pull away from someone?,Self-awareness,Patterns,pull away from someone,Classic,Approved
-AED-0069,"When you are upset, what do you tend to keep yourself busy with?",Self-awareness,Patterns,keep yourself busy,Classic,Approved
-AED-0070,"When you feel overlooked, what do you do next?",Self-awareness,Patterns,feel overlooked,Classic,Approved
-AED-0071,Which kind of praise makes you take on too much?,Self-awareness,Patterns,take on too much,Classic,Approved
-AED-0072,What do you tend to avoid after something goes well?,Self-awareness,Patterns,goes well,Classic,Approved
-AED-0073,How does your behaviour change when you expect to be criticised?,Self-awareness,Patterns,be criticised,Classic,Approved
-AED-0074,Which uncertainty tends to bring out a familiar reaction in you?,Self-awareness,Patterns,a familiar reaction,Classic,Approved
-AED-0075,Which problem is easier for you to address for someone else than for yourself?,Self-awareness,Patterns,than for yourself,Classic,Approved
-AED-0076,What is the earliest sign that you are repeating an old response?,Self-awareness,Patterns,repeating an old response,Classic,Approved
-AED-0077,What are you grieving about a change you chose yourself?,Growth,Change,chose yourself,Classic,Approved
-AED-0078,Which part of your old life deserves a proper goodbye?,Growth,Change,a proper goodbye,Classic,Approved
-AED-0079,Who still expects a version of you that you no longer recognise?,Growth,Change,a version of you,Classic,Approved
-AED-0080,What has become easier since you stopped trying to stay the same?,Growth,Change,become easier,Classic,Approved
-AED-0081,How do you know a change is yours rather than a reaction to someone else?,Growth,Change,a reaction to someone else,Classic,Approved
-AED-0082,Which uncertainty comes with a life you actually want?,Growth,Change,actually want,Classic,Approved
-AED-0083,What do you need to keep while everything else shifts?,Growth,Change,everything else shifts,Classic,Approved
-AED-0084,Where are you waiting for other people to notice your growth?,Growth,Change,notice your growth,Classic,Approved
-AED-0085,What new freedom have you not yet learned how to use?,Growth,Change,learned how to use,Classic,Approved
-AED-0086,Which routine depends on a version of you who is never tired?,Growth,Habits,never tired,Classic,Approved
-AED-0087,What makes a useful habit easy to return to after a missed day?,Growth,Habits,easy to return to,Classic,Approved
-AED-0088,What usually happens just before you slip into a habit you want to change?,Growth,Habits,just before,Classic,Approved
-AED-0089,What do you get from a habit you say you want to break?,Growth,Habits,say you want to break,Classic,Approved
-AED-0090,How could your surroundings make one good choice less demanding?,Growth,Habits,your surroundings,Classic,Approved
-AED-0091,Which evening habit changes the quality of the next morning?,Growth,Habits,the next morning,Classic,Approved
-AED-0092,What is the smallest version of a routine that still counts?,Growth,Habits,still counts,Classic,Approved
-AED-0093,Which repeated choice feels harmless alone but costly over time?,Growth,Habits,costly over time,Classic,Approved
-AED-0094,When does tracking your progress stop helping and become another pressure?,Growth,Habits,another pressure,Classic,Approved
-AED-0095,Who helped you through something you once described as getting through alone?,Growth,Resilience,getting through alone,Classic,Approved
-AED-0096,What did a hard season teach you about asking for help?,Growth,Resilience,asking for help,Classic,Approved
-AED-0097,Which strength would you rather not have needed to develop?,Growth,Resilience,not have needed to develop,Classic,Approved
-AED-0098,How can you tell the difference between enduring and recovering?,Growth,Resilience,enduring and recovering,Classic,Approved
-AED-0099,What helped you feel steady when you did not know what would happen next?,Growth,Resilience,feel steady,Classic,Approved
-AED-0100,Which setback changed your route without ending your effort?,Growth,Resilience,changed your route,Classic,Approved
-AED-0101,What does rebuilding look like on a day when you have very little to give?,Growth,Resilience,very little to give,Classic,Approved
-AED-0102,How has a difficult experience changed what you ask of yourself?,Growth,Resilience,what you ask of yourself,Classic,Approved
-AED-0103,What do you now know you can survive without wanting to repeat it?,Growth,Resilience,wanting to repeat it,Classic,Approved
-AED-0104,Which silence do you rush to fill because it feels too revealing?,Growth,Discomfort,rush to fill,Classic,Approved
-AED-0105,What question are you reluctant to ask because you should already know?,Growth,Discomfort,should already know,Classic,Approved
-AED-0106,When does awkwardness signal learning rather than a reason to leave?,Growth,Discomfort,a reason to leave,Classic,Approved
-AED-0107,What feeling could you allow for a moment without trying to fix it?,Growth,Discomfort,trying to fix it,Classic,Approved
-AED-0108,How do you react when someone sees you make a mistake?,Growth,Discomfort,sees you make a mistake,Classic,Approved
-AED-0109,How do you cope with waiting when there is nothing useful you can do?,Growth,Discomfort,cope with waiting,Classic,Approved
-AED-0110,Where do you confuse being uncomfortable with being unwelcome?,Growth,Discomfort,being unwelcome,Classic,Approved
-AED-0111,What could you learn by staying curious when you feel defensive?,Growth,Discomfort,feel defensive,Classic,Approved
-AED-0112,Which familiar comfort do you miss most when you are away from home?,Growth,Discomfort,familiar comfort,Classic,Approved
-AED-0113,When did you last feel understood without explaining everything?,Relationships,Connection,understood without explaining everything,Classic,Approved
-AED-0114,Who knows what your ordinary days really look like?,Relationships,Connection,really look like,Classic,Approved
-AED-0115,Which friendship needs time together more than another message?,Relationships,Connection,time together,Classic,Approved
-AED-0116,What do you reveal through humour that you rarely say directly?,Relationships,Connection,say directly,Classic,Approved
-AED-0117,How do you let someone know their company is enough without needing a plan?,Relationships,Connection,their company is enough,Classic,Approved
-AED-0118,Which shared ritual makes distance feel smaller?,Relationships,Connection,feel smaller,Classic,Approved
-AED-0119,What do you tend to notice first when a friend is having a difficult day?,Relationships,Connection,notice first,Classic,Approved
-AED-0120,Who would you like to know beyond the role they play in your life?,Relationships,Connection,beyond the role,Classic,Approved
-AED-0121,What kind of welcome do you offer when someone returns after a long silence?,Relationships,Connection,a long silence,Classic,Approved
-AED-0122,Which request do you wish you had answered differently?,Relationships,Boundaries,answered differently,Classic,Approved
-AED-0123,Which boundary is easy to state but difficult to put into practice?,Relationships,Boundaries,put into practice,Classic,Approved
-AED-0124,Where are you offering access when you only mean to offer kindness?,Relationships,Boundaries,offer kindness,Classic,Approved
-AED-0125,Which boundary would protect your affection from turning into resentment?,Relationships,Boundaries,turning into resentment,Classic,Approved
-AED-0126,What do you worry a brief no might say about you?,Relationships,Boundaries,a brief no,Classic,Approved
-AED-0127,How do you respond when someone sets a limit you did not expect?,Relationships,Boundaries,a limit you did not expect,Classic,Approved
-AED-0128,"Which responsibility belongs to you, and which have you quietly adopted?",Relationships,Boundaries,quietly adopted,Classic,Approved
-AED-0129,When do you need privacy rather than permission?,Relationships,Boundaries,permission,Classic,Approved
-AED-0130,Which boundary do you wish you had discussed before sharing a space with someone?,Relationships,Boundaries,sharing a space,Classic,Approved
-AED-0131,What do you hope someone will understand from your silence?,Relationships,Communication,silence,Classic,Approved
-AED-0132,Which complaint contains a request you have not made plainly?,Relationships,Communication,not made plainly,Classic,Approved
-AED-0133,What do you tend to hear first when someone disagrees with you?,Relationships,Communication,hear first,Classic,Approved
-AED-0134,What would you want an apology to acknowledge before you could trust it?,Relationships,Communication,an apology to acknowledge,Classic,Approved
-AED-0135,Which feeling are you disguising as a statement of fact?,Relationships,Communication,a statement of fact,Classic,Approved
-AED-0136,How could you describe the impact of something without guessing the intention?,Relationships,Communication,guessing the intention,Classic,Approved
-AED-0137,What needs to be said while you can still say it kindly?,Relationships,Communication,still say it kindly,Classic,Approved
-AED-0138,Which question do you wish someone had asked before offering you advice?,Relationships,Communication,before offering you advice,Classic,Approved
-AED-0139,When did you last check whether someone wanted comfort or a solution?,Relationships,Communication,comfort or a solution,Classic,Approved
-AED-0140,What does reliability look like in the smallest moments?,Relationships,Trust,reliability,Classic,Approved
-AED-0141,Which promise to you has someone kept when it was inconvenient?,Relationships,Trust,it was inconvenient,Classic,Approved
-AED-0142,How do you decide who has earned more of your story?,Relationships,Trust,more of your story,Classic,Approved
-AED-0143,What happens inside you when a trustworthy person makes a mistake?,Relationships,Trust,makes a mistake,Classic,Approved
-AED-0144,What do you need to know before you feel comfortable relying on someone?,Relationships,Trust,relying on someone,Classic,Approved
-AED-0145,Which act of repair would matter more than reassuring words?,Relationships,Trust,reassuring words,Classic,Approved
-AED-0146,How do you handle information someone gave you in confidence?,Relationships,Trust,in confidence,Classic,Approved
-AED-0147,When has consistency changed your first impression of someone?,Relationships,Trust,consistency,Classic,Approved
-AED-0148,What helps you distinguish caution from expecting old hurt to repeat?,Relationships,Trust,expecting old hurt to repeat,Classic,Approved
-AED-0149,Which smell takes you back to a place you no longer visit?,Past & Healing,Memories,a place you no longer visit,Classic,Approved
-AED-0150,What small detail do you remember about someone whose voice is harder to recall?,Past & Healing,Memories,harder to recall,Classic,Approved
-AED-0151,Which childhood afternoon do you remember for no obvious reason?,Past & Healing,Memories,no obvious reason,Classic,Approved
-AED-0152,What object holds a story that nobody else would guess?,Past & Healing,Memories,nobody else would guess,Classic,Approved
-AED-0153,Which memory has changed as you have learned more of the story?,Past & Healing,Memories,more of the story,Classic,Approved
-AED-0154,Who remembers a side of you that your current friends have never met?,Past & Healing,Memories,never met,Classic,Approved
-AED-0155,What place feels different because of who is missing from it?,Past & Healing,Memories,who is missing from it,Classic,Approved
-AED-0156,Which family story would you like to hear from another person's point of view?,Past & Healing,Memories,another person's point of view,Classic,Approved
-AED-0157,What ordinary moment would you want to describe before the details fade?,Past & Healing,Memories,the details fade,Classic,Approved
-AED-0158,What did an ending teach you that staying could not?,Past & Healing,Lessons,staying could not,Classic,Approved
-AED-0159,Which lesson do you understand intellectually but struggle to live by?,Past & Healing,Lessons,understand intellectually,Classic,Approved
-AED-0160,Who taught you something important without realising it?,Past & Healing,Lessons,without realising it,Classic,Approved
-AED-0161,What mistake made you more careful without making you less curious?,Past & Healing,Lessons,more careful,Classic,Approved
-AED-0162,Which advice only made sense after you ignored it?,Past & Healing,Lessons,ignored it,Classic,Approved
-AED-0163,What did you learn by getting something you thought you desperately wanted?,Past & Healing,Lessons,desperately wanted,Classic,Approved
-AED-0164,Which lesson made sense at one point in your life but no longer fits?,Past & Healing,Lessons,no longer fits,Classic,Approved
-AED-0165,When did being wrong leave you better informed rather than smaller?,Past & Healing,Lessons,being wrong,Classic,Approved
-AED-0166,What do you wish you had asked before learning the hard way?,Past & Healing,Lessons,learning the hard way,Classic,Approved
-AED-0167,Which choice are you judging with information you did not have then?,Past & Healing,Regret,did not have then,Classic,Approved
-AED-0168,What repair is still possible even if the past cannot change?,Past & Healing,Regret,the past cannot change,Classic,Approved
-AED-0169,"Which missed chance do you imagine most often, and what draws you back to it?",Past & Healing,Regret,draws you back,Classic,Approved
-AED-0170,What does a regret reveal about what you value now?,Past & Healing,Regret,value now,Classic,Approved
-AED-0171,How do you judge a past decision when its outcome was painful?,Past & Healing,Regret,judge a past decision,Classic,Approved
-AED-0172,Which regret has changed a choice you made since?,Past & Healing,Regret,changed a choice,Classic,Approved
-AED-0173,What do you regret leaving unsaid that you could still tell someone?,Past & Healing,Regret,leaving unsaid,Classic,Approved
-AED-0174,What part of your life grew from a choice you still wish had gone differently?,Past & Healing,Regret,still wish had gone differently,Classic,Approved
-AED-0175,"How much of your regret belongs to you, and how much to someone else's expectations?",Past & Healing,Regret,someone else's expectations,Classic,Approved
-AED-0176,"What would setting down resentment make room for, without excusing what happened?",Past & Healing,Forgiveness,without excusing what happened,Classic,Approved
-AED-0177,What would help you tell someone you are not ready to forgive?,Past & Healing,Forgiveness,not ready to forgive,Classic,Approved
-AED-0178,What does forgiveness mean to you if reconciliation is not possible?,Past & Healing,Forgiveness,reconciliation is not possible,Classic,Approved
-AED-0179,Where do you need accountability more than pressure to move on?,Past & Healing,Forgiveness,pressure to move on,Classic,Approved
-AED-0180,Which old accusation against yourself have you never re-examined?,Past & Healing,Forgiveness,never re-examined,Classic,Approved
-AED-0181,What did you need from someone that they were unable to give?,Past & Healing,Forgiveness,unable to give,Classic,Approved
-AED-0182,What boundary could remain even if your anger softened?,Past & Healing,Forgiveness,anger softened,Classic,Approved
-AED-0183,What would forgiving yourself change about how you describe a painful memory?,Past & Healing,Forgiveness,forgiving yourself,Classic,Approved
-AED-0184,What would patience with your own pace of forgiveness look like today?,Past & Healing,Forgiveness,your own pace of forgiveness,Classic,Approved
-AED-0185,How will you know you have reached a goal if nobody gives you a score?,Future,Goals,nobody gives you a score,Classic,Approved
-AED-0186,Which goal needs a smaller next step rather than more motivation?,Future,Goals,a smaller next step,Classic,Approved
-AED-0187,"What are you willing to give up for a goal, and what is not negotiable?",Future,Goals,not negotiable,Classic,Approved
-AED-0188,Which milestone fits the time and energy you actually have?,Future,Goals,time and energy,Classic,Approved
-AED-0189,How would you recognise that a goal is no longer worth pursuing?,Future,Goals,no longer worth pursuing,Classic,Approved
-AED-0190,What part of reaching a goal is within your control?,Future,Goals,within your control,Classic,Approved
-AED-0191,Who could offer useful support for a goal you have kept to yourself?,Future,Goals,kept to yourself,Classic,Approved
-AED-0192,Which part of pursuing a goal would you want to keep after you reach it?,Future,Goals,keep after you reach it,Classic,Approved
-AED-0193,Which finish line keeps moving each time you get close?,Future,Goals,finish line keeps moving,Classic,Approved
-AED-0194,Which ordinary decision is slowly choosing a life for you?,Future,Direction,a life for you,Classic,Approved
-AED-0195,What would you need to notice to know you were heading the wrong way?,Future,Direction,heading the wrong way,Classic,Approved
-AED-0196,Where does your current path reflect momentum rather than intention?,Future,Direction,momentum rather than intention,Classic,Approved
-AED-0197,Which commitment points towards a future you no longer want?,Future,Direction,no longer want,Classic,Approved
-AED-0198,What is one sign that your life is becoming more your own?,Future,Direction,more your own,Classic,Approved
-AED-0199,Whose definition of progress is shaping your next move?,Future,Direction,definition of progress,Classic,Approved
-AED-0200,Which direction feels worthwhile even without a clear destination?,Future,Direction,a clear destination,Classic,Approved
-AED-0201,Which recent decision has brought your longer-term direction into focus?,Future,Direction,direction into focus,Classic,Approved
-AED-0202,How could you test a new direction without abandoning everything at once?,Future,Direction,abandoning everything at once,Classic,Approved
-AED-0203,Which ordinary part of today might your older self miss most?,Future,Future Self,ordinary part of today,Classic,Approved
-AED-0204,What would you like to leave your future self besides achievements?,Future,Future Self,besides achievements,Classic,Approved
-AED-0205,Which unfinished decision are you passing to a version of yourself with less time?,Future,Future Self,less time,Classic,Approved
-AED-0206,What could you write down now that your future self might need to remember?,Future,Future Self,need to remember,Classic,Approved
-AED-0207,How do you hope you will speak about this season ten years from now?,Future,Future Self,ten years from now,Classic,Approved
-AED-0208,Which relationship would you regret treating as permanently available?,Future,Future Self,permanently available,Classic,Approved
-AED-0209,What kind of beginner would you like to remain as you grow older?,Future,Future Self,as you grow older,Classic,Approved
-AED-0210,Which burden could you stop handing from one year to the next?,Future,Future Self,one year to the next,Classic,Approved
-AED-0211,What would make your future home feel like a place you want to return to?,Future,Future Self,want to return to,Classic,Approved
-AED-0212,Which interest could become something if it did not need to be useful immediately?,Future,Possibility,useful immediately,Classic,Approved
-AED-0213,What alternative have you dismissed because nobody around you has chosen it?,Future,Possibility,has chosen it,Classic,Approved
-AED-0214,"If this plan did not work, what else might still be possible?",Future,Possibility,might still be possible,Classic,Approved
-AED-0215,Which version of a good life have you not allowed yourself to imagine?,Future,Possibility,not allowed yourself to imagine,Classic,Approved
-AED-0216,What could you make with skills you have never tried using together?,Future,Possibility,using together,Classic,Approved
-AED-0217,Where might an unexpected invitation interrupt a plan that has become too narrow?,Future,Possibility,a plan that has become too narrow,Classic,Approved
-AED-0218,Which skill would let you participate in a world you currently only watch?,Future,Possibility,currently only watch,Classic,Approved
-AED-0219,What could a plan still offer you if it worked only partly?,Future,Possibility,worked only partly,Classic,Approved
-AED-0220,Who could show you a way of living that your usual circle cannot?,Future,Possibility,a way of living,Classic,Approved
-AED-0221,Which truth could you say without making it sound smaller?,Confidence,Courage,making it sound smaller,Classic,Approved
-AED-0222,Where would asking for support require more courage than handling it alone?,Confidence,Courage,handling it alone,Classic,Approved
-AED-0223,What would you like to share even though someone might dislike it?,Confidence,Courage,someone might dislike it,Classic,Approved
-AED-0224,When have you acted with courage while still feeling afraid?,Confidence,Courage,still feeling afraid,Classic,Approved
-AED-0225,Which unpopular choice would let you respect yourself tomorrow?,Confidence,Courage,respect yourself tomorrow,Classic,Approved
-AED-0226,What would it take to admit that you want something deeply?,Confidence,Courage,want something deeply,Classic,Approved
-AED-0227,How do you decide whether staying or leaving asks more courage of you?,Confidence,Courage,staying or leaving,Classic,Approved
-AED-0228,Who could you stand beside when it would be easier to remain neutral?,Confidence,Courage,stand beside,Classic,Approved
-AED-0229,Which question are you willing to ask even if your voice shakes?,Confidence,Courage,your voice shakes,Classic,Approved
-AED-0230,What part of someone else's success would you not want to live through?,Confidence,Comparison,not want to live through,Classic,Approved
-AED-0231,"Whose progress inspires you, and whose makes you lose sight of your own?",Confidence,Comparison,lose sight of your own,Classic,Approved
-AED-0232,Which measure makes your life seem smaller while missing what matters to you?,Confidence,Comparison,what matters to you,Classic,Approved
-AED-0233,What do you overlook in yourself when you admire it in someone else?,Confidence,Comparison,overlook in yourself,Classic,Approved
-AED-0234,When has another person's timeline made you rush a decision?,Confidence,Comparison,rush a decision,Classic,Approved
-AED-0235,What happens to your satisfaction after you look for a ranking?,Confidence,Comparison,look for a ranking,Classic,Approved
-AED-0236,Which difference between you and a friend do you find interesting rather than competitive?,Confidence,Comparison,interesting rather than competitive,Classic,Approved
-AED-0237,How would you describe your progress using only your own starting point?,Confidence,Comparison,only your own starting point,Classic,Approved
-AED-0238,Where are you comparing your private doubts with someone's public confidence?,Confidence,Comparison,someone's public confidence,Classic,Approved
-AED-0239,What decision did you make well before anyone agreed with you?,Confidence,Self-trust,agreed with you,Classic,Approved
-AED-0240,How do you distinguish a quiet preference from the loudest outside opinion?,Confidence,Self-trust,the loudest outside opinion,Classic,Approved
-AED-0241,Which promise to yourself is small enough to keep today?,Confidence,Self-trust,keep today,Classic,Approved
-AED-0242,How do you know when you have enough information to make a decision?,Confidence,Self-trust,enough information,Classic,Approved
-AED-0243,When has changing your mind shown good judgement?,Confidence,Self-trust,good judgement,Classic,Approved
-AED-0244,Which decision can you make without polling everyone you know?,Confidence,Self-trust,polling everyone you know,Classic,Approved
-AED-0245,What helps you make another decision after you have got one wrong?,Confidence,Self-trust,another decision,Classic,Approved
-AED-0246,What signs tell you to pause rather than override your hesitation?,Confidence,Self-trust,override your hesitation,Classic,Approved
-AED-0247,Which past decision reminds you that you can handle responsibility?,Confidence,Self-trust,handle responsibility,Classic,Approved
-AED-0248,What would remain valuable about you during an unproductive month?,Confidence,Self-worth,an unproductive month,Classic,Approved
-AED-0249,Which compliment do you dismiss because it is not about achievement?,Confidence,Self-worth,not about achievement,Classic,Approved
-AED-0250,What makes it difficult to rest before everything is finished?,Confidence,Self-worth,before everything is finished,Classic,Approved
-AED-0251,Whose disappointment feels like evidence that you are not good enough?,Confidence,Self-worth,not good enough,Classic,Approved
-AED-0252,What kindness do you offer others that you withhold from yourself?,Confidence,Self-worth,withhold from yourself,Classic,Approved
-AED-0253,How does believing you will be taken seriously change the way you speak?,Confidence,Self-worth,taken seriously,Classic,Approved
-AED-0254,Which ordinary need do you apologise for having at all?,Confidence,Self-worth,ordinary need,Classic,Approved
-AED-0255,What would it mean to accept care without repaying it immediately?,Confidence,Self-worth,repaying it immediately,Classic,Approved
-AED-0256,Where have you mistaken being needed for being worthy of love?,Confidence,Self-worth,being worthy of love,Classic,Approved
-AED-0257,Whose day becomes easier because of something you do?,Purpose & Work,Meaning,something you do,Classic,Approved
-AED-0258,Which effort would feel worthwhile even if the result stayed small?,Purpose & Work,Meaning,the result stayed small,Classic,Approved
-AED-0259,What problem holds your attention without needing an external reward?,Purpose & Work,Meaning,an external reward,Classic,Approved
-AED-0260,When has useful work mattered more to you than visible work?,Purpose & Work,Meaning,useful work,Classic,Approved
-AED-0261,Which task connects you to something beyond your own advancement?,Purpose & Work,Meaning,beyond your own advancement,Classic,Approved
-AED-0262,What contribution would you like people to count on you for?,Purpose & Work,Meaning,count on you,Classic,Approved
-AED-0263,Where does the way you work conflict with the reason you work?,Purpose & Work,Meaning,the reason you work,Classic,Approved
-AED-0264,Which overlooked responsibility gives your life a sense of purpose?,Purpose & Work,Meaning,a sense of purpose,Classic,Approved
-AED-0265,Which problem would you like to leave easier for the person who comes next?,Purpose & Work,Meaning,the person who comes next,Classic,Approved
-AED-0266,Which working conditions help you do your best without becoming someone else?,Purpose & Work,Career,working conditions,Classic,Approved
-AED-0267,What part of your job are you good at but do not want more of?,Purpose & Work,Career,do not want more of,Classic,Approved
-AED-0268,Which skill would you like to use more often in an ordinary working day?,Purpose & Work,Career,an ordinary working day,Classic,Approved
-AED-0269,What did your least favourite job teach you about what you need at work?,Purpose & Work,Career,what you need at work,Classic,Approved
-AED-0270,Whose working life would you like to understand beyond their job title?,Purpose & Work,Career,their job title,Classic,Approved
-AED-0271,Which career choice would change if you counted the cost to your health?,Purpose & Work,Career,the cost to your health,Classic,Approved
-AED-0272,What kind of colleague do you become under constant urgency?,Purpose & Work,Career,constant urgency,Classic,Approved
-AED-0273,Where could your experience be useful outside the field you know?,Purpose & Work,Career,the field you know,Classic,Approved
-AED-0274,Which question would you ask a future employer if you were also interviewing them?,Purpose & Work,Career,also interviewing them,Classic,Approved
-AED-0275,What is the life you hope an achievement will give you permission to live?,Purpose & Work,Ambition,give you permission to live,Classic,Approved
-AED-0276,Which ambition becomes less attractive when you picture the daily work behind it?,Purpose & Work,Ambition,the daily work behind it,Classic,Approved
-AED-0277,How much of your drive comes from wanting to prove someone wrong?,Purpose & Work,Ambition,prove someone wrong,Classic,Approved
-AED-0278,How do you decide when to compete and when to collaborate?,Purpose & Work,Ambition,compete and when to collaborate,Classic,Approved
-AED-0279,Which limit could make your ambition more sustainable?,Purpose & Work,Ambition,more sustainable,Classic,Approved
-AED-0280,When does wanting more begin to erase what you have built?,Purpose & Work,Ambition,erase what you have built,Classic,Approved
-AED-0281,Who gets less of you when you pursue your biggest ambition?,Purpose & Work,Ambition,your biggest ambition,Classic,Approved
-AED-0282,What are you unwilling to become in order to get ahead?,Purpose & Work,Ambition,unwilling to become,Classic,Approved
-AED-0283,How would you recognise ambition that is quiet but still serious?,Purpose & Work,Ambition,quiet but still serious,Classic,Approved
-AED-0284,When did you last finish a day feeling satisfied rather than simply relieved it was over?,Purpose & Work,Fulfilment,satisfied rather than simply relieved,Classic,Approved
-AED-0285,Which activity leaves a satisfaction that lasts after the excitement fades?,Purpose & Work,Fulfilment,the excitement fades,Classic,Approved
-AED-0286,What is missing from a life that looks successful on paper?,Purpose & Work,Fulfilment,successful on paper,Classic,Approved
-AED-0287,What part of a satisfying experience do you tend to remember longest?,Purpose & Work,Fulfilment,remember longest,Classic,Approved
-AED-0288,Who would you choose to share a satisfying moment with?,Purpose & Work,Fulfilment,share a satisfying moment,Classic,Approved
-AED-0289,How often does your idea of a good life appear in your actual week?,Purpose & Work,Fulfilment,your actual week,Classic,Approved
-AED-0290,What do you enjoy making even when nobody needs the result?,Purpose & Work,Fulfilment,nobody needs the result,Classic,Approved
-AED-0291,Which experience made you feel fully involved rather than pleasantly distracted?,Purpose & Work,Fulfilment,pleasantly distracted,Classic,Approved
-AED-0292,What would you add to your life if you measured it by depth rather than output?,Purpose & Work,Fulfilment,depth rather than output,Classic,Approved
-AED-0293,Who does something dependable that you have stopped noticing as a gift?,Gratitude & Perspective,Appreciation,something dependable,Classic,Approved
-AED-0294,Which ordinary comfort would make today harder if it suddenly disappeared?,Gratitude & Perspective,Appreciation,suddenly disappeared,Classic,Approved
-AED-0295,What has someone taught you that you use almost every day?,Gratitude & Perspective,Appreciation,someone taught you,Classic,Approved
-AED-0296,Which part of your body helped you experience something you enjoyed today?,Gratitude & Perspective,Appreciation,something you enjoyed today,Classic,Approved
-AED-0297,What small act of care happened without asking to be noticed?,Gratitude & Perspective,Appreciation,asking to be noticed,Classic,Approved
-AED-0298,Which place offers you a welcome you have come to expect?,Gratitude & Perspective,Appreciation,a welcome,Classic,Approved
-AED-0299,What skill do you now take for granted that once required patient practice?,Gratitude & Perspective,Appreciation,required patient practice,Classic,Approved
-AED-0300,Who would appreciate knowing the lasting effect of something they did for you?,Gratitude & Perspective,Appreciation,something they did for you,Classic,Approved
-AED-0301,What was unexpectedly lovely about a day you would otherwise forget?,Gratitude & Perspective,Appreciation,would otherwise forget,Classic,Approved
-AED-0302,When do you feel no urge to be somewhere else?,Gratitude & Perspective,Contentment,somewhere else,Classic,Approved
-AED-0303,What helps you enjoy something without wondering whether there is a better version?,Gratitude & Perspective,Contentment,there is a better version,Classic,Approved
-AED-0304,Which ordinary pleasure needs no improvement?,Gratitude & Perspective,Contentment,no improvement,Classic,Approved
-AED-0305,How does your body feel when you are not trying to catch up?,Gratitude & Perspective,Contentment,not trying to catch up,Classic,Approved
-AED-0306,Where could you let a good moment be good without making it last forever?,Gratitude & Perspective,Contentment,making it last forever,Classic,Approved
-AED-0307,What do you stop noticing when you are waiting for the next thing?,Gratitude & Perspective,Contentment,the next thing,Classic,Approved
-AED-0308,Which part of your life feels right even though it is not impressive?,Gratitude & Perspective,Contentment,not impressive,Classic,Approved
-AED-0309,How can you make room for a change while appreciating what you want to keep?,Gratitude & Perspective,Contentment,what you want to keep,Classic,Approved
-AED-0310,When does doing less let you enjoy more of what is here?,Gratitude & Perspective,Contentment,enjoy more of what is here,Classic,Approved
-AED-0311,How might someone who cares about you describe the situation you are in?,Gratitude & Perspective,Perspective,someone who cares about you,Classic,Approved
-AED-0312,How would you describe this problem without using the words always or never?,Gratitude & Perspective,Perspective,always or never,Classic,Approved
-AED-0313,Which detail are you treating as though it tells the whole story?,Gratitude & Perspective,Perspective,tells the whole story,Classic,Approved
-AED-0314,What helps you keep a difficult hour from colouring the rest of your day?,Gratitude & Perspective,Perspective,colouring the rest of your day,Classic,Approved
-AED-0315,What context would make another person's behaviour less mysterious?,Gratitude & Perspective,Perspective,less mysterious,Classic,Approved
-AED-0316,"Which part of this situation is temporary, even if it does not feel that way?",Gratitude & Perspective,Perspective,temporary,Classic,Approved
-AED-0317,What can be true alongside the thing that is troubling you?,Gratitude & Perspective,Perspective,true alongside,Classic,Approved
-AED-0318,How would you view this decision if you were advising someone you love?,Gratitude & Perspective,Perspective,advising someone you love,Classic,Approved
-AED-0319,What are you taking personally that might have very little to do with you?,Gratitude & Perspective,Perspective,very little to do with you,Classic,Approved
-AED-0320,How will you decide when you have enough money set aside for a particular purpose?,Gratitude & Perspective,Enough,enough money set aside,Classic,Approved
-AED-0321,Which possession creates more upkeep than pleasure?,Gratitude & Perspective,Enough,more upkeep,Classic,Approved
-AED-0322,Where would a clear stopping point protect you from endless improvement?,Gratitude & Perspective,Enough,endless improvement,Classic,Approved
-AED-0323,How many commitments can you hold while still being present for them?,Gratitude & Perspective,Enough,being present for them,Classic,Approved
-AED-0324,Which task could be done well enough without needing to be perfect?,Gratitude & Perspective,Enough,well enough,Classic,Approved
-AED-0325,Which purchase promises to solve a feeling that buying cannot settle?,Gratitude & Perspective,Enough,buying cannot settle,Classic,Approved
-AED-0326,How much news helps you stay informed before it becomes more than you can use?,Gratitude & Perspective,Enough,more than you can use,Classic,Approved
-AED-0327,What would you decline if you believed this season was already full?,Gratitude & Perspective,Enough,already full,Classic,Approved
-AED-0328,Where did you learn what a comfortable life should contain?,Gratitude & Perspective,Enough,a comfortable life,Classic,Approved
-AED-0329,Which neglected interest deserves an appointment in your calendar?,Life Audit,Start,an appointment in your calendar,Classic,Approved
-AED-0330,What first step could you take without announcing a big plan?,Life Audit,Start,announcing a big plan,Classic,Approved
-AED-0331,Where would a rough first attempt teach you more than another week of planning?,Life Audit,Start,another week of planning,Classic,Approved
-AED-0332,Which practical obstacle could you remove before asking yourself for willpower?,Life Audit,Start,asking yourself for willpower,Classic,Approved
-AED-0333,What have you made conditional on someone else joining you?,Life Audit,Start,someone else joining you,Classic,Approved
-AED-0334,What would make it easier to return to an interest you abandoned years ago?,Life Audit,Start,return to an interest,Classic,Approved
-AED-0335,What resource do you already have for something you say you cannot start?,Life Audit,Start,already have,Classic,Approved
-AED-0336,When would you begin if you stopped waiting for a symbolic date?,Life Audit,Start,a symbolic date,Classic,Approved
-AED-0337,Which small beginning would make tomorrow less intimidating?,Life Audit,Start,less intimidating,Classic,Approved
-AED-0338,Which obligation survives only because you have never revisited it?,Life Audit,Stop,never revisited it,Classic,Approved
-AED-0339,What do you keep checking even though the answer is unlikely to change?,Life Audit,Stop,unlikely to change,Classic,Approved
-AED-0340,Which explanation do you keep offering after a conversation has stopped moving forward?,Life Audit,Stop,stopped moving forward,Classic,Approved
-AED-0341,Where are you investing more because you have already invested so much?,Life Audit,Stop,already invested so much,Classic,Approved
-AED-0342,What task could disappear without anyone losing something important?,Life Audit,Stop,could disappear,Classic,Approved
-AED-0343,Which way of relaxing leaves you less rested?,Life Audit,Stop,less rested,Classic,Approved
-AED-0344,What are you continuing mainly to avoid admitting you are finished?,Life Audit,Stop,admitting you are finished,Classic,Approved
-AED-0345,Which argument no longer needs your participation?,Life Audit,Stop,your participation,Classic,Approved
-AED-0346,What would happen if you stopped volunteering to rescue every difficult moment?,Life Audit,Stop,rescue every difficult moment,Classic,Approved
-AED-0347,Which practice helps even when you cannot see immediate progress?,Life Audit,Continue,cannot see immediate progress,Classic,Approved
-AED-0348,What agreement with yourself has been worth keeping?,Life Audit,Continue,worth keeping,Classic,Approved
-AED-0349,"Which relationship grows through small, regular attention?",Life Audit,Continue,"small, regular attention",Classic,Approved
-AED-0350,Which useful routine do you drop first when life gets busy?,Life Audit,Continue,drop first,Classic,Approved
-AED-0351,Which part of your routine holds the rest of your day together?,Life Audit,Continue,holds the rest of your day together,Classic,Approved
-AED-0352,What support should remain in place even when things are going well?,Life Audit,Continue,things are going well,Classic,Approved
-AED-0353,Which tradition connects you to people across different seasons of life?,Life Audit,Continue,different seasons of life,Classic,Approved
-AED-0354,Where has patience already produced something you do not want to lose?,Life Audit,Continue,do not want to lose,Classic,Approved
-AED-0355,What needs maintenance more than it needs reinvention?,Life Audit,Continue,maintenance,Classic,Approved
-AED-0356,Which recurring inconvenience could be solved by one practical adjustment?,Life Audit,Change,one practical adjustment,Classic,Approved
-AED-0357,What could you delegate if you stopped insisting on your exact method?,Life Audit,Change,your exact method,Classic,Approved
-AED-0358,Which meeting or commitment needs a different frequency?,Life Audit,Change,a different frequency,Classic,Approved
-AED-0359,Where would asking earlier prevent a familiar last-minute rush?,Life Audit,Change,a familiar last-minute rush,Classic,Approved
-AED-0360,What could you move in your space to make a daily task less frustrating?,Life Audit,Change,less frustrating,Classic,Approved
-AED-0361,Which household agreement needs to reflect how life works now?,Life Audit,Change,how life works now,Classic,Approved
-AED-0362,What part of your week needs a buffer instead of another plan?,Life Audit,Change,a buffer,Classic,Approved
-AED-0363,Which default in your calendar would you choose differently if you set it up today?,Life Audit,Change,set it up today,Classic,Approved
-AED-0364,What repeated misunderstanding could be reduced by making one expectation explicit?,Life Audit,Change,making one expectation explicit,Classic,Approved
-AED-0365,Which hour of your day feels most like your own?,Everyday Life,Time,like your own,Classic,Approved
-AED-0366,Which part of your day regularly takes longer than you allow for it?,Everyday Life,Time,longer than you allow,Classic,Approved
-AED-0367,When do you hurry even though nobody is waiting?,Everyday Life,Time,nobody is waiting,Classic,Approved
-AED-0368,Which activity makes time feel spacious rather than merely occupied?,Everyday Life,Time,merely occupied,Classic,Approved
-AED-0369,Which shared experience would be harder to arrange if you kept postponing it?,Everyday Life,Time,kept postponing it,Classic,Approved
-AED-0370,Where could you leave a gap without immediately filling it?,Everyday Life,Time,immediately filling it,Classic,Approved
-AED-0371,How much of your free time is spent recovering from your scheduled time?,Everyday Life,Time,recovering from your scheduled time,Classic,Approved
-AED-0372,Which part of today would you like to experience at half the speed?,Everyday Life,Time,at half the speed,Classic,Approved
-AED-0373,What would you choose for an hour if you did not need to justify its use?,Everyday Life,Time,justify its use,Classic,Approved
-AED-0374,What did you notice today only because you put your phone away?,Everyday Life,Attention,put your phone away,Classic,Approved
-AED-0375,Which notifications deserve the right to interrupt your thoughts?,Everyday Life,Attention,interrupt your thoughts,Classic,Approved
-AED-0376,Where does your mind go when a conversation becomes quiet?,Everyday Life,Attention,becomes quiet,Classic,Approved
-AED-0377,What are you repeatedly consuming that changes how you see other people?,Everyday Life,Attention,how you see other people,Classic,Approved
-AED-0378,Which worry keeps returning even after you have done what you can?,Everyday Life,Attention,done what you can,Classic,Approved
-AED-0379,How does the first thing you read shape the rest of your morning?,Everyday Life,Attention,the rest of your morning,Classic,Approved
-AED-0380,What would you see differently if you stayed with it for five uninterrupted minutes?,Everyday Life,Attention,five uninterrupted minutes,Classic,Approved
-AED-0381,Who receives the part of your attention left over after everything else?,Everyday Life,Attention,attention left over,Classic,Approved
-AED-0382,Which detail of a familiar place have you never looked at closely?,Everyday Life,Attention,never looked at closely,Classic,Approved
-AED-0383,What is your earliest sign that you need a quieter day?,Everyday Life,Energy,a quieter day,Classic,Approved
-AED-0384,Which social setting leaves you tired from performing rather than connecting?,Everyday Life,Energy,performing rather than connecting,Classic,Approved
-AED-0385,How do hunger or tiredness change the way you see a problem?,Everyday Life,Energy,the way you see a problem,Classic,Approved
-AED-0386,"How can you tell whether you need sleep, quiet, or time with someone?",Everyday Life,Energy,"sleep, quiet, or time with someone",Classic,Approved
-AED-0387,Which task is easier at a different time of day?,Everyday Life,Energy,time of day,Classic,Approved
-AED-0388,Where are you spending energy on appearing unbothered?,Everyday Life,Energy,appearing unbothered,Classic,Approved
-AED-0389,What restores you without requiring another achievement?,Everyday Life,Energy,another achievement,Classic,Approved
-AED-0390,Which transition in your day needs a little recovery time?,Everyday Life,Energy,a little recovery time,Classic,Approved
-AED-0391,How could you plan a demanding week around your real limits?,Everyday Life,Energy,your real limits,Classic,Approved
-AED-0392,"What gets your best attention, and is it what you would choose?",Everyday Life,Priorities,what you would choose,Classic,Approved
-AED-0393,Which urgent request is displacing something important but quiet?,Everyday Life,Priorities,important but quiet,Classic,Approved
-AED-0394,What does your next yes require you to say no to?,Everyday Life,Priorities,say no to,Classic,Approved
-AED-0395,Which priority would survive if you had to name its cost?,Everyday Life,Priorities,name its cost,Classic,Approved
-AED-0396,Who needs to hear what you can realistically offer this season?,Everyday Life,Priorities,realistically offer,Classic,Approved
-AED-0397,What needs your attention now because waiting would make it harder?,Everyday Life,Priorities,waiting would make it harder,Classic,Approved
-AED-0398,Which commitment reflects the life you want rather than the person you want to impress?,Everyday Life,Priorities,the person you want to impress,Classic,Approved
-AED-0399,Which choice today will be hardest to undo later?,Everyday Life,Priorities,hardest to undo,Classic,Approved
-AED-0400,What would make you reconsider the order of your priorities?,Everyday Life,Priorities,reconsider the order,Classic,Approved
+id,prompt,category,subcategory,highlight_text,template,status,caption_override,hashtag_set_id
+AED-0001,Who are you when no one needs anything from you?,Self-awareness,Identity,no one needs anything from you,Classic,Approved,,
+AED-0002,What do you say matters to you that your calendar suggests otherwise?,Self-awareness,Values,your calendar suggests otherwise,Classic,Approved,,
+AED-0003,Which belief about yourself have you never seriously questioned?,Self-awareness,Beliefs,never seriously questioned,Classic,Approved,,
+AED-0004,"What situation keeps repeating in your life, and what part do you play in it?",Self-awareness,Patterns,what part do you play,Classic,Approved,,
+AED-0005,"What are you ready to outgrow, even if it once served you?",Growth,Change,ready to outgrow,Classic,Approved,,
+AED-0006,Which small habit would make your days noticeably better if you kept it for a year?,Growth,Habits,kept it for a year,Classic,Approved,,
+AED-0007,What difficult experience proved you were more capable than you thought?,Growth,Resilience,more capable than you thought,Classic,Approved,,
+AED-0008,What are you avoiding because being a beginner feels uncomfortable?,Growth,Discomfort,being a beginner,Classic,Approved,,
+AED-0009,"Who makes you feel most like yourself, and why?",Relationships,Connection,most like yourself,Classic,Approved,,
+AED-0010,Where are you saying yes because you are afraid of disappointing someone?,Relationships,Boundaries,afraid of disappointing someone,Classic,Approved,,
+AED-0011,What conversation would become easier if you said what you actually meant?,Relationships,Communication,what you actually meant,Classic,Approved,,
+AED-0012,What does someone consistently do that makes you feel safe with them?,Relationships,Trust,feel safe with them,Classic,Approved,,
+AED-0013,Which ordinary memory from your past do you wish you could experience once more?,Past & Healing,Memories,experience once more,Classic,Approved,,
+AED-0014,What lesson did you learn much later than you wish you had?,Past & Healing,Lessons,learn much later,Classic,Approved,,
+AED-0015,What would you forgive your younger self for if you could?,Past & Healing,Regret,forgive your younger self,Classic,Approved,,
+AED-0016,What are you still carrying that an apology may never resolve?,Past & Healing,Forgiveness,an apology may never resolve,Classic,Approved,,
+AED-0017,What goal would still matter to you if nobody ever knew you achieved it?,Future,Goals,if nobody ever knew,Classic,Approved,,
+AED-0018,"If you kept living exactly as you are now, where would you be in three years?",Future,Direction,in three years,Classic,Approved,,
+AED-0019,What would your future self thank you for starting today?,Future,Future Self,thank you for starting today,Classic,Approved,,
+AED-0020,What would you attempt if you knew you were allowed to change your mind later?,Future,Possibility,allowed to change your mind,Classic,Approved,,
+AED-0021,Which risk feels worth taking even while the outcome is uncertain?,Confidence,Courage,worth taking,Classic,Approved,,
+AED-0022,"Whose life are you comparing yours to, and what are you not seeing?",Confidence,Comparison,what are you not seeing,Classic,Approved,,
+AED-0023,When was the last time you ignored your instincts and wished you hadn't?,Confidence,Self-trust,ignored your instincts,Classic,Approved,,
+AED-0024,What do you believe you have to prove before you can feel proud of yourself?,Confidence,Self-worth,have to prove,Classic,Approved,,
+AED-0025,Which parts of your week make you feel that your time is well spent?,Purpose & Work,Meaning,time is well spent,Classic,Approved,,
+AED-0026,"If status and salary were equal, what kind of work would you choose?",Purpose & Work,Career,what kind of work would you choose,Classic,Approved,,
+AED-0027,"Which goal are you chasing because you want it, and which because you think you should?",Purpose & Work,Ambition,because you want it,Classic,Approved,,
+AED-0028,What does a successful day look like when productivity is not the measure?,Purpose & Work,Fulfilment,productivity is not the measure,Classic,Approved,,
+AED-0029,What part of your current life would an earlier version of you be amazed to have?,Gratitude & Perspective,Appreciation,amazed to have,Classic,Approved,,
+AED-0030,What do you already have enough of?,Gratitude & Perspective,Contentment,enough,Classic,Approved,,
+AED-0031,What problem feels enormous now but may look very different in a year?,Gratitude & Perspective,Perspective,different in a year,Classic,Approved,,
+AED-0032,Where could choosing enough create more space in your life?,Gratitude & Perspective,Enough,choosing enough,Classic,Approved,,
+AED-0033,What have you been waiting to feel ready to begin?,Life Audit,Start,waiting to feel ready,Classic,Approved,,
+AED-0034,What are you doing out of habit that no longer deserves your time?,Life Audit,Stop,no longer deserves your time,Classic,Approved,,
+AED-0035,What is quietly working in your life that you should protect?,Life Audit,Continue,you should protect,Classic,Approved,,
+AED-0036,"If you could change one recurring part of your week, what would it be?",Life Audit,Change,one recurring part,Classic,Approved,,
+AED-0037,What deserves more of your time than it currently gets?,Everyday Life,Time,more of your time,Classic,Approved,,
+AED-0038,What has been taking your attention without giving much back?,Everyday Life,Attention,taking your attention,Classic,Approved,,
+AED-0039,Which people or activities reliably leave you with more energy?,Everyday Life,Energy,more energy,Classic,Approved,,
+AED-0040,"If you could only accomplish three things this month, what would matter most?",Everyday Life,Priorities,three things this month,Classic,Approved,,
+AED-0041,Which part of yourself feels hardest to explain to people who know you well?,Self-awareness,Identity,hardest to explain,Classic,Approved,,
+AED-0042,What do you do differently when you stop worrying about how you come across?,Self-awareness,Identity,how you come across,Classic,Approved,,
+AED-0043,What did you love before you learned whether it was impressive?,Self-awareness,Identity,before you learned,Classic,Approved,,
+AED-0044,Which label once helped you but now feels too small?,Self-awareness,Identity,too small,Classic,Approved,,
+AED-0045,How are you different in a room where nobody knows your history?,Self-awareness,Identity,nobody knows your history,Classic,Approved,,
+AED-0046,Whose description of you have you mistaken for a fact?,Self-awareness,Identity,mistaken for a fact,Classic,Approved,,
+AED-0047,What private pleasure feels unmistakably yours?,Self-awareness,Identity,unmistakably yours,Classic,Approved,,
+AED-0048,Which contradiction in yourself are you learning to make room for?,Self-awareness,Identity,contradiction in yourself,Classic,Approved,,
+AED-0049,How would you introduce yourself without mentioning work or family roles?,Self-awareness,Identity,work or family roles,Classic,Approved,,
+AED-0050,Which inconvenience are you willing to accept to live by a principle?,Self-awareness,Values,live by a principle,Classic,Approved,,
+AED-0051,What do your spending choices reveal that your words leave out?,Self-awareness,Values,words leave out,Classic,Approved,,
+AED-0052,When has following a principle put you at odds with someone you respect?,Self-awareness,Values,someone you respect,Classic,Approved,,
+AED-0053,Which quality do you admire but rarely practise yourself?,Self-awareness,Values,practise yourself,Classic,Approved,,
+AED-0054,What would you refuse to trade for an easier life?,Self-awareness,Values,refuse to trade,Classic,Approved,,
+AED-0055,Where do two things you value pull in opposite directions?,Self-awareness,Values,pull in opposite directions,Classic,Approved,,
+AED-0056,Whose values are you defending without checking whether they are still yours?,Self-awareness,Values,still yours,Classic,Approved,,
+AED-0057,Which value is hardest to practise when nobody will notice?,Self-awareness,Values,nobody will notice,Classic,Approved,,
+AED-0058,Which small choice today could reflect something you care about?,Self-awareness,Values,something you care about,Classic,Approved,,
+AED-0059,What do you call impossible because you have never seen it done?,Self-awareness,Beliefs,never seen it done,Classic,Approved,,
+AED-0060,Which family saying still shapes a choice you make as an adult?,Self-awareness,Beliefs,family saying,Classic,Approved,,
+AED-0061,When did evidence last persuade you to change your mind?,Self-awareness,Beliefs,evidence,Classic,Approved,,
+AED-0062,What assumption do you make about people who disagree with you?,Self-awareness,Beliefs,disagree with you,Classic,Approved,,
+AED-0063,Which rule about success have you kept without deciding whether it suits you?,Self-awareness,Beliefs,whether it suits you,Classic,Approved,,
+AED-0064,Where might you be treating a fear as a prediction?,Self-awareness,Beliefs,fear as a prediction,Classic,Approved,,
+AED-0065,What belief helps you belong but makes it harder to be honest?,Self-awareness,Beliefs,be honest,Classic,Approved,,
+AED-0066,Which opinion feels borrowed when you try to explain it in your own words?,Self-awareness,Beliefs,explain it in your own words,Classic,Approved,,
+AED-0067,What would count as evidence against a story you keep telling yourself?,Self-awareness,Beliefs,keep telling yourself,Classic,Approved,,
+AED-0068,What usually happens just before you pull away from someone?,Self-awareness,Patterns,pull away from someone,Classic,Approved,,
+AED-0069,"When you are upset, what do you tend to keep yourself busy with?",Self-awareness,Patterns,keep yourself busy,Classic,Approved,,
+AED-0070,"When you feel overlooked, what do you do next?",Self-awareness,Patterns,feel overlooked,Classic,Approved,,
+AED-0071,Which kind of praise makes you take on too much?,Self-awareness,Patterns,take on too much,Classic,Approved,,
+AED-0072,What do you tend to avoid after something goes well?,Self-awareness,Patterns,goes well,Classic,Approved,,
+AED-0073,How does your behaviour change when you expect to be criticised?,Self-awareness,Patterns,be criticised,Classic,Approved,,
+AED-0074,Which uncertainty tends to bring out a familiar reaction in you?,Self-awareness,Patterns,a familiar reaction,Classic,Approved,,
+AED-0075,Which problem is easier for you to address for someone else than for yourself?,Self-awareness,Patterns,than for yourself,Classic,Approved,,
+AED-0076,What is the earliest sign that you are repeating an old response?,Self-awareness,Patterns,repeating an old response,Classic,Approved,,
+AED-0077,What are you grieving about a change you chose yourself?,Growth,Change,chose yourself,Classic,Approved,,
+AED-0078,Which part of your old life deserves a proper goodbye?,Growth,Change,a proper goodbye,Classic,Approved,,
+AED-0079,Who still expects a version of you that you no longer recognise?,Growth,Change,a version of you,Classic,Approved,,
+AED-0080,What has become easier since you stopped trying to stay the same?,Growth,Change,become easier,Classic,Approved,,
+AED-0081,How do you know a change is yours rather than a reaction to someone else?,Growth,Change,a reaction to someone else,Classic,Approved,,
+AED-0082,Which uncertainty comes with a life you actually want?,Growth,Change,actually want,Classic,Approved,,
+AED-0083,What do you need to keep while everything else shifts?,Growth,Change,everything else shifts,Classic,Approved,,
+AED-0084,Where are you waiting for other people to notice your growth?,Growth,Change,notice your growth,Classic,Approved,,
+AED-0085,What new freedom have you not yet learned how to use?,Growth,Change,learned how to use,Classic,Approved,,
+AED-0086,Which routine depends on a version of you who is never tired?,Growth,Habits,never tired,Classic,Approved,,
+AED-0087,What makes a useful habit easy to return to after a missed day?,Growth,Habits,easy to return to,Classic,Approved,,
+AED-0088,What usually happens just before you slip into a habit you want to change?,Growth,Habits,just before,Classic,Approved,,
+AED-0089,What do you get from a habit you say you want to break?,Growth,Habits,say you want to break,Classic,Approved,,
+AED-0090,How could your surroundings make one good choice less demanding?,Growth,Habits,your surroundings,Classic,Approved,,
+AED-0091,Which evening habit changes the quality of the next morning?,Growth,Habits,the next morning,Classic,Approved,,
+AED-0092,What is the smallest version of a routine that still counts?,Growth,Habits,still counts,Classic,Approved,,
+AED-0093,Which repeated choice feels harmless alone but costly over time?,Growth,Habits,costly over time,Classic,Approved,,
+AED-0094,When does tracking your progress stop helping and become another pressure?,Growth,Habits,another pressure,Classic,Approved,,
+AED-0095,Who helped you through something you once described as getting through alone?,Growth,Resilience,getting through alone,Classic,Approved,,
+AED-0096,What did a hard season teach you about asking for help?,Growth,Resilience,asking for help,Classic,Approved,,
+AED-0097,Which strength would you rather not have needed to develop?,Growth,Resilience,not have needed to develop,Classic,Approved,,
+AED-0098,How can you tell the difference between enduring and recovering?,Growth,Resilience,enduring and recovering,Classic,Approved,,
+AED-0099,What helped you feel steady when you did not know what would happen next?,Growth,Resilience,feel steady,Classic,Approved,,
+AED-0100,Which setback changed your route without ending your effort?,Growth,Resilience,changed your route,Classic,Approved,,
+AED-0101,What does rebuilding look like on a day when you have very little to give?,Growth,Resilience,very little to give,Classic,Approved,,
+AED-0102,How has a difficult experience changed what you ask of yourself?,Growth,Resilience,what you ask of yourself,Classic,Approved,,
+AED-0103,What do you now know you can survive without wanting to repeat it?,Growth,Resilience,wanting to repeat it,Classic,Approved,,
+AED-0104,Which silence do you rush to fill because it feels too revealing?,Growth,Discomfort,rush to fill,Classic,Approved,,
+AED-0105,What question are you reluctant to ask because you should already know?,Growth,Discomfort,should already know,Classic,Approved,,
+AED-0106,When does awkwardness signal learning rather than a reason to leave?,Growth,Discomfort,a reason to leave,Classic,Approved,,
+AED-0107,What feeling could you allow for a moment without trying to fix it?,Growth,Discomfort,trying to fix it,Classic,Approved,,
+AED-0108,How do you react when someone sees you make a mistake?,Growth,Discomfort,sees you make a mistake,Classic,Approved,,
+AED-0109,How do you cope with waiting when there is nothing useful you can do?,Growth,Discomfort,cope with waiting,Classic,Approved,,
+AED-0110,Where do you confuse being uncomfortable with being unwelcome?,Growth,Discomfort,being unwelcome,Classic,Approved,,
+AED-0111,What could you learn by staying curious when you feel defensive?,Growth,Discomfort,feel defensive,Classic,Approved,,
+AED-0112,Which familiar comfort do you miss most when you are away from home?,Growth,Discomfort,familiar comfort,Classic,Approved,,
+AED-0113,When did you last feel understood without explaining everything?,Relationships,Connection,understood without explaining everything,Classic,Approved,,
+AED-0114,Who knows what your ordinary days really look like?,Relationships,Connection,really look like,Classic,Approved,,
+AED-0115,Which friendship needs time together more than another message?,Relationships,Connection,time together,Classic,Approved,,
+AED-0116,What do you reveal through humour that you rarely say directly?,Relationships,Connection,say directly,Classic,Approved,,
+AED-0117,How do you let someone know their company is enough without needing a plan?,Relationships,Connection,their company is enough,Classic,Approved,,
+AED-0118,Which shared ritual makes distance feel smaller?,Relationships,Connection,feel smaller,Classic,Approved,,
+AED-0119,What do you tend to notice first when a friend is having a difficult day?,Relationships,Connection,notice first,Classic,Approved,,
+AED-0120,Who would you like to know beyond the role they play in your life?,Relationships,Connection,beyond the role,Classic,Approved,,
+AED-0121,What kind of welcome do you offer when someone returns after a long silence?,Relationships,Connection,a long silence,Classic,Approved,,
+AED-0122,Which request do you wish you had answered differently?,Relationships,Boundaries,answered differently,Classic,Approved,,
+AED-0123,Which boundary is easy to state but difficult to put into practice?,Relationships,Boundaries,put into practice,Classic,Approved,,
+AED-0124,Where are you offering access when you only mean to offer kindness?,Relationships,Boundaries,offer kindness,Classic,Approved,,
+AED-0125,Which boundary would protect your affection from turning into resentment?,Relationships,Boundaries,turning into resentment,Classic,Approved,,
+AED-0126,What do you worry a brief no might say about you?,Relationships,Boundaries,a brief no,Classic,Approved,,
+AED-0127,How do you respond when someone sets a limit you did not expect?,Relationships,Boundaries,a limit you did not expect,Classic,Approved,,
+AED-0128,"Which responsibility belongs to you, and which have you quietly adopted?",Relationships,Boundaries,quietly adopted,Classic,Approved,,
+AED-0129,When do you need privacy rather than permission?,Relationships,Boundaries,permission,Classic,Approved,,
+AED-0130,Which boundary do you wish you had discussed before sharing a space with someone?,Relationships,Boundaries,sharing a space,Classic,Approved,,
+AED-0131,What do you hope someone will understand from your silence?,Relationships,Communication,silence,Classic,Approved,,
+AED-0132,Which complaint contains a request you have not made plainly?,Relationships,Communication,not made plainly,Classic,Approved,,
+AED-0133,What do you tend to hear first when someone disagrees with you?,Relationships,Communication,hear first,Classic,Approved,,
+AED-0134,What would you want an apology to acknowledge before you could trust it?,Relationships,Communication,an apology to acknowledge,Classic,Approved,,
+AED-0135,Which feeling are you disguising as a statement of fact?,Relationships,Communication,a statement of fact,Classic,Approved,,
+AED-0136,How could you describe the impact of something without guessing the intention?,Relationships,Communication,guessing the intention,Classic,Approved,,
+AED-0137,What needs to be said while you can still say it kindly?,Relationships,Communication,still say it kindly,Classic,Approved,,
+AED-0138,Which question do you wish someone had asked before offering you advice?,Relationships,Communication,before offering you advice,Classic,Approved,,
+AED-0139,When did you last check whether someone wanted comfort or a solution?,Relationships,Communication,comfort or a solution,Classic,Approved,,
+AED-0140,What does reliability look like in the smallest moments?,Relationships,Trust,reliability,Classic,Approved,,
+AED-0141,Which promise to you has someone kept when it was inconvenient?,Relationships,Trust,it was inconvenient,Classic,Approved,,
+AED-0142,How do you decide who has earned more of your story?,Relationships,Trust,more of your story,Classic,Approved,,
+AED-0143,What happens inside you when a trustworthy person makes a mistake?,Relationships,Trust,makes a mistake,Classic,Approved,,
+AED-0144,What do you need to know before you feel comfortable relying on someone?,Relationships,Trust,relying on someone,Classic,Approved,,
+AED-0145,Which act of repair would matter more than reassuring words?,Relationships,Trust,reassuring words,Classic,Approved,,
+AED-0146,How do you handle information someone gave you in confidence?,Relationships,Trust,in confidence,Classic,Approved,,
+AED-0147,When has consistency changed your first impression of someone?,Relationships,Trust,consistency,Classic,Approved,,
+AED-0148,What helps you distinguish caution from expecting old hurt to repeat?,Relationships,Trust,expecting old hurt to repeat,Classic,Approved,,
+AED-0149,Which smell takes you back to a place you no longer visit?,Past & Healing,Memories,a place you no longer visit,Classic,Approved,,
+AED-0150,What small detail do you remember about someone whose voice is harder to recall?,Past & Healing,Memories,harder to recall,Classic,Approved,,
+AED-0151,Which childhood afternoon do you remember for no obvious reason?,Past & Healing,Memories,no obvious reason,Classic,Approved,,
+AED-0152,What object holds a story that nobody else would guess?,Past & Healing,Memories,nobody else would guess,Classic,Approved,,
+AED-0153,Which memory has changed as you have learned more of the story?,Past & Healing,Memories,more of the story,Classic,Approved,,
+AED-0154,Who remembers a side of you that your current friends have never met?,Past & Healing,Memories,never met,Classic,Approved,,
+AED-0155,What place feels different because of who is missing from it?,Past & Healing,Memories,who is missing from it,Classic,Approved,,
+AED-0156,Which family story would you like to hear from another person's point of view?,Past & Healing,Memories,another person's point of view,Classic,Approved,,
+AED-0157,What ordinary moment would you want to describe before the details fade?,Past & Healing,Memories,the details fade,Classic,Approved,,
+AED-0158,What did an ending teach you that staying could not?,Past & Healing,Lessons,staying could not,Classic,Approved,,
+AED-0159,Which lesson do you understand intellectually but struggle to live by?,Past & Healing,Lessons,understand intellectually,Classic,Approved,,
+AED-0160,Who taught you something important without realising it?,Past & Healing,Lessons,without realising it,Classic,Approved,,
+AED-0161,What mistake made you more careful without making you less curious?,Past & Healing,Lessons,more careful,Classic,Approved,,
+AED-0162,Which advice only made sense after you ignored it?,Past & Healing,Lessons,ignored it,Classic,Approved,,
+AED-0163,What did you learn by getting something you thought you desperately wanted?,Past & Healing,Lessons,desperately wanted,Classic,Approved,,
+AED-0164,Which lesson made sense at one point in your life but no longer fits?,Past & Healing,Lessons,no longer fits,Classic,Approved,,
+AED-0165,When did being wrong leave you better informed rather than smaller?,Past & Healing,Lessons,being wrong,Classic,Approved,,
+AED-0166,What do you wish you had asked before learning the hard way?,Past & Healing,Lessons,learning the hard way,Classic,Approved,,
+AED-0167,Which choice are you judging with information you did not have then?,Past & Healing,Regret,did not have then,Classic,Approved,,
+AED-0168,What repair is still possible even if the past cannot change?,Past & Healing,Regret,the past cannot change,Classic,Approved,,
+AED-0169,"Which missed chance do you imagine most often, and what draws you back to it?",Past & Healing,Regret,draws you back,Classic,Approved,,
+AED-0170,What does a regret reveal about what you value now?,Past & Healing,Regret,value now,Classic,Approved,,
+AED-0171,How do you judge a past decision when its outcome was painful?,Past & Healing,Regret,judge a past decision,Classic,Approved,,
+AED-0172,Which regret has changed a choice you made since?,Past & Healing,Regret,changed a choice,Classic,Approved,,
+AED-0173,What do you regret leaving unsaid that you could still tell someone?,Past & Healing,Regret,leaving unsaid,Classic,Approved,,
+AED-0174,What part of your life grew from a choice you still wish had gone differently?,Past & Healing,Regret,still wish had gone differently,Classic,Approved,,
+AED-0175,"How much of your regret belongs to you, and how much to someone else's expectations?",Past & Healing,Regret,someone else's expectations,Classic,Approved,,
+AED-0176,"What would setting down resentment make room for, without excusing what happened?",Past & Healing,Forgiveness,without excusing what happened,Classic,Approved,,
+AED-0177,What would help you tell someone you are not ready to forgive?,Past & Healing,Forgiveness,not ready to forgive,Classic,Approved,,
+AED-0178,What does forgiveness mean to you if reconciliation is not possible?,Past & Healing,Forgiveness,reconciliation is not possible,Classic,Approved,,
+AED-0179,Where do you need accountability more than pressure to move on?,Past & Healing,Forgiveness,pressure to move on,Classic,Approved,,
+AED-0180,Which old accusation against yourself have you never re-examined?,Past & Healing,Forgiveness,never re-examined,Classic,Approved,,
+AED-0181,What did you need from someone that they were unable to give?,Past & Healing,Forgiveness,unable to give,Classic,Approved,,
+AED-0182,What boundary could remain even if your anger softened?,Past & Healing,Forgiveness,anger softened,Classic,Approved,,
+AED-0183,What would forgiving yourself change about how you describe a painful memory?,Past & Healing,Forgiveness,forgiving yourself,Classic,Approved,,
+AED-0184,What would patience with your own pace of forgiveness look like today?,Past & Healing,Forgiveness,your own pace of forgiveness,Classic,Approved,,
+AED-0185,How will you know you have reached a goal if nobody gives you a score?,Future,Goals,nobody gives you a score,Classic,Approved,,
+AED-0186,Which goal needs a smaller next step rather than more motivation?,Future,Goals,a smaller next step,Classic,Approved,,
+AED-0187,"What are you willing to give up for a goal, and what is not negotiable?",Future,Goals,not negotiable,Classic,Approved,,
+AED-0188,Which milestone fits the time and energy you actually have?,Future,Goals,time and energy,Classic,Approved,,
+AED-0189,How would you recognise that a goal is no longer worth pursuing?,Future,Goals,no longer worth pursuing,Classic,Approved,,
+AED-0190,What part of reaching a goal is within your control?,Future,Goals,within your control,Classic,Approved,,
+AED-0191,Who could offer useful support for a goal you have kept to yourself?,Future,Goals,kept to yourself,Classic,Approved,,
+AED-0192,Which part of pursuing a goal would you want to keep after you reach it?,Future,Goals,keep after you reach it,Classic,Approved,,
+AED-0193,Which finish line keeps moving each time you get close?,Future,Goals,finish line keeps moving,Classic,Approved,,
+AED-0194,Which ordinary decision is slowly choosing a life for you?,Future,Direction,a life for you,Classic,Approved,,
+AED-0195,What would you need to notice to know you were heading the wrong way?,Future,Direction,heading the wrong way,Classic,Approved,,
+AED-0196,Where does your current path reflect momentum rather than intention?,Future,Direction,momentum rather than intention,Classic,Approved,,
+AED-0197,Which commitment points towards a future you no longer want?,Future,Direction,no longer want,Classic,Approved,,
+AED-0198,What is one sign that your life is becoming more your own?,Future,Direction,more your own,Classic,Approved,,
+AED-0199,Whose definition of progress is shaping your next move?,Future,Direction,definition of progress,Classic,Approved,,
+AED-0200,Which direction feels worthwhile even without a clear destination?,Future,Direction,a clear destination,Classic,Approved,,
+AED-0201,Which recent decision has brought your longer-term direction into focus?,Future,Direction,direction into focus,Classic,Approved,,
+AED-0202,How could you test a new direction without abandoning everything at once?,Future,Direction,abandoning everything at once,Classic,Approved,,
+AED-0203,Which ordinary part of today might your older self miss most?,Future,Future Self,ordinary part of today,Classic,Approved,,
+AED-0204,What would you like to leave your future self besides achievements?,Future,Future Self,besides achievements,Classic,Approved,,
+AED-0205,Which unfinished decision are you passing to a version of yourself with less time?,Future,Future Self,less time,Classic,Approved,,
+AED-0206,What could you write down now that your future self might need to remember?,Future,Future Self,need to remember,Classic,Approved,,
+AED-0207,How do you hope you will speak about this season ten years from now?,Future,Future Self,ten years from now,Classic,Approved,,
+AED-0208,Which relationship would you regret treating as permanently available?,Future,Future Self,permanently available,Classic,Approved,,
+AED-0209,What kind of beginner would you like to remain as you grow older?,Future,Future Self,as you grow older,Classic,Approved,,
+AED-0210,Which burden could you stop handing from one year to the next?,Future,Future Self,one year to the next,Classic,Approved,,
+AED-0211,What would make your future home feel like a place you want to return to?,Future,Future Self,want to return to,Classic,Approved,,
+AED-0212,Which interest could become something if it did not need to be useful immediately?,Future,Possibility,useful immediately,Classic,Approved,,
+AED-0213,What alternative have you dismissed because nobody around you has chosen it?,Future,Possibility,has chosen it,Classic,Approved,,
+AED-0214,"If this plan did not work, what else might still be possible?",Future,Possibility,might still be possible,Classic,Approved,,
+AED-0215,Which version of a good life have you not allowed yourself to imagine?,Future,Possibility,not allowed yourself to imagine,Classic,Approved,,
+AED-0216,What could you make with skills you have never tried using together?,Future,Possibility,using together,Classic,Approved,,
+AED-0217,Where might an unexpected invitation interrupt a plan that has become too narrow?,Future,Possibility,a plan that has become too narrow,Classic,Approved,,
+AED-0218,Which skill would let you participate in a world you currently only watch?,Future,Possibility,currently only watch,Classic,Approved,,
+AED-0219,What could a plan still offer you if it worked only partly?,Future,Possibility,worked only partly,Classic,Approved,,
+AED-0220,Who could show you a way of living that your usual circle cannot?,Future,Possibility,a way of living,Classic,Approved,,
+AED-0221,Which truth could you say without making it sound smaller?,Confidence,Courage,making it sound smaller,Classic,Approved,,
+AED-0222,Where would asking for support require more courage than handling it alone?,Confidence,Courage,handling it alone,Classic,Approved,,
+AED-0223,What would you like to share even though someone might dislike it?,Confidence,Courage,someone might dislike it,Classic,Approved,,
+AED-0224,When have you acted with courage while still feeling afraid?,Confidence,Courage,still feeling afraid,Classic,Approved,,
+AED-0225,Which unpopular choice would let you respect yourself tomorrow?,Confidence,Courage,respect yourself tomorrow,Classic,Approved,,
+AED-0226,What would it take to admit that you want something deeply?,Confidence,Courage,want something deeply,Classic,Approved,,
+AED-0227,How do you decide whether staying or leaving asks more courage of you?,Confidence,Courage,staying or leaving,Classic,Approved,,
+AED-0228,Who could you stand beside when it would be easier to remain neutral?,Confidence,Courage,stand beside,Classic,Approved,,
+AED-0229,Which question are you willing to ask even if your voice shakes?,Confidence,Courage,your voice shakes,Classic,Approved,,
+AED-0230,What part of someone else's success would you not want to live through?,Confidence,Comparison,not want to live through,Classic,Approved,,
+AED-0231,"Whose progress inspires you, and whose makes you lose sight of your own?",Confidence,Comparison,lose sight of your own,Classic,Approved,,
+AED-0232,Which measure makes your life seem smaller while missing what matters to you?,Confidence,Comparison,what matters to you,Classic,Approved,,
+AED-0233,What do you overlook in yourself when you admire it in someone else?,Confidence,Comparison,overlook in yourself,Classic,Approved,,
+AED-0234,When has another person's timeline made you rush a decision?,Confidence,Comparison,rush a decision,Classic,Approved,,
+AED-0235,What happens to your satisfaction after you look for a ranking?,Confidence,Comparison,look for a ranking,Classic,Approved,,
+AED-0236,Which difference between you and a friend do you find interesting rather than competitive?,Confidence,Comparison,interesting rather than competitive,Classic,Approved,,
+AED-0237,How would you describe your progress using only your own starting point?,Confidence,Comparison,only your own starting point,Classic,Approved,,
+AED-0238,Where are you comparing your private doubts with someone's public confidence?,Confidence,Comparison,someone's public confidence,Classic,Approved,,
+AED-0239,What decision did you make well before anyone agreed with you?,Confidence,Self-trust,agreed with you,Classic,Approved,,
+AED-0240,How do you distinguish a quiet preference from the loudest outside opinion?,Confidence,Self-trust,the loudest outside opinion,Classic,Approved,,
+AED-0241,Which promise to yourself is small enough to keep today?,Confidence,Self-trust,keep today,Classic,Approved,,
+AED-0242,How do you know when you have enough information to make a decision?,Confidence,Self-trust,enough information,Classic,Approved,,
+AED-0243,When has changing your mind shown good judgement?,Confidence,Self-trust,good judgement,Classic,Approved,,
+AED-0244,Which decision can you make without polling everyone you know?,Confidence,Self-trust,polling everyone you know,Classic,Approved,,
+AED-0245,What helps you make another decision after you have got one wrong?,Confidence,Self-trust,another decision,Classic,Approved,,
+AED-0246,What signs tell you to pause rather than override your hesitation?,Confidence,Self-trust,override your hesitation,Classic,Approved,,
+AED-0247,Which past decision reminds you that you can handle responsibility?,Confidence,Self-trust,handle responsibility,Classic,Approved,,
+AED-0248,What would remain valuable about you during an unproductive month?,Confidence,Self-worth,an unproductive month,Classic,Approved,,
+AED-0249,Which compliment do you dismiss because it is not about achievement?,Confidence,Self-worth,not about achievement,Classic,Approved,,
+AED-0250,What makes it difficult to rest before everything is finished?,Confidence,Self-worth,before everything is finished,Classic,Approved,,
+AED-0251,Whose disappointment feels like evidence that you are not good enough?,Confidence,Self-worth,not good enough,Classic,Approved,,
+AED-0252,What kindness do you offer others that you withhold from yourself?,Confidence,Self-worth,withhold from yourself,Classic,Approved,,
+AED-0253,How does believing you will be taken seriously change the way you speak?,Confidence,Self-worth,taken seriously,Classic,Approved,,
+AED-0254,Which ordinary need do you apologise for having at all?,Confidence,Self-worth,ordinary need,Classic,Approved,,
+AED-0255,What would it mean to accept care without repaying it immediately?,Confidence,Self-worth,repaying it immediately,Classic,Approved,,
+AED-0256,Where have you mistaken being needed for being worthy of love?,Confidence,Self-worth,being worthy of love,Classic,Approved,,
+AED-0257,Whose day becomes easier because of something you do?,Purpose & Work,Meaning,something you do,Classic,Approved,,
+AED-0258,Which effort would feel worthwhile even if the result stayed small?,Purpose & Work,Meaning,the result stayed small,Classic,Approved,,
+AED-0259,What problem holds your attention without needing an external reward?,Purpose & Work,Meaning,an external reward,Classic,Approved,,
+AED-0260,When has useful work mattered more to you than visible work?,Purpose & Work,Meaning,useful work,Classic,Approved,,
+AED-0261,Which task connects you to something beyond your own advancement?,Purpose & Work,Meaning,beyond your own advancement,Classic,Approved,,
+AED-0262,What contribution would you like people to count on you for?,Purpose & Work,Meaning,count on you,Classic,Approved,,
+AED-0263,Where does the way you work conflict with the reason you work?,Purpose & Work,Meaning,the reason you work,Classic,Approved,,
+AED-0264,Which overlooked responsibility gives your life a sense of purpose?,Purpose & Work,Meaning,a sense of purpose,Classic,Approved,,
+AED-0265,Which problem would you like to leave easier for the person who comes next?,Purpose & Work,Meaning,the person who comes next,Classic,Approved,,
+AED-0266,Which working conditions help you do your best without becoming someone else?,Purpose & Work,Career,working conditions,Classic,Approved,,
+AED-0267,What part of your job are you good at but do not want more of?,Purpose & Work,Career,do not want more of,Classic,Approved,,
+AED-0268,Which skill would you like to use more often in an ordinary working day?,Purpose & Work,Career,an ordinary working day,Classic,Approved,,
+AED-0269,What did your least favourite job teach you about what you need at work?,Purpose & Work,Career,what you need at work,Classic,Approved,,
+AED-0270,Whose working life would you like to understand beyond their job title?,Purpose & Work,Career,their job title,Classic,Approved,,
+AED-0271,Which career choice would change if you counted the cost to your health?,Purpose & Work,Career,the cost to your health,Classic,Approved,,
+AED-0272,What kind of colleague do you become under constant urgency?,Purpose & Work,Career,constant urgency,Classic,Approved,,
+AED-0273,Where could your experience be useful outside the field you know?,Purpose & Work,Career,the field you know,Classic,Approved,,
+AED-0274,Which question would you ask a future employer if you were also interviewing them?,Purpose & Work,Career,also interviewing them,Classic,Approved,,
+AED-0275,What is the life you hope an achievement will give you permission to live?,Purpose & Work,Ambition,give you permission to live,Classic,Approved,,
+AED-0276,Which ambition becomes less attractive when you picture the daily work behind it?,Purpose & Work,Ambition,the daily work behind it,Classic,Approved,,
+AED-0277,How much of your drive comes from wanting to prove someone wrong?,Purpose & Work,Ambition,prove someone wrong,Classic,Approved,,
+AED-0278,How do you decide when to compete and when to collaborate?,Purpose & Work,Ambition,compete and when to collaborate,Classic,Approved,,
+AED-0279,Which limit could make your ambition more sustainable?,Purpose & Work,Ambition,more sustainable,Classic,Approved,,
+AED-0280,When does wanting more begin to erase what you have built?,Purpose & Work,Ambition,erase what you have built,Classic,Approved,,
+AED-0281,Who gets less of you when you pursue your biggest ambition?,Purpose & Work,Ambition,your biggest ambition,Classic,Approved,,
+AED-0282,What are you unwilling to become in order to get ahead?,Purpose & Work,Ambition,unwilling to become,Classic,Approved,,
+AED-0283,How would you recognise ambition that is quiet but still serious?,Purpose & Work,Ambition,quiet but still serious,Classic,Approved,,
+AED-0284,When did you last finish a day feeling satisfied rather than simply relieved it was over?,Purpose & Work,Fulfilment,satisfied rather than simply relieved,Classic,Approved,,
+AED-0285,Which activity leaves a satisfaction that lasts after the excitement fades?,Purpose & Work,Fulfilment,the excitement fades,Classic,Approved,,
+AED-0286,What is missing from a life that looks successful on paper?,Purpose & Work,Fulfilment,successful on paper,Classic,Approved,,
+AED-0287,What part of a satisfying experience do you tend to remember longest?,Purpose & Work,Fulfilment,remember longest,Classic,Approved,,
+AED-0288,Who would you choose to share a satisfying moment with?,Purpose & Work,Fulfilment,share a satisfying moment,Classic,Approved,,
+AED-0289,How often does your idea of a good life appear in your actual week?,Purpose & Work,Fulfilment,your actual week,Classic,Approved,,
+AED-0290,What do you enjoy making even when nobody needs the result?,Purpose & Work,Fulfilment,nobody needs the result,Classic,Approved,,
+AED-0291,Which experience made you feel fully involved rather than pleasantly distracted?,Purpose & Work,Fulfilment,pleasantly distracted,Classic,Approved,,
+AED-0292,What would you add to your life if you measured it by depth rather than output?,Purpose & Work,Fulfilment,depth rather than output,Classic,Approved,,
+AED-0293,Who does something dependable that you have stopped noticing as a gift?,Gratitude & Perspective,Appreciation,something dependable,Classic,Approved,,
+AED-0294,Which ordinary comfort would make today harder if it suddenly disappeared?,Gratitude & Perspective,Appreciation,suddenly disappeared,Classic,Approved,,
+AED-0295,What has someone taught you that you use almost every day?,Gratitude & Perspective,Appreciation,someone taught you,Classic,Approved,,
+AED-0296,Which part of your body helped you experience something you enjoyed today?,Gratitude & Perspective,Appreciation,something you enjoyed today,Classic,Approved,,
+AED-0297,What small act of care happened without asking to be noticed?,Gratitude & Perspective,Appreciation,asking to be noticed,Classic,Approved,,
+AED-0298,Which place offers you a welcome you have come to expect?,Gratitude & Perspective,Appreciation,a welcome,Classic,Approved,,
+AED-0299,What skill do you now take for granted that once required patient practice?,Gratitude & Perspective,Appreciation,required patient practice,Classic,Approved,,
+AED-0300,Who would appreciate knowing the lasting effect of something they did for you?,Gratitude & Perspective,Appreciation,something they did for you,Classic,Approved,,
+AED-0301,What was unexpectedly lovely about a day you would otherwise forget?,Gratitude & Perspective,Appreciation,would otherwise forget,Classic,Approved,,
+AED-0302,When do you feel no urge to be somewhere else?,Gratitude & Perspective,Contentment,somewhere else,Classic,Approved,,
+AED-0303,What helps you enjoy something without wondering whether there is a better version?,Gratitude & Perspective,Contentment,there is a better version,Classic,Approved,,
+AED-0304,Which ordinary pleasure needs no improvement?,Gratitude & Perspective,Contentment,no improvement,Classic,Approved,,
+AED-0305,How does your body feel when you are not trying to catch up?,Gratitude & Perspective,Contentment,not trying to catch up,Classic,Approved,,
+AED-0306,Where could you let a good moment be good without making it last forever?,Gratitude & Perspective,Contentment,making it last forever,Classic,Approved,,
+AED-0307,What do you stop noticing when you are waiting for the next thing?,Gratitude & Perspective,Contentment,the next thing,Classic,Approved,,
+AED-0308,Which part of your life feels right even though it is not impressive?,Gratitude & Perspective,Contentment,not impressive,Classic,Approved,,
+AED-0309,How can you make room for a change while appreciating what you want to keep?,Gratitude & Perspective,Contentment,what you want to keep,Classic,Approved,,
+AED-0310,When does doing less let you enjoy more of what is here?,Gratitude & Perspective,Contentment,enjoy more of what is here,Classic,Approved,,
+AED-0311,How might someone who cares about you describe the situation you are in?,Gratitude & Perspective,Perspective,someone who cares about you,Classic,Approved,,
+AED-0312,How would you describe this problem without using the words always or never?,Gratitude & Perspective,Perspective,always or never,Classic,Approved,,
+AED-0313,Which detail are you treating as though it tells the whole story?,Gratitude & Perspective,Perspective,tells the whole story,Classic,Approved,,
+AED-0314,What helps you keep a difficult hour from colouring the rest of your day?,Gratitude & Perspective,Perspective,colouring the rest of your day,Classic,Approved,,
+AED-0315,What context would make another person's behaviour less mysterious?,Gratitude & Perspective,Perspective,less mysterious,Classic,Approved,,
+AED-0316,"Which part of this situation is temporary, even if it does not feel that way?",Gratitude & Perspective,Perspective,temporary,Classic,Approved,,
+AED-0317,What can be true alongside the thing that is troubling you?,Gratitude & Perspective,Perspective,true alongside,Classic,Approved,,
+AED-0318,How would you view this decision if you were advising someone you love?,Gratitude & Perspective,Perspective,advising someone you love,Classic,Approved,,
+AED-0319,What are you taking personally that might have very little to do with you?,Gratitude & Perspective,Perspective,very little to do with you,Classic,Approved,,
+AED-0320,How will you decide when you have enough money set aside for a particular purpose?,Gratitude & Perspective,Enough,enough money set aside,Classic,Approved,,
+AED-0321,Which possession creates more upkeep than pleasure?,Gratitude & Perspective,Enough,more upkeep,Classic,Approved,,
+AED-0322,Where would a clear stopping point protect you from endless improvement?,Gratitude & Perspective,Enough,endless improvement,Classic,Approved,,
+AED-0323,How many commitments can you hold while still being present for them?,Gratitude & Perspective,Enough,being present for them,Classic,Approved,,
+AED-0324,Which task could be done well enough without needing to be perfect?,Gratitude & Perspective,Enough,well enough,Classic,Approved,,
+AED-0325,Which purchase promises to solve a feeling that buying cannot settle?,Gratitude & Perspective,Enough,buying cannot settle,Classic,Approved,,
+AED-0326,How much news helps you stay informed before it becomes more than you can use?,Gratitude & Perspective,Enough,more than you can use,Classic,Approved,,
+AED-0327,What would you decline if you believed this season was already full?,Gratitude & Perspective,Enough,already full,Classic,Approved,,
+AED-0328,Where did you learn what a comfortable life should contain?,Gratitude & Perspective,Enough,a comfortable life,Classic,Approved,,
+AED-0329,Which neglected interest deserves an appointment in your calendar?,Life Audit,Start,an appointment in your calendar,Classic,Approved,,
+AED-0330,What first step could you take without announcing a big plan?,Life Audit,Start,announcing a big plan,Classic,Approved,,
+AED-0331,Where would a rough first attempt teach you more than another week of planning?,Life Audit,Start,another week of planning,Classic,Approved,,
+AED-0332,Which practical obstacle could you remove before asking yourself for willpower?,Life Audit,Start,asking yourself for willpower,Classic,Approved,,
+AED-0333,What have you made conditional on someone else joining you?,Life Audit,Start,someone else joining you,Classic,Approved,,
+AED-0334,What would make it easier to return to an interest you abandoned years ago?,Life Audit,Start,return to an interest,Classic,Approved,,
+AED-0335,What resource do you already have for something you say you cannot start?,Life Audit,Start,already have,Classic,Approved,,
+AED-0336,When would you begin if you stopped waiting for a symbolic date?,Life Audit,Start,a symbolic date,Classic,Approved,,
+AED-0337,Which small beginning would make tomorrow less intimidating?,Life Audit,Start,less intimidating,Classic,Approved,,
+AED-0338,Which obligation survives only because you have never revisited it?,Life Audit,Stop,never revisited it,Classic,Approved,,
+AED-0339,What do you keep checking even though the answer is unlikely to change?,Life Audit,Stop,unlikely to change,Classic,Approved,,
+AED-0340,Which explanation do you keep offering after a conversation has stopped moving forward?,Life Audit,Stop,stopped moving forward,Classic,Approved,,
+AED-0341,Where are you investing more because you have already invested so much?,Life Audit,Stop,already invested so much,Classic,Approved,,
+AED-0342,What task could disappear without anyone losing something important?,Life Audit,Stop,could disappear,Classic,Approved,,
+AED-0343,Which way of relaxing leaves you less rested?,Life Audit,Stop,less rested,Classic,Approved,,
+AED-0344,What are you continuing mainly to avoid admitting you are finished?,Life Audit,Stop,admitting you are finished,Classic,Approved,,
+AED-0345,Which argument no longer needs your participation?,Life Audit,Stop,your participation,Classic,Approved,,
+AED-0346,What would happen if you stopped volunteering to rescue every difficult moment?,Life Audit,Stop,rescue every difficult moment,Classic,Approved,,
+AED-0347,Which practice helps even when you cannot see immediate progress?,Life Audit,Continue,cannot see immediate progress,Classic,Approved,,
+AED-0348,What agreement with yourself has been worth keeping?,Life Audit,Continue,worth keeping,Classic,Approved,,
+AED-0349,"Which relationship grows through small, regular attention?",Life Audit,Continue,"small, regular attention",Classic,Approved,,
+AED-0350,Which useful routine do you drop first when life gets busy?,Life Audit,Continue,drop first,Classic,Approved,,
+AED-0351,Which part of your routine holds the rest of your day together?,Life Audit,Continue,holds the rest of your day together,Classic,Approved,,
+AED-0352,What support should remain in place even when things are going well?,Life Audit,Continue,things are going well,Classic,Approved,,
+AED-0353,Which tradition connects you to people across different seasons of life?,Life Audit,Continue,different seasons of life,Classic,Approved,,
+AED-0354,Where has patience already produced something you do not want to lose?,Life Audit,Continue,do not want to lose,Classic,Approved,,
+AED-0355,What needs maintenance more than it needs reinvention?,Life Audit,Continue,maintenance,Classic,Approved,,
+AED-0356,Which recurring inconvenience could be solved by one practical adjustment?,Life Audit,Change,one practical adjustment,Classic,Approved,,
+AED-0357,What could you delegate if you stopped insisting on your exact method?,Life Audit,Change,your exact method,Classic,Approved,,
+AED-0358,Which meeting or commitment needs a different frequency?,Life Audit,Change,a different frequency,Classic,Approved,,
+AED-0359,Where would asking earlier prevent a familiar last-minute rush?,Life Audit,Change,a familiar last-minute rush,Classic,Approved,,
+AED-0360,What could you move in your space to make a daily task less frustrating?,Life Audit,Change,less frustrating,Classic,Approved,,
+AED-0361,Which household agreement needs to reflect how life works now?,Life Audit,Change,how life works now,Classic,Approved,,
+AED-0362,What part of your week needs a buffer instead of another plan?,Life Audit,Change,a buffer,Classic,Approved,,
+AED-0363,Which default in your calendar would you choose differently if you set it up today?,Life Audit,Change,set it up today,Classic,Approved,,
+AED-0364,What repeated misunderstanding could be reduced by making one expectation explicit?,Life Audit,Change,making one expectation explicit,Classic,Approved,,
+AED-0365,Which hour of your day feels most like your own?,Everyday Life,Time,like your own,Classic,Approved,,
+AED-0366,Which part of your day regularly takes longer than you allow for it?,Everyday Life,Time,longer than you allow,Classic,Approved,,
+AED-0367,When do you hurry even though nobody is waiting?,Everyday Life,Time,nobody is waiting,Classic,Approved,,
+AED-0368,Which activity makes time feel spacious rather than merely occupied?,Everyday Life,Time,merely occupied,Classic,Approved,,
+AED-0369,Which shared experience would be harder to arrange if you kept postponing it?,Everyday Life,Time,kept postponing it,Classic,Approved,,
+AED-0370,Where could you leave a gap without immediately filling it?,Everyday Life,Time,immediately filling it,Classic,Approved,,
+AED-0371,How much of your free time is spent recovering from your scheduled time?,Everyday Life,Time,recovering from your scheduled time,Classic,Approved,,
+AED-0372,Which part of today would you like to experience at half the speed?,Everyday Life,Time,at half the speed,Classic,Approved,,
+AED-0373,What would you choose for an hour if you did not need to justify its use?,Everyday Life,Time,justify its use,Classic,Approved,,
+AED-0374,What did you notice today only because you put your phone away?,Everyday Life,Attention,put your phone away,Classic,Approved,,
+AED-0375,Which notifications deserve the right to interrupt your thoughts?,Everyday Life,Attention,interrupt your thoughts,Classic,Approved,,
+AED-0376,Where does your mind go when a conversation becomes quiet?,Everyday Life,Attention,becomes quiet,Classic,Approved,,
+AED-0377,What are you repeatedly consuming that changes how you see other people?,Everyday Life,Attention,how you see other people,Classic,Approved,,
+AED-0378,Which worry keeps returning even after you have done what you can?,Everyday Life,Attention,done what you can,Classic,Approved,,
+AED-0379,How does the first thing you read shape the rest of your morning?,Everyday Life,Attention,the rest of your morning,Classic,Approved,,
+AED-0380,What would you see differently if you stayed with it for five uninterrupted minutes?,Everyday Life,Attention,five uninterrupted minutes,Classic,Approved,,
+AED-0381,Who receives the part of your attention left over after everything else?,Everyday Life,Attention,attention left over,Classic,Approved,,
+AED-0382,Which detail of a familiar place have you never looked at closely?,Everyday Life,Attention,never looked at closely,Classic,Approved,,
+AED-0383,What is your earliest sign that you need a quieter day?,Everyday Life,Energy,a quieter day,Classic,Approved,,
+AED-0384,Which social setting leaves you tired from performing rather than connecting?,Everyday Life,Energy,performing rather than connecting,Classic,Approved,,
+AED-0385,How do hunger or tiredness change the way you see a problem?,Everyday Life,Energy,the way you see a problem,Classic,Approved,,
+AED-0386,"How can you tell whether you need sleep, quiet, or time with someone?",Everyday Life,Energy,"sleep, quiet, or time with someone",Classic,Approved,,
+AED-0387,Which task is easier at a different time of day?,Everyday Life,Energy,time of day,Classic,Approved,,
+AED-0388,Where are you spending energy on appearing unbothered?,Everyday Life,Energy,appearing unbothered,Classic,Approved,,
+AED-0389,What restores you without requiring another achievement?,Everyday Life,Energy,another achievement,Classic,Approved,,
+AED-0390,Which transition in your day needs a little recovery time?,Everyday Life,Energy,a little recovery time,Classic,Approved,,
+AED-0391,How could you plan a demanding week around your real limits?,Everyday Life,Energy,your real limits,Classic,Approved,,
+AED-0392,"What gets your best attention, and is it what you would choose?",Everyday Life,Priorities,what you would choose,Classic,Approved,,
+AED-0393,Which urgent request is displacing something important but quiet?,Everyday Life,Priorities,important but quiet,Classic,Approved,,
+AED-0394,What does your next yes require you to say no to?,Everyday Life,Priorities,say no to,Classic,Approved,,
+AED-0395,Which priority would survive if you had to name its cost?,Everyday Life,Priorities,name its cost,Classic,Approved,,
+AED-0396,Who needs to hear what you can realistically offer this season?,Everyday Life,Priorities,realistically offer,Classic,Approved,,
+AED-0397,What needs your attention now because waiting would make it harder?,Everyday Life,Priorities,waiting would make it harder,Classic,Approved,,
+AED-0398,Which commitment reflects the life you want rather than the person you want to impress?,Everyday Life,Priorities,the person you want to impress,Classic,Approved,,
+AED-0399,Which choice today will be hardest to undo later?,Everyday Life,Priorities,hardest to undo,Classic,Approved,,
+AED-0400,What would make you reconsider the order of your priorities?,Everyday Life,Priorities,reconsider the order,Classic,Approved,,

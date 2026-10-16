@@ -4,6 +4,11 @@ import csv
 from collections import Counter
 from pathlib import Path
 
+from ask_every_day.content_import import (
+    load_hashtag_snapshot,
+    optional_copy,
+    resolve_hashtag_reference,
+)
 from ask_every_day.domain import Post
 
 DATA = Path(__file__).resolve().parents[1] / "data"
@@ -36,6 +41,7 @@ def test_prompts_are_distinct_and_concise() -> None:
 
 
 def test_metadata_and_highlights_are_valid() -> None:
+    sets = load_hashtag_snapshot(DATA / "hashtags.csv")
     for row in _rows("prompts.csv"):
         assert row["status"] == "Approved"
         assert row["template"] == "Classic"
@@ -46,6 +52,11 @@ def test_metadata_and_highlights_are_valid() -> None:
             subcategory=row["subcategory"],
             highlight_text=row["highlight_text"],
             template=row["template"],
+            caption_override=optional_copy(row["caption_override"]),
+            hashtag_set_id=optional_copy(row["hashtag_set_id"]),
+        )
+        assert (
+            resolve_hashtag_reference(post.hashtag_set_id, sets) == post.hashtag_set_id
         )
         assert post.highlight_text
         assert len(post.highlight_text) < len(post.prompt) * 0.8

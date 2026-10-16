@@ -48,6 +48,8 @@ class Post:
     subcategory: str
     template: str
     highlight_text: str | None = None
+    caption_override: str | None = None
+    hashtag_set_id: str | None = None
 
     def __post_init__(self) -> None:
         _post_id(self.id)
@@ -57,6 +59,16 @@ class Post:
             _text(self.highlight_text, "highlight_text")
             if self.highlight_text not in self.prompt:
                 raise ValueError("highlight_text must occur exactly within prompt")
+
+        if self.caption_override is not None:
+            _text(self.caption_override, "caption_override")
+        if self.hashtag_set_id is not None:
+            _text(self.hashtag_set_id, "hashtag_set_id")
+            if (
+                re.fullmatch(r"TAG-[0-9]{3}", self.hashtag_set_id) is None
+                or self.hashtag_set_id == "TAG-000"
+            ):
+                raise ValueError("hashtag_set_id must use TAG-001 through TAG-999")
 
 
 class PublicationStatus(StrEnum):

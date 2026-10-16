@@ -185,7 +185,8 @@ class SQLiteRepository:
         with self._write("create_post", post_id=post.id):
             self._connection.execute(
                 "INSERT INTO posts (id, prompt, category, subcategory, template, "
-                "highlight_text) VALUES (?, ?, ?, ?, ?, ?)",
+                "highlight_text, caption_override, hashtag_set_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     post.id,
                     post.prompt,
@@ -193,6 +194,8 @@ class SQLiteRepository:
                     post.subcategory,
                     post.template,
                     post.highlight_text,
+                    post.caption_override,
+                    post.hashtag_set_id,
                 ),
             )
 
@@ -220,7 +223,8 @@ class SQLiteRepository:
             missing = [incoming[key] for key in sorted(incoming.keys() - stored.keys())]
             self._connection.executemany(
                 "INSERT INTO posts (id, prompt, category, subcategory, template, "
-                "highlight_text) VALUES (?, ?, ?, ?, ?, ?)",
+                "highlight_text, caption_override, hashtag_set_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         p.id,
@@ -229,6 +233,8 @@ class SQLiteRepository:
                         p.subcategory,
                         p.template,
                         p.highlight_text,
+                        p.caption_override,
+                        p.hashtag_set_id,
                     )
                     for p in missing
                 ],
@@ -253,13 +259,16 @@ class SQLiteRepository:
         with self._write("update_post", post_id=post.id):
             cursor = self._connection.execute(
                 "UPDATE posts SET prompt = ?, category = ?, subcategory = ?, "
-                "template = ?, highlight_text = ? WHERE id = ?",
+                "template = ?, highlight_text = ?, caption_override = ?, "
+                "hashtag_set_id = ? WHERE id = ?",
                 (
                     post.prompt,
                     post.category,
                     post.subcategory,
                     post.template,
                     post.highlight_text,
+                    post.caption_override,
+                    post.hashtag_set_id,
                     post.id,
                 ),
             )

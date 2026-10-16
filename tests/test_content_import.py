@@ -42,16 +42,18 @@ def config(tmp_path: Path) -> AppConfig:
 
 
 def test_full_round_trip_and_rerun(tmp_path: Path) -> None:
-    posts = load_snapshot(DATA / "prompts.csv", DATA / "taxonomy.csv")
+    posts = load_snapshot(
+        DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+    )
     with open_repository(config(tmp_path)) as repo:
         assert import_snapshot(
-            repo, DATA / "prompts.csv", DATA / "taxonomy.csv"
+            repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
         ) == ImportResult(400, 0)
         assert repo.list_posts() == list(posts)
         repo.replace_queue([QueueEntry(posts[0].id, 1)])
     with open_repository(config(tmp_path)) as repo:
         assert import_snapshot(
-            repo, DATA / "prompts.csv", DATA / "taxonomy.csv"
+            repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
         ) == ImportResult(0, 400)
         assert repo.list_queue() == [QueueEntry(posts[0].id, 1)]
 
@@ -94,7 +96,7 @@ def test_invalid_snapshot_rejected_before_writes(tmp_path: Path, change: str) ->
     write_rows(path, rows)
     with open_repository(config(tmp_path)) as repo:
         with pytest.raises(SnapshotError):
-            import_snapshot(repo, path, DATA / "taxonomy.csv")
+            import_snapshot(repo, path, DATA / "taxonomy.csv", DATA / "hashtags.csv")
         assert repo.list_posts() == []
 
 
@@ -103,22 +105,22 @@ def test_invalid_snapshot_rejected_before_writes(tmp_path: Path, change: str) ->
     [
         "",
         "id,id\n",
-        "id,prompt,category,subcategory,highlight_text,template,status\nAED-0001,short\n",
-        'id,prompt,category,subcategory,highlight_text,template,status\n"unterminated',
+        "id,prompt,category,subcategory,highlight_text,template,status,caption_override,hashtag_set_id\nAED-0001,short\n",
+        'id,prompt,category,subcategory,highlight_text,template,status,caption_override,hashtag_set_id\n"unterminated',
     ],
 )
 def test_csv_structure_errors(tmp_path: Path, text: str) -> None:
     source = tmp_path / "broken.csv"
     source.write_text(text)
     with pytest.raises(SnapshotError):
-        load_snapshot(source, DATA / "taxonomy.csv")
+        load_snapshot(source, DATA / "taxonomy.csv", DATA / "hashtags.csv")
 
 
 def test_taxonomy_must_be_complete(tmp_path: Path) -> None:
     taxonomy = tmp_path / "taxonomy.csv"
     taxonomy.write_text("category,subcategory\nGrowth,Change\n")
     with pytest.raises(SnapshotError, match="40 distinct"):
-        load_snapshot(DATA / "prompts.csv", taxonomy)
+        load_snapshot(DATA / "prompts.csv", taxonomy, DATA / "hashtags.csv")
 
 
 def test_blank_highlight_and_reordered_source_round_trip(tmp_path: Path) -> None:
@@ -127,9 +129,9 @@ def test_blank_highlight_and_reordered_source_round_trip(tmp_path: Path) -> None
     rows.reverse()
     write_rows(source, rows)
     with open_repository(config(tmp_path)) as repo:
-        assert import_snapshot(repo, source, DATA / "taxonomy.csv") == ImportResult(
-            400, 0
-        )
+        assert import_snapshot(
+            repo, source, DATA / "taxonomy.csv", DATA / "hashtags.csv"
+        ) == ImportResult(400, 0)
         first = repo.get_post("AED-0001")
         assert first is not None and first.highlight_text is None
         assert [post.id for post in repo.list_posts()] == [
@@ -139,7 +141,9 @@ def test_blank_highlight_and_reordered_source_round_trip(tmp_path: Path) -> None
 
 @pytest.mark.parametrize("extra", [False, True])
 def test_stored_drift_never_overwritten(tmp_path: Path, extra: bool) -> None:
-    posts = load_snapshot(DATA / "prompts.csv", DATA / "taxonomy.csv")
+    posts = load_snapshot(
+        DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+    )
     local = (
         replace(posts[-1], id="AED-9999")
         if extra
@@ -148,21 +152,27 @@ def test_stored_drift_never_overwritten(tmp_path: Path, extra: bool) -> None:
     with open_repository(config(tmp_path)) as repo:
         repo.create_post(local)
         with pytest.raises(ContentDriftError):
-            import_snapshot(repo, DATA / "prompts.csv", DATA / "taxonomy.csv")
+            import_snapshot(
+                repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+            )
         assert repo.list_posts() == [local]
 
 
 def test_missing_subset_is_filled(tmp_path: Path) -> None:
-    posts = load_snapshot(DATA / "prompts.csv", DATA / "taxonomy.csv")
+    posts = load_snapshot(
+        DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+    )
     with open_repository(config(tmp_path)) as repo:
         repo.create_post(posts[0])
         assert import_snapshot(
-            repo, DATA / "prompts.csv", DATA / "taxonomy.csv"
+            repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
         ) == ImportResult(399, 1)
 
 
 def test_database_failure_rolls_back_whole_import() -> None:
-    posts = load_snapshot(DATA / "prompts.csv", DATA / "taxonomy.csv")
+    posts = load_snapshot(
+        DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+    )
     connection = sqlite3.connect(":memory:", autocommit=True)
     try:
         repo = SQLiteRepository(connection)
@@ -178,7 +188,9 @@ def test_database_failure_rolls_back_whole_import() -> None:
 
 
 def test_repository_rejects_duplicates(tmp_path: Path) -> None:
-    post = load_snapshot(DATA / "prompts.csv", DATA / "taxonomy.csv")[0]
+    post = load_snapshot(
+        DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+    )[0]
     with open_repository(config(tmp_path)) as repo:
         with pytest.raises(ValueError, match="duplicate"):
             repo.import_posts([post, post])
@@ -189,7 +201,9 @@ def test_logs_have_counts_not_content(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     with open_repository(config(tmp_path)) as repo, caplog.at_level(logging.INFO):
-        import_snapshot(repo, DATA / "prompts.csv", DATA / "taxonomy.csv")
+        import_snapshot(
+            repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+        )
         events = [record.__dict__ for record in caplog.records]
         event = next(
             event for event in events if event.get("event") == "content_imported"
@@ -210,6 +224,8 @@ def test_cli_uses_configuration_and_no_network(tmp_path: Path) -> None:
         "ask_every_day.content_import",
         "--config",
         str(settings),
+        "--hashtags",
+        str(DATA / "hashtags.csv"),
         "--source",
         str(DATA / "prompts.csv"),
         "--taxonomy",

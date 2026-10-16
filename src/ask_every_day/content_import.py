@@ -8,6 +8,7 @@ from collections import Counter
 from pathlib import Path
 
 from ask_every_day.config import load_config
+from ask_every_day.copy_policy import HashtagSet, select_hashtag_set
 from ask_every_day.domain import Post
 from ask_every_day.logging_config import configure_logging
 from ask_every_day.repository import (
@@ -28,6 +29,8 @@ _COLUMNS = {
     "highlight_text",
     "template",
     "status",
+    "caption_override",
+    "hashtag_set_id",
 }
 _EXPECTED_IDS = {f"AED-{number:04}" for number in range(1, 401)}
 
@@ -53,8 +56,54 @@ def _read_rows(path: Path, columns: set[str]) -> list[dict[str, str]]:
         raise SnapshotError(f"Cannot decode CSV: {path}") from error
 
 
-def load_snapshot(source: Path, taxonomy: Path) -> tuple[Post, ...]:
+def optional_copy(value: str | None) -> str | None:
+    """Normalize absent editorial cells while preserving populated text exactly."""
+    if value is not None and not isinstance(value, str):
+        raise TypeError("Copy metadata must be a string or None")
+    return value if value is not None and value.strip() else None
+
+
+def load_hashtag_snapshot(path: Path) -> tuple[HashtagSet, ...]:
+    """Read editorial values without adding filesystem access to pure copy policy."""
+    rows = _read_rows(path, {"id", "name", "hashtags", "active", "use_for"})
+    sets = []
+    try:
+        for row in rows:
+            if row["active"] not in ("TRUE", "FALSE"):
+                raise ValueError("Invalid active flag")
+            sets.append(
+                HashtagSet(
+                    row["id"],
+                    row["name"],
+                    tuple(row["hashtags"].split()),
+                    tuple(row["use_for"].split("; ")),
+                    row["active"] == "TRUE",
+                )
+            )
+        select_hashtag_set("Validation", sets, enabled=False)
+    except (TypeError, ValueError) as error:
+        raise SnapshotError("Invalid hashtag editorial snapshot") from error
+    return tuple(sets)
+
+
+def resolve_hashtag_reference(
+    value: str | None, sets: tuple[HashtagSet, ...]
+) -> str | None:
+    """Resolve an exact Sheet/export ID or name; never choose a category fallback."""
+    value = optional_copy(value)
+    if value is None:
+        return None
+    try:
+        selected = select_hashtag_set("Validation", sets, explicit_set=value)
+    except (TypeError, ValueError) as error:
+        raise SnapshotError("Hashtag reference must identify one active set") from error
+    assert selected is not None
+    return selected.id
+
+
+def load_snapshot(source: Path, taxonomy: Path, hashtags: Path) -> tuple[Post, ...]:
     """Validate the whole 400-row snapshot before any database is opened."""
+    hashtag_sets = load_hashtag_snapshot(hashtags)
     taxonomy_rows = _read_rows(taxonomy, {"category", "subcategory"})
     pairs = {(row["category"], row["subcategory"]) for row in taxonomy_rows}
     if (
@@ -76,6 +125,9 @@ def load_snapshot(source: Path, taxonomy: Path) -> tuple[Post, ...]:
         if row["template"] != "Classic":
             raise SnapshotError(f"Unsupported template at {source}:{number}")
         try:
+            hashtag_id = optional_copy(row["hashtag_set_id"])
+            if resolve_hashtag_reference(hashtag_id, hashtag_sets) != hashtag_id:
+                raise ValueError("Snapshot requires immutable hashtag IDs")
             posts.append(
                 Post(
                     id=row["id"],
@@ -84,6 +136,8 @@ def load_snapshot(source: Path, taxonomy: Path) -> tuple[Post, ...]:
                     subcategory=row["subcategory"],
                     template=row["template"],
                     highlight_text=row["highlight_text"] or None,
+                    caption_override=optional_copy(row["caption_override"]),
+                    hashtag_set_id=hashtag_id,
                 )
             )
         except (ValueError, TypeError) as error:
@@ -103,10 +157,10 @@ def load_snapshot(source: Path, taxonomy: Path) -> tuple[Post, ...]:
 
 
 def import_snapshot(
-    repository: Repository, source: Path, taxonomy: Path
+    repository: Repository, source: Path, taxonomy: Path, hashtags: Path
 ) -> ImportResult:
     """Validate fully, then use the repository's atomic create-or-compare contract."""
-    return _import_posts(repository, load_snapshot(source, taxonomy), source)
+    return _import_posts(repository, load_snapshot(source, taxonomy, hashtags), source)
 
 
 def _import_posts(
@@ -142,11 +196,12 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("aed.toml"))
     parser.add_argument("--source", type=Path, default=Path("data/prompts.csv"))
     parser.add_argument("--taxonomy", type=Path, default=Path("data/taxonomy.csv"))
+    parser.add_argument("--hashtags", type=Path, default=Path("data/hashtags.csv"))
     args = parser.parse_args()
     configure_logging()
     try:
         # Invalid files must not even create an empty database.
-        posts = load_snapshot(args.source, args.taxonomy)
+        posts = load_snapshot(args.source, args.taxonomy, args.hashtags)
         config = load_config(args.config)
         with open_repository(config) as repository:
             result = _import_posts(repository, posts, args.source)

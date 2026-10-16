@@ -3,7 +3,7 @@
 import logging
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _LOGGER = logging.getLogger(__name__)
 
 # Timestamps are signed integer UTC microseconds since the Unix epoch.
@@ -66,8 +66,17 @@ _SCHEMA = (
 )
 
 
+_METADATA_COLUMNS = (
+    "caption_override TEXT CHECK (caption_override IS NULL OR "
+    "length(trim(caption_override, char(9,10,11,12,13,28,29,30,31,32,133,160,5760,"
+    "8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288))) > 0)",
+    "hashtag_set_id TEXT CHECK (hashtag_set_id IS NULL OR "
+    "(hashtag_set_id GLOB 'TAG-[0-9][0-9][0-9]' AND hashtag_set_id != 'TAG-000'))",
+)
+
+
 def initialize_schema(connection: sqlite3.Connection) -> None:
-    """Initialize an empty database, or enable foreign keys for schema version 1.
+    """Initialize version 2 or atomically migrate version 1; enable foreign keys.
 
     Call on every connection before starting a transaction. Existing caller
     transactions and unversioned nonempty databases are rejected without changes.
@@ -89,14 +98,17 @@ def initialize_schema(connection: sqlite3.Connection) -> None:
         if version == SCHEMA_VERSION:
             connection.execute("COMMIT")
             return
-        if version != 0:
+        if version not in (0, 1):
             raise ValueError(f"Unsupported SQLite schema version: {version}")
-        if connection.execute(
-            "SELECT 1 FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1"
-        ).fetchone():
-            raise ValueError("Cannot initialize a nonempty, unversioned database")
-        for statement in _SCHEMA:
-            connection.execute(statement)
+        if version == 0:
+            if connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1"
+            ).fetchone():
+                raise ValueError("Cannot initialize a nonempty, unversioned database")
+            for statement in _SCHEMA:
+                connection.execute(statement)
+        for column in _METADATA_COLUMNS:
+            connection.execute(f"ALTER TABLE posts ADD COLUMN {column}")
         connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         connection.execute("COMMIT")
     except Exception:

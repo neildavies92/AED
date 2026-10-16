@@ -27,7 +27,7 @@ Those tests cover contiguous IDs, uniqueness, length, distribution, metadata, an
 highlight validity. The 100-character ceiling is a snapshot QA limit, not a
 production renderer constraint. It does not guarantee fit in every template.
 
-For future revisions, edit the Sheet first, export the seven documented prompt
+For future revisions, edit the Sheet first, export the nine documented prompt
 columns in ID order plus the active taxonomy pairs, then rerun checks and review
 the diff. This ticket adds no automated import/export or application integration.
 There is no operational application code here, so structured logging is not
@@ -37,5 +37,10 @@ AED-008 adds `captions.csv` and `hashtags.csv`, reviewed against the live Captio
 and Hashtags tabs on 16 October 2026. All 12 captions and six sets are retained;
 active flags use `TRUE`/`FALSE`, hashtag tokens use spaces, and category mappings
 use `; ` separators. See the [copy strategy](../docs/caption-hashtag-strategy.md)
-for deterministic selection and override precedence. These exports do not add
-copy metadata to the current Post/SQLite importer.
+for deterministic selection and override precedence. AED-038 appends `caption_override` and `hashtag_set_id` to prompts.csv. A fresh
+16 October 2026 Content/Hashtags readback confirmed all 400 overrides/references
+blank and all six hashtag sets active; original seven columns are unchanged.
+Sheet hashtag names resolve exactly to stable TAG IDs before export. Empty or
+whitespace-only metadata exports as blank cells; populated captions retain exact
+text. See [import documentation](../docs/content-import.md) for validation,
+normalization and safe schema-v2 persistence.
