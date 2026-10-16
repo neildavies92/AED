@@ -14,7 +14,7 @@ def db() -> Iterator[sqlite3.Connection]:
     connection = sqlite3.connect(":memory:")
     initialize_schema(connection)
     connection.execute(
-        "INSERT INTO posts VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO posts (id,prompt,category,subcategory,template,highlight_text) VALUES (?, ?, ?, ?, ?, ?)",
         ("AED-0001", "Who are you?", "Identity", "Self", "Classic", "you"),
     )
     connection.commit()
@@ -26,7 +26,7 @@ def test_initialization(
     db: sqlite3.Connection, caplog: pytest.LogCaptureFixture
 ) -> None:
     assert db.execute("PRAGMA foreign_keys").fetchone() == (1,)
-    assert db.execute("PRAGMA user_version").fetchone() == (1,)
+    assert db.execute("PRAGMA user_version").fetchone() == (2,)
     assert {
         row[0]
         for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
@@ -41,7 +41,7 @@ def test_initialization(
     assert caplog.records[-1].__dict__["event"] == "sqlite_schema_initialized"
 
 
-@pytest.mark.parametrize("version", [2, 99])
+@pytest.mark.parametrize("version", [3, 99])
 def test_unknown_version(version: int) -> None:
     with sqlite3.connect(":memory:") as connection:
         connection.execute(f"PRAGMA user_version = {version}")
@@ -104,7 +104,7 @@ def test_queue_positions(db: sqlite3.Connection, position: object) -> None:
 def test_queue_uniqueness(db: sqlite3.Connection) -> None:
     db.execute("INSERT INTO publication_queue VALUES ('AED-0001', 1)")
     db.execute(
-        "INSERT INTO posts VALUES ('AED-0002', 'Why?', 'A', 'B', 'Classic', NULL)"
+        "INSERT INTO posts (id,prompt,category,subcategory,template,highlight_text) VALUES ('AED-0002', 'Why?', 'A', 'B', 'Classic', NULL)"
     )
     for post_id, position in [("AED-0001", 2), ("AED-0002", 1)]:
         with pytest.raises(sqlite3.IntegrityError):
@@ -215,4 +215,4 @@ def test_initialization_failure_rolls_back() -> None:
         assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
         connection.set_authorizer(None)
         initialize_schema(connection)
-        assert connection.execute("PRAGMA user_version").fetchone() == (1,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (2,)

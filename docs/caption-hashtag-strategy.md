@@ -70,11 +70,15 @@ flags, blank copy, hashtag syntax, duplicate IDs/names/tags and ambiguous select
 are validated. Current supported hashtag tokens use ASCII letters, digits and
 underscores after `#`; do not silently broaden this when editing the snapshot.
 
-The existing Post/SQLite/importer does not retain Caption Override or Hashtag Set.
-All 400 current Content rows have both fields empty, but future overrides would
-otherwise be lost. A separately tracked follow-up must version/import/persist those
-fields with safe rerun/drift semantics before runtime publication assembly consumes
-them. This ticket changes no domain fields, schema, importer or publishing flow.
+AED-038 now retains nullable `Post.caption_override` and `Post.hashtag_set_id`
+through the versioned prompt snapshot and SQLite schema v2, automatically migrating
+existing v1 databases. Blank metadata becomes None; nonblank captions remain exact.
+Sheet display names resolve to stable TAG IDs at export preparation. The importer
+requires valid active IDs and preserves create-or-compare drift rejection. All 400
+Content overrides/references were still blank on 16 October 2026. Callers can pass
+these fields directly to the selection functions above. Automatically selected
+copy is still derived, not stored; final caption assembly and publication-history
+copy snapshots remain outside AED-038.
 
 Config's Caption Selection and Hashtag Selection rows now describe these rules.
 Other Config settings and Content rows are unchanged. Edit the Sheet first, export

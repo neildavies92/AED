@@ -6,9 +6,19 @@ connection, before any transaction. Use `sqlite3.connect(':memory:')` for an
 in-memory database or pass a local filename to `sqlite3.connect`. SQLite 3.37+
 is required for STRICT tables; no additional Python dependencies are needed.
 
-Initialization is atomic, records `PRAGMA user_version = 1`, and is repeatable.
-An existing version 1 is trusted and left intact. Unknown versions and nonempty
-unversioned databases are rejected; migration and schema repair are future work.
+Initialization is atomic, records `PRAGMA user_version = 2`, and is repeatable.
+Version 1 migrates automatically by adding nullable `caption_override` and
+`hashtag_set_id` columns to posts. Existing rows receive NULL; all queue, attempt
+and metrics records remain intact. Fresh databases follow the same v1 creation
+plus ALTER sequence, so final SQL/constraints match migrated databases exactly.
+Both ALTER statements and the version update commit together or roll back.
+Existing version 2 is trusted. Unknown versions and nonempty unversioned databases
+are rejected; schema repair remains future work.
+
+Caption overrides must be NULL or nonblank (including Unicode whitespace);
+populated text is preserved exactly. Hashtag IDs must be NULL or TAG-001–TAG-999.
+Existence/active status is validated against the editorial snapshot on import,
+not a filesystem foreign key.
 Active caller transactions are rejected without committing their changes. The
 initializer owns only its transaction, never the connection or filesystem paths.
 It emits a standard-library log record with `event` and `schema_version` fields

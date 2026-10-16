@@ -75,7 +75,7 @@ def test_persistence_and_close(config: AppConfig, post: Post) -> None:
         with pytest.raises(sqlite3.IntegrityError):
             second.replace_queue([QueueEntry("AED-9999", 1)])
     with sqlite3.connect(config.database_path) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone() == (1,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
     assert not config.assets_path.exists()
 
 

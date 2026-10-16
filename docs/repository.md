@@ -12,7 +12,7 @@ with open_repository(load_config()) as repository:
     posts = repository.list_posts()
 ```
 
-Each connection initializes/checks schema version 1 and enables/verifies foreign
+Each connection initializes/checks schema version 2 (migrating version 1 atomically) and enables/verifies foreign
 keys using AED-004's initializer. The context closes it on success, caller failure,
 or initialization failure. No global connections, pooling or asynchronous I/O.
 The lower-level `SQLiteRepository(connection)` initializes a caller-owned
@@ -24,7 +24,9 @@ repository operations. Prefer the managed factory.
 - Posts: create, get, exists, deterministic ID-ordered list, update and delete.
   Creating a duplicate raises `sqlite3.IntegrityError`. Unknown gets return `None`,
   exists returns `False`, updates raise `KeyError`, and deletes return `False`.
-  Deletes of referenced posts preserve SQLite's foreign-key error.
+  Deletes of referenced posts preserve SQLite's foreign-key error. Nullable
+  `caption_override` and `hashtag_set_id` round-trip without altering populated
+  text. Metadata changes count as drift during create-or-compare imports.
 - Publications: create returns `PublicationRecord(id, publication)`. Each creation
   is a new attempt; the integer database ID is distinct from the post ID. Get
   returns a record or `None`; history returns records ordered by attempt instant,
