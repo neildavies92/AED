@@ -22,6 +22,7 @@ cannot prove semantic distinctiveness. See [the review record](../docs/editorial
 for methodology, overlap decisions, and the change rationale.
 
 Run `make check` for the full project checks, including snapshot integrity tests.
+
 Those tests cover contiguous IDs, uniqueness, length, distribution, metadata, and
 highlight validity. The 100-character ceiling is a snapshot QA limit, not a
 production renderer constraint. It does not guarantee fit in every template.
@@ -31,3 +32,10 @@ columns in ID order plus the active taxonomy pairs, then rerun checks and review
 the diff. This ticket adds no automated import/export or application integration.
 There is no operational application code here, so structured logging is not
 appropriate for these static data files and deterministic tests.
+
+AED-008 adds `captions.csv` and `hashtags.csv`, reviewed against the live Captions
+and Hashtags tabs on 16 October 2026. All 12 captions and six sets are retained;
+active flags use `TRUE`/`FALSE`, hashtag tokens use spaces, and category mappings
+use `; ` separators. See the [copy strategy](../docs/caption-hashtag-strategy.md)
+for deterministic selection and override precedence. These exports do not add
+copy metadata to the current Post/SQLite importer.
