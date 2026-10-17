@@ -3,9 +3,10 @@
 # Carry any Make-supplied fallback through macOS's protected shell boundary.
 CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-cairo.sh
 
-.PHONY: help setup test lint format format-check typecheck check prototype import-content render-assets
+.PHONY: help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets
 
 help:
+	@echo "make validate-assets Check strict PNG/JPEG inventory without writes"
 	@echo "make render-assets Render SQLite Posts to PNG/JPEG using aed.toml"
 	@echo "make import-content Import approved CSV content using aed.toml"
 	@echo "make prototype     Render the Classic SVG design specimen"
@@ -45,3 +46,6 @@ import-content:
 
 render-assets:
 	$(CAIRO_RUN) uv run python -m ask_every_day.batch_render
+
+validate-assets:
+	uv run python -m ask_every_day.asset_inventory
