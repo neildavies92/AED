@@ -33,6 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make launch-review` | Generate a 20-Post local visual/copy review gallery |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make validate-assets` | Validate strict PNG/JPEG inventory without writes |
@@ -98,3 +99,6 @@ See [batch rendering](docs/batch-rendering.md) for rerun and failure semantics.
 
 Run `make validate-assets` after rendering to check exact filenames and image
 representations. See [asset inventory](docs/asset-inventory.md).
+
+Generate a curated visual and copy review with `make launch-review`; see
+[launch review](docs/launch-review.md) and [inspection findings](docs/launch-review-findings.md).
