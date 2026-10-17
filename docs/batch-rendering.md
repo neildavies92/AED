@@ -56,3 +56,6 @@ There is no network access, Instagram publishing, queue mutation, caption assemb
 or lifecycle-directory work here. Tests generate real assets in temporary storage,
 including all 400 imported Posts and all 800 expected files; no binary fixtures
 are committed.
+
+After rendering, run `make validate-assets`; the [inventory validator](asset-inventory.md)
+reports missing, unexpected or malformed assets without modifying them.

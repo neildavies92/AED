@@ -35,6 +35,7 @@ Run `make` or `make help` to list the available commands.
 | --- | --- |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
+| `make validate-assets` | Validate strict PNG/JPEG inventory without writes |
 | `make render-assets` | Render SQLite Posts to configured PNG/JPEG assets |
 | `make test` | Run pytest |
 | `make lint` | Run Ruff lint checks |
@@ -94,3 +95,6 @@ failure diagnostics and safe context rules.
 After `make import-content`, run `make render-assets` to render persisted SQLite
 Posts into the configured assets directory as `AED-NNNN.png` and `AED-NNNN.jpg`.
 See [batch rendering](docs/batch-rendering.md) for rerun and failure semantics.
+
+Run `make validate-assets` after rendering to check exact filenames and image
+representations. See [asset inventory](docs/asset-inventory.md).
