@@ -56,7 +56,9 @@ def test_production_400_post_batch(
     monkeypatch.setattr(socket, "create_connection", deny_network)
     settings = config(tmp_path)
     with open_repository(settings) as repo:
-        import_snapshot(repo, DATA / "prompts.csv", DATA / "taxonomy.csv")
+        import_snapshot(
+            repo, DATA / "prompts.csv", DATA / "taxonomy.csv", DATA / "hashtags.csv"
+        )
     # Reopen proves SQLite, not an in-memory import result, is the runtime source.
     with open_repository(settings) as repo:
         started = time.monotonic()
