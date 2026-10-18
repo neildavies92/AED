@@ -101,12 +101,49 @@ def test_automatic_svg_structure(
     assert sum(bool(text) for text in highlights) == highlight_count
     assert "".join(highlights) == post.highlight_text
     assert "".join("".join(line.itertext()) for line in text_lines) == post.prompt
-    assert groups[0].findtext(SVG + "text") == "ASK EVERY DAY"
+    header = groups[0]
+    assert header.attrib == {
+        "fill": "#343B35",
+        "font-family": "Arial, Helvetica, sans-serif",
+    }
+    brand = header.find(SVG + "text")
+    assert brand is not None
+    assert "".join(brand.itertext()) == "@ask.every.day"
+    assert brand.attrib == {
+        "id": "classic-brand",
+        "x": "540",
+        "y": "147",
+        "text-anchor": "middle",
+        "font-size": "23",
+        "letter-spacing": "1.5",
+    }
+    assert [(span.text, span.get("fill")) for span in brand] == [
+        ("@", "#8D957F"),
+        ("ask.every.day", "#343B35"),
+    ]
+    underline = header.find(SVG + "path")
+    assert underline is not None
+    assert underline.attrib == {
+        "d": "M512 190 H568",
+        "stroke": "#8D957F",
+        "stroke-width": "2",
+    }
+    assert "".join(root.itertext()).count("@ask.every.day") == 1
+    assert root.findtext(SVG + "desc") == "Ask Every Day. A question to sit with."
+    assert groups[2].attrib == {
+        "font-family": "Arial, Helvetica, sans-serif",
+        "fill": "#62695F",
+    }
     footer = groups[2].findall(SVG + "text")
     assert [(text.get("x"), text.get("y"), text.text) for text in footer] == [
         ("112", "1138", "A QUESTION TO SIT WITH."),
-        ("112", "1214", "@ask.every.day"),
     ]
+    assert footer[0].attrib == {
+        "x": "112",
+        "y": "1138",
+        "font-size": "20",
+        "letter-spacing": "1.5",
+    }
 
 
 @pytest.mark.parametrize("post_id", [case[0] for case in CASES])

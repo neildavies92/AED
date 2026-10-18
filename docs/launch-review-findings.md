@@ -9,9 +9,10 @@ QA observations, **not owner sign-off** or a claim about audience performance.
 
 ## Blocking before first live post
 
-No concrete rendering/copy defect was found in this inspected set. Owner visual
-and copy acceptance is still pending. No production redesign or content rewrite
-is included, and no defect follow-up ticket is required from this inspection.
+The initial agent inspection found no concrete rendering/copy defect. During
+owner review on 18 October, the original top `ASK EVERY DAY` and duplicate bottom
+handle were judged redundant. The requested branding refinement is AED-042,
+recorded below. Owner visual/copy acceptance remains pending.
 
 ## Desirable iteration after launch
 
@@ -29,8 +30,8 @@ is included, and no defect follow-up ticket is required from this inspection.
 
 ## Acceptable as-is in this inspection
 
-- Consistent warm background, left alignment, serif scale, olive highlights,
-  top brand and bottom sign-off/handle across the set. Two-line AED-0030 has much
+- The initial pack had consistent warm background, left alignment, serif scale,
+  olive highlights and top brand/bottom sign-off/handle. Two-line AED-0030 has much
   more open space than six-line AED-0364, while the text remains vertically balanced.
 - Multi-line emphasis on AED-0236/0364 stays legible and restrained; punctuation
   remains attached. No clipping, overlapping brand/footer or obvious JPEG artefacts
@@ -45,6 +46,34 @@ is included, and no defect follow-up ticket is required from this inspection.
 
 Owner: open the generated gallery, inspect the JPEGs and copy as a set, and record
 approval or concrete requested changes. No owner approval has yet been recorded.
-AED-040 remains In Progress with Completed blank through PR CI, pending merge,
-integrated-main CI and owner acceptance. Any actual launch-blocking renderer or
-content defect needs a separate tracked ticket rather than a hidden redesign here.
+AED-040 remains Blocked on AED-042 and owner sign-off, with Completed blank.
+AED-042 remains In Progress through PR CI, pending merge, integrated-main CI and
+owner review of the regenerated pack. Neither ticket is complete from agent QA.
+
+## AED-042 branding refinement — 18 October 2026
+
+The owner selected one top attribution: centered `@ask.every.day` and a centered
+short underline, with a subtle sage `@` and stronger dark account name. The bottom
+handle is removed; `A QUESTION TO SIT WITH.` retains its position and styling.
+This is a branding change, not a prompt/template redesign.
+
+Implemented x=540/y=147 with one middle-anchored SVG text element, 23px
+Arial/Helvetica and 1.5px letter spacing. The spans use `#8D957F` and `#343B35`;
+the existing 56px/2px sage rule is centered from x=512 to 568 at y=190.
+The deliberate SVG/PNG specimen was refreshed. CairoSVG's anchored-span overlap
+required a narrow, measured header-only adaptation at PNG export; the canonical
+SVG remains centered and prompt rendering is untouched. See [renderer](renderer.md).
+
+Regenerated all 20 production JPEGs with `make launch-review` and inspected the
+actual gallery as a set, plus AED-0030, AED-0236 and AED-0364 at full resolution.
+The handle and rule appear centered and consistent. The `@` is noticeably lighter
+but readable; the account name remains subordinate to the question. Removing the
+duplicate handle leaves a quiet, intentional footer rather than an accidental gap.
+No clipping, prompt shift or obvious JPEG artefact was observed. Before/after
+comparisons for those three Posts confirm identical prompt SVG groups and exact
+PNG pixels across the prompt/footer-phrase region.
+
+No additional concrete launch-blocking visual issue was found in this regenerated
+set. Earlier short-final-line and caption preferences remain unchanged and outside
+this ticket. No new follow-up ticket is needed. These are agent observations;
+**owner sign-off on the new branding is still required**.

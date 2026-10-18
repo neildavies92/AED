@@ -29,6 +29,30 @@ Configuration width and height set the SVG viewport. Classic retains its
 scales it proportionally, letterboxing if a different aspect ratio is requested.
 This preserves typography and spacing without inventing responsive layouts.
 
+## Classic branding — AED-042
+
+The single attribution is a centered `@ask.every.day` at x=540, baseline y=147,
+with `text-anchor="middle"`. One Arial/Helvetica text element uses 23px type and
+1.5px letter spacing; adjacent spans give `@` the muted sage `#8D957F` and
+`ask.every.day` the stronger charcoal `#343B35`, without a heavier weight.
+The 56px underline runs from (512,190) to (568,190), with the existing sage stroke
+and 2px width. Centering follows the complete SVG text, not a guessed left offset.
+
+The footer contains only `A QUESTION TO SIT WITH.` at x=112/y=1138, retaining
+its 20px sans-serif type, 1.5px spacing and `#62695F` fill. The duplicate bottom
+handle is removed. Prompt layout/highlights, background, canvas and accessible
+description are unchanged. The deliberate SVG/PNG specimen in `docs/design/`
+reflects this canonical branding; prompt layout policy is unchanged.
+
+CairoSVG currently centers adjacent anchored spans independently
+([upstream issue 317](https://github.com/Kozea/CairoSVG/issues/317)). The PNG boundary
+therefore adapts only the `classic-brand` element in its in-memory conversion copy:
+the same Cairo backend/font/scale measures the complete handle, then positions the
+left-anchored runs with their boundary spacing preserved. The returned canonical
+SVG keeps x=540 and `text-anchor="middle"`; no font-width guess, prompt modification,
+dependency or general text-layout replacement is introduced. Raster regression
+compares this split handle with an unsplit centered control at full and half size.
+
 ## Automatic Classic layout — AED-011
 
 Without `lines`, `layout_prompt` automatically wraps the prompt using fixed,

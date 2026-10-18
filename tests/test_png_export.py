@@ -115,3 +115,33 @@ def test_structured_success_log(caplog: pytest.LogCaptureFixture) -> None:
     assert record.__dict__["width"] == 1080
     assert record.__dict__["height"] == 1350
     assert "<svg" not in caplog.text
+
+
+@pytest.mark.parametrize("size", [(1080, 1350), (540, 675)])
+def test_centered_brand_raster_matches_unsplit_text_geometry(size):
+    from io import BytesIO
+    from xml.etree import ElementTree
+
+    import cairosvg
+    from PIL import Image, ImageChops
+
+    config = RendererConfig(width=size[0], height=size[1])
+    svg = render_svg(SAMPLE_POST, config)
+    root = ElementTree.fromstring(svg)
+    brand = root.find(".//{http://www.w3.org/2000/svg}text[@id='classic-brand']")
+    assert brand is not None
+    for span in brand:
+        span.set("fill", "#343B35")
+    actual = export_png(ElementTree.tostring(root, encoding="unicode"), config)
+    text = "".join(brand.itertext())
+    brand[:] = []
+    brand.text = text
+    # A single-colour, unsplit control uses CairoSVG's working native centering.
+    expected = cairosvg.svg2png(
+        bytestring=ElementTree.tostring(root),
+        output_width=size[0],
+        output_height=size[1],
+    )
+    assert isinstance(expected, bytes)
+    with Image.open(BytesIO(actual)) as a, Image.open(BytesIO(expected)) as b:
+        assert ImageChops.difference(a, b).getbbox() is None
