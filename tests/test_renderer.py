@@ -22,7 +22,7 @@ def test_render_content_and_config_dimensions() -> None:
     assert root.attrib["height"] == "675"
     assert root.attrib["viewBox"] == "0 0 1080 1350"
     assert SAMPLE_POST.prompt in "".join(root.itertext())
-    assert "@ask.every.day" in "".join(root.itertext())
+    assert "".join(root.itertext()).count("@ask.every.day") == 1
 
 
 def test_deterministic_and_independent_of_working_directory(

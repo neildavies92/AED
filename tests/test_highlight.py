@@ -37,9 +37,10 @@ def test_exact_segments_and_offsets(prompt: str, highlight: str | None) -> None:
     )
     root = ElementTree.fromstring(svg)
     assert root.findtext(SVG + "title") == prompt
-    assert "".join(element.text or "" for element in root.iter(SVG + "tspan")) == (
-        highlight or ""
-    )
+    prompt_group = root.findall(SVG + "g")[1]
+    assert "".join(
+        element.text or "" for element in prompt_group.iter(SVG + "tspan")
+    ) == (highlight or "")
     span = highlight_span(prompt, highlight)
     lines = layout_prompt(prompt)
     segments = [segment_line(line, span) for line in lines]

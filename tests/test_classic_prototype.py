@@ -15,7 +15,8 @@ def test_reference_svg() -> None:
     assert root.attrib["viewBox"] == "0 0 1080 1350"
     assert SAMPLE_POST.prompt in "".join(root.itertext())
     assert "@ask.every.day" in "".join(root.itertext())
-    highlights = root.findall(".//{http://www.w3.org/2000/svg}tspan")
+    prompt_group = root.findall("{http://www.w3.org/2000/svg}g")[1]
+    highlights = prompt_group.findall(".//{http://www.w3.org/2000/svg}tspan")
     assert " ".join(span.text for span in highlights if span.text) == (
         SAMPLE_POST.highlight_text
     )
