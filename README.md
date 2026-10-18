@@ -33,6 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make stage-media POST_ID=AED-0001` | Temporarily stage one validated JPEG over public HTTPS |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make validate-assets` | Validate strict PNG/JPEG inventory without writes |
@@ -98,3 +99,7 @@ See [batch rendering](docs/batch-rendering.md) for rerun and failure semantics.
 
 Run `make validate-assets` after rendering to check exact filenames and image
 representations. See [asset inventory](docs/asset-inventory.md).
+
+For controlled manual acceptance, [public media staging](docs/media-staging.md)
+serves one canonical JPEG through an externally installed `cloudflared` Quick
+Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publish.
