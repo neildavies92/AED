@@ -34,6 +34,7 @@ Run `make` or `make help` to list the available commands.
 | Command | Action |
 | --- | --- |
 | `make launch-review` | Generate a 20-Post local visual/copy review gallery |
+| `make stage-media POST_ID=AED-0001` | Temporarily stage one validated JPEG over public HTTPS |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make validate-assets` | Validate strict PNG/JPEG inventory without writes |
@@ -102,3 +103,7 @@ representations. See [asset inventory](docs/asset-inventory.md).
 
 Generate a curated visual and copy review with `make launch-review`; see
 [launch review](docs/launch-review.md) and [inspection findings](docs/launch-review-findings.md).
+
+For controlled manual acceptance, [public media staging](docs/media-staging.md)
+serves one canonical JPEG through an externally installed `cloudflared` Quick
+Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publish.
