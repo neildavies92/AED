@@ -77,3 +77,12 @@ No additional concrete launch-blocking visual issue was found in this regenerate
 set. Earlier short-final-line and caption preferences remain unchanged and outside
 this ticket. No new follow-up ticket is needed. These are agent observations;
 **owner sign-off on the new branding is still required**.
+
+## AED-043 context-aware caption review — 19 October 2026
+
+The former 12-caption rotation is superseded by reviewed per-Post profiles and
+134 compatible CTA captions. [Caption review findings](caption-review.md) record
+all 20 reviewed combinations, 100-seed queue metrics and remaining acceptance.
+Images are byte-identical to the merged AED-042 gallery. AED-043 remains In Progress
+pending merge/main CI and owner review; AED-040 remains Blocked. This is not owner
+sign-off and does not authorize publishing.

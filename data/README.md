@@ -1,8 +1,10 @@
 # Editorial snapshot — AED-007
 
 [Google Sheets](https://docs.google.com/spreadsheets/d/1gL_9RS25QdAd9dTLzDEDoXsGEmfjanM5V1pda2wfqK4/edit)
-is the editorial authoring source of truth. These CSV files are versioned exports
-for review, not a second independently maintained content library.
+is the editorial authoring source of truth for prompts, taxonomy and hashtags.
+Those CSVs are versioned exports for review. AED-043 explicitly authorizes local
+caption/profile snapshot authoring; the expanded copy model is not yet mirrored
+in Sheets. Synchronization after owner acceptance is a separate follow-up.
 
 Exported and checked against the live Sheet on 13 October 2026:
 
@@ -44,3 +46,29 @@ Sheet hashtag names resolve exactly to stable TAG IDs before export. Empty or
 whitespace-only metadata exports as blank cells; populated captions retain exact
 text. See [import documentation](../docs/content-import.md) for validation,
 normalization and safe schema-v2 persistence.
+
+## AED-043 caption policy snapshots
+
+`caption_profiles.csv`: exactly 400 rows with `post_id,prompt_form,response_mode,
+time_focus,public_reply_ok`; no prompt duplication. All production forms are
+question. Modes are reflect/recall/compare/imagine/decide/notice/appreciate/relate/act;
+time focus is past/present/future/timeless/mixed. Public reply uses TRUE/FALSE and
+is conservatively false for private disclosures. One primary mode per Post.
+Profiles were individually classified from actual meaning, then reviewed again.
+
+`captions.csv`: 134 active rows, 120 targeted (three per exact taxonomy pair) and
+14 General (`*`/`*`). CAP-001–012 text and IDs are preserved. Fields are `id,caption,
+active,category,subcategory,cta_role,prompt_forms,response_modes,time_focus,
+public_reply_required,notes`. Compatibility uses `|` or `*` alone; no expressions.
+CTA roles are reflect/journal/save_return/comment_reply/follow. Only comment_reply
+requires public-reply permission. 33 lines use one restrained emoji; 101 use none.
+The palette is 🪞/✍️/🌿/💭. Normalized duplicate text is rejected.
+
+The dedicated caption loader validates complete snapshots before review. Metadata
+is not added to SQLite. Selection is deterministic from Post/profile/catalogue and
+one-based queue position, with exact override precedence, semantic filtering,
+private-safe CTA fallback and exact-taxonomy preference within each CTA lane.
+No runtime LLM, semantic inference, external API or Sheets dependency is involved.
+See [copy strategy](../docs/caption-hashtag-strategy.md) for vocabulary, counts and
+algorithm, and [caption review](../docs/caption-review.md) for evidence. Use
+`make caption-review` and `make launch-review`; outputs remain ignored.

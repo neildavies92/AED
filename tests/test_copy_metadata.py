@@ -54,8 +54,8 @@ def test_domain_exact_values_and_policy() -> None:
     assert value.caption_override == CAPTION
     assert (
         select_caption(
-            value.id, [Caption("CAP-001", "Fallback")], override=value.caption_override
-        )
+            value, [Caption("CAP-001", "Fallback")], None, position=None
+        ).caption
         == CAPTION
     )
     selected = select_hashtag_set(

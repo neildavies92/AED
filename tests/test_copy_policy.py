@@ -1,9 +1,6 @@
 """Editorial snapshot integrity and deterministic, override-aware copy selection."""
 
 import csv
-import os
-import subprocess
-import sys
 from dataclasses import replace
 from pathlib import Path
 from typing import cast
@@ -13,7 +10,6 @@ import pytest
 from ask_every_day.copy_policy import (
     Caption,
     HashtagSet,
-    select_caption,
     select_hashtag_set,
 )
 
@@ -23,14 +19,6 @@ DATA = Path(__file__).parents[1] / "data"
 def rows(filename: str) -> list[dict[str, str]]:
     with (DATA / filename).open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
-
-
-@pytest.fixture
-def captions() -> list[Caption]:
-    return [
-        Caption(row["id"], row["caption"], row["active"] == "TRUE")
-        for row in rows("captions.csv")
-    ]
 
 
 @pytest.fixture
@@ -47,10 +35,8 @@ def sets() -> list[HashtagSet]:
     ]
 
 
-def test_snapshot_integrity(captions: list[Caption], sets: list[HashtagSet]) -> None:
-    assert [item.id for item in captions] == [f"CAP-{i:03}" for i in range(1, 13)]
+def test_snapshot_integrity(sets: list[HashtagSet]) -> None:
     assert [item.id for item in sets] == [f"TAG-{i:03}" for i in range(1, 7)]
-    assert len({item.caption for item in captions}) == 12
     assert len({item.name for item in sets}) == 6
     for filename in ("captions.csv", "hashtags.csv"):
         assert all(row["active"] in {"TRUE", "FALSE"} for row in rows(filename))
@@ -59,7 +45,7 @@ def test_snapshot_integrity(captions: list[Caption], sets: list[HashtagSet]) -> 
     mapped = [category for item in sets[1:] for category in item.use_for]
     assert len(mapped) == len(set(mapped)) == 10
     assert set(mapped) == categories
-    assert all(item.active for item in captions + sets)
+    assert all(item.active for item in sets)
 
 
 @pytest.mark.parametrize(
@@ -81,37 +67,6 @@ def test_category_mapping(sets: list[HashtagSet], category: str, expected: str) 
     result = select_hashtag_set(category, sets)
     assert result is not None and result.id == expected
     assert select_hashtag_set(category, sets[::-1]) == result
-
-
-def test_caption_cycle_and_order(captions: list[Caption]) -> None:
-    for number, index in [(1, 0), (12, 11), (13, 0), (400, 3)]:
-        expected = captions[index].caption
-        assert select_caption(f"AED-{number:04}", captions) == expected
-        assert select_caption(f"AED-{number:04}", captions[::-1]) == expected
-
-
-def test_override_preserves_exact_copy_and_precedes_empty_pool() -> None:
-    override = "  A personal reflection. 🪞\nTake your time.  "
-    assert select_caption("AED-0001", [], override=override) == override
-
-
-@pytest.mark.parametrize("blank", [None, "", " \n"])
-def test_blank_overrides_use_defaults(
-    captions: list[Caption], sets: list[HashtagSet], blank: str | None
-) -> None:
-    assert select_caption("AED-0001", captions, override=blank) == captions[0].caption
-    assert select_hashtag_set("Growth", sets, explicit_set=blank) == sets[2]
-
-
-def test_inactive_caption_is_excluded_and_empty_pool_fails(
-    captions: list[Caption],
-) -> None:
-    captions[0] = replace(captions[0], active=False)
-    assert select_caption("AED-0001", captions) == captions[1].caption
-    with pytest.raises(ValueError, match="No active"):
-        select_caption("AED-0001", [captions[0]])
-    with pytest.raises(ValueError, match="Duplicate"):
-        select_caption("AED-0001", [captions[1], captions[1]])
 
 
 def test_explicit_set_id_or_sheet_name_overrides_category(
@@ -161,12 +116,6 @@ def test_inactive_and_ambiguous_sets_fail(sets: list[HashtagSet]) -> None:
         )
 
 
-@pytest.mark.parametrize("post_id", ["AED-0000", "AED-1", "BAD-0001", "AED-１２３４"])
-def test_invalid_post_ids_fail(post_id: str) -> None:
-    with pytest.raises(ValueError):
-        select_caption(post_id, [], override="A valid override")
-
-
 @pytest.mark.parametrize("tags", [("journaling",), ("#a-b",), ("#",), ("#A", "#a"), ()])
 def test_malformed_or_duplicate_tags_fail(tags: tuple[str, ...]) -> None:
     with pytest.raises(ValueError):
@@ -181,26 +130,13 @@ def test_invalid_editorial_values_and_override_types() -> None:
     # Wrong runtime values deliberately reach the public boundaries.
     invalid: object = 7
     with pytest.raises(TypeError):
-        select_caption("AED-0001", [], override=cast(str, invalid))
-    with pytest.raises(TypeError):
         select_hashtag_set("Growth", [], explicit_set=cast(str, invalid))
     with pytest.raises(TypeError):
         Caption("CAP-001", "Valid", active=cast(bool, "TRUE"))
 
 
-def test_selection_is_independent_of_process_hash_seed() -> None:
-    code = """from ask_every_day.copy_policy import Caption, select_caption
-pool = [Caption('CAP-002', 'Second'), Caption('CAP-001', 'First')]
-print(select_caption('AED-0013', pool))
-"""
-    outputs = [
-        subprocess.run(
-            [sys.executable, "-c", code],
-            env={**os.environ, "PYTHONHASHSEED": str(seed)},
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-        for seed in (0, 1, 12345)
-    ]
-    assert outputs == ["First\n"] * 3
+@pytest.mark.parametrize("blank", [None, "", " \n"])
+def test_blank_hashtag_override_uses_category(
+    sets: list[HashtagSet], blank: str | None
+) -> None:
+    assert select_hashtag_set("Growth", sets, explicit_set=blank) == sets[2]
