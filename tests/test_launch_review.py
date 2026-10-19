@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from ask_every_day.caption_catalog import load_captions, load_profiles
 from ask_every_day.content_import import load_hashtag_snapshot, load_snapshot
 from ask_every_day.domain import AppConfig, RendererConfig
 from ask_every_day.highlight import highlight_span, segment_line
@@ -20,10 +21,10 @@ from ask_every_day.launch_review import (
     REVIEW_IDS,
     gallery_html,
     generate_review,
-    load_captions,
     select_review,
 )
 from ask_every_day.layout import layout_prompt
+from ask_every_day.queue_generation import generate_queue
 from ask_every_day.repository import open_repository
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,20 +37,32 @@ def editorial():
         load_snapshot(
             data / "prompts.csv", data / "taxonomy.csv", data / "hashtags.csv"
         ),
-        load_captions(data / "captions.csv"),
+        load_captions(data / "captions.csv", data / "taxonomy.csv"),
         load_hashtag_snapshot(data / "hashtags.csv"),
+        load_profiles(
+            data / "caption_profiles.csv", [f"AED-{n:04}" for n in range(1, 401)]
+        ),
     )
 
 
 def test_curated_coverage_and_deterministic_copy(editorial):
-    posts, captions, tags = editorial
-    items = select_review(posts, captions, tags)
+    posts, captions, tags, profiles = editorial
+    items = select_review(posts, captions, tags, profiles)
     assert len(items) == len(set(REVIEW_IDS)) == 20
     assert tuple(x.post.id for x in items) == REVIEW_IDS
-    assert items == select_review(posts[::-1], captions[::-1], tags[::-1])
+    assert items == select_review(posts[::-1], captions[::-1], tags[::-1], profiles)
     assert set(Counter(x.post.category for x in items).values()) == {2}
     assert len({x.post.category for x in items}) == 10
-    assert {x.caption for x in items} == {x.caption for x in captions}
+    assert {x.caption for x in items} <= {x.caption for x in captions}
+    positions = {p.id: n for n, p in enumerate(generate_queue(posts, seed=42), 1)}
+    assert all(item.position == positions[item.post.id] for item in items)
+    html = gallery_html(items)
+    for item in items:
+        assert f"Preview queue position: {item.position}" in html
+        assert f"CTA: {item.cta_role}" in html
+        assert item.profile.response_mode in html
+        assert item.profile.time_focus in html
+    assert "Public reply: no" in html and "Public reply: yes" in html
     assert {x.hashtags.id for x in items if x.hashtags} == {
         f"TAG-{n:03}" for n in range(2, 7)
     }
@@ -78,7 +91,7 @@ def test_curated_coverage_and_deterministic_copy(editorial):
 
 
 def test_overrides_escaping_and_synthetic_no_highlight(editorial, tmp_path):
-    posts, captions, tags = editorial
+    posts, captions, tags, profiles = editorial
     first = next(p for p in posts if p.id == REVIEW_IDS[0])
     changed = replace(
         first,
@@ -88,7 +101,7 @@ def test_overrides_escaping_and_synthetic_no_highlight(editorial, tmp_path):
         hashtag_set_id="TAG-001",
     )
     items = select_review(
-        [changed if p.id == changed.id else p for p in posts], captions, tags
+        [changed if p.id == changed.id else p for p in posts], captions, tags, profiles
     )
     assert items[0].caption == changed.caption_override
     assert items[0].hashtags == tags[0]
@@ -105,7 +118,7 @@ def test_overrides_escaping_and_synthetic_no_highlight(editorial, tmp_path):
 def test_real_pack_rerun_readonly_and_no_network(
     editorial, tmp_path, monkeypatch, caplog
 ):
-    posts, captions, tags = editorial
+    posts, captions, tags, profiles = editorial
 
     def denied(*args, **kwargs):
         raise AssertionError("Network forbidden")
@@ -124,7 +137,9 @@ def test_real_pack_rerun_readonly_and_no_network(
     ) as connection:
         from ask_every_day.repository import SQLiteRepository
 
-        items = select_review(SQLiteRepository(connection).list_posts(), captions, tags)
+        items = select_review(
+            SQLiteRepository(connection).list_posts(), captions, tags, profiles
+        )
     output = tmp_path / "nested" / "launch-review"
     caplog.set_level(logging.INFO, logger="ask_every_day")
     index = generate_review(items, config.renderer, output)
@@ -212,15 +227,15 @@ def test_caption_parser_rejects_malformed(tmp_path, contents):
     source = tmp_path / "captions.csv"
     source.write_text(contents)
     with pytest.raises((ValueError, csv.Error)):
-        load_captions(source)
+        load_captions(source, ROOT / "data/taxonomy.csv")
 
 
 def test_selection_rejects_missing_duplicate(editorial):
-    posts, captions, tags = editorial
+    posts, captions, tags, profiles = editorial
     with pytest.raises(ValueError, match="missing"):
-        select_review([], captions, tags)
+        select_review([], captions, tags, profiles)
     with pytest.raises(ValueError, match="Duplicate"):
-        select_review([*posts, posts[0]], captions, tags)
+        select_review([*posts, posts[0]], captions, tags, profiles)
 
 
 def test_cli_missing_database_is_not_created(tmp_path):
@@ -241,7 +256,7 @@ def test_cli_missing_database_is_not_created(tmp_path):
 
 
 def test_cli_custom_config_and_read_only_state(editorial, tmp_path):
-    posts, _, _ = editorial
+    posts, _, _, _ = editorial
     config = AppConfig(tmp_path / "content.db", tmp_path / "unused-assets", "@test")
     with open_repository(config) as repository:
         repository.import_posts(posts)

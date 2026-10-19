@@ -1,33 +1,117 @@
-# Caption and hashtag strategy — AED-008
+# Caption and hashtag strategy — AED-043
 
-Google Sheets is the editorial source of truth. Reviewed on 16 October 2026:
-all 12 active captions and six active hashtag sets are retained unchanged in
-`data/captions.csv` and `data/hashtags.csv`. IDs, copy, active flags, notes and
-category mappings match the Sheet; CSV headers use the repository's snake_case
-convention. `active` is exactly `TRUE` or `FALSE`.
+The global twelve-caption ID rotation was deterministic but context-blind. Copy now
+uses reviewed, versioned per-Post profiles, exact taxonomy and publication position.
+No runtime LLM, keyword/punctuation inference, network or Google Sheets access is
+involved. Selection never reads arbitrary prompt text to guess meaning.
 
-The caption pool mixes quiet invitations, writing prompts and reminders to return.
-The save/return lines offer a practical use rather than demanding engagement;
-"What comes up for you?" works as a private reflection, not a request for comments.
-One restrained mirror emoji fits the brand. No caption needs rewriting for novelty.
-Each hashtag set contains five valid, distinct evergreen tags. Broad journaling
-tags intentionally recur across sets; only one set is used per post. Category
-relevance and consistent tone motivate the choices, with no claim about reach.
+## Editorial snapshots
 
-## Deterministic selection
+`data/caption_profiles.csv` contains exactly 400 rows, one for each Approved Post,
+with no duplicated prompt text. Columns: `post_id`, `prompt_form`, `response_mode`,
+`time_focus`, `public_reply_ok`. All 400 current Posts are questions; statement
+support is exercised with synthetic fixtures, not invented production content.
 
-Caption precedence:
+| Field | Vocabulary / meaning |
+| --- | --- |
+| prompt_form | question, statement |
+| response_mode | reflect (consider meaning), recall (retrieve experience), compare (contrast), imagine (explore a possibility), decide (choose), notice (observe), appreciate (value), relate (consider a connection), act (identify a practical step) |
+| time_focus | past, present, future, timeless (habitual/general), mixed (connects periods) |
+| public_reply_ok | TRUE/FALSE; whether actively inviting public disclosure is appropriate |
 
-1. A nonblank `Content.Caption Override` wins, preserved exactly, including
-   whitespace and line breaks. `None`, empty or whitespace-only values mean absent.
-2. Otherwise sort active captions by immutable CAP ID and select zero-based index
-   `(numeric_post_id - 1) % active_caption_count`. No active captions is an error.
+Use one primary mode; taxonomy is a subject, not a mode. These are deliberately
+read and authored editorial judgements. For example AED-0013 recalls an ordinary
+memory, AED-0030 appreciates enough, AED-0236 compares without competition.
+Grief, regret, forgiveness, relationship conflict and private identity material
+are conservatively private. AED-0047 explicitly asks about a private pleasure and
+was marked private during the second review pass. This is CTA suitability, not a
+medical/safety classifier. Re-review profiles whenever prompts change.
 
-For the current pool AED-0001 selects CAP-001, AED-0012 selects CAP-012,
-AED-0013 selects CAP-001 and AED-0400 selects CAP-004. No random generator,
-process-salted hash or queue position is involved. Identical ID and editorial
-data give identical results regardless of pool ordering. Changing active entries
-can change future selections; this is not a historical publication-copy snapshot.
+Profile counts: question 400; act 19, appreciate 14, compare 30, decide 41,
+imagine 71, notice 73, recall 50, reflect 81, relate 21; future 79, mixed 53,
+past 44, present 134, timeless 90; public replies permitted 249, private 151.
+These distributions reflect the actual corpus, not quotas.
+
+`data/captions.csv` has 134 active immutable IDs: the original CAP-001–012 text is
+unchanged; CAP-013–132 supply exactly three targeted captions for each of the 40
+exact Category/Subcategory pairs; CAP-133–134 add two quiet follow invitations.
+There are 120 targeted captions and 14 General fallbacks. General uses `*`/`*`;
+partial wildcards and unknown taxonomy pairs fail.
+
+Columns: `id`, `caption`, `active`, `category`, `subcategory`, `cta_role`,
+`prompt_forms`, `response_modes`, `time_focus`, `public_reply_required`, `notes`.
+Compatibility cells contain `*` alone or unique allowed values separated by `|`.
+Flags are exactly TRUE/FALSE. Casefolded, NFKC-normalized, whitespace-collapsed
+caption text must be unique. Loaders reject malformed rows/columns, unknown values,
+duplicate IDs, missing/extra profiles and unreachable active copy before review.
+
+| CTA role | Action | Catalogue count |
+| --- | --- | ---: |
+| reflect | Quiet internal thought | 34 |
+| journal | Writing/private exploration | 23 |
+| save_return | Save or revisit | 42 |
+| comment_reply | Explicit optional public response | 33 |
+| follow | Follow the account | 2 |
+
+Only `comment_reply` requires public-reply permission, enforced when constructing
+captions. The other roles never solicit public disclosure. Sensitive pairs use a
+second quiet caption instead of a comment invitation. Legacy CAP-007 remains
+reflection: its text asks no one to post publicly. CAP-008 allows uninterrupted
+thought without explicitly asking for writing, so its role is reflect.
+
+Broad compatibility is appropriate for copy without form/mode/time assumptions;
+question-specific wording is restricted to questions. Memory-detail reply copy is
+restricted to recall and past/mixed focus. No historical-comparison caption can
+ignore declared time/mode restrictions to fill a lane. Future statement Posts may
+use compatible General copy until targeted statement copy is authored.
+
+33 captions (24.6%) have one emoji; 101 have none. The only palette is 🪞, ✍️, 🌿,
+💭. No emoji dependency is needed. Tests enforce the actual palette, at most one
+mark, unique text and the current <=120-character editorial bound. Most lines are
+much shorter. No urgency, engagement bait, therapy claims or stacked actions.
+
+## Deterministic caption selection
+
+`select_caption(post, captions, profile, position=...)` is pure. It returns exact
+text plus caption ID, CTA role and General-fallback metadata. An exact nonblank
+`Post.caption_override` wins unchanged, even without a profile or catalogue;
+metadata is marked as owner override rather than assigning an inferred role.
+The existing domain/import boundary normalizes absent cells and rejects blank
+populated overrides. Automatically selected copy is not a persisted history record.
+
+For non-overrides, the profile must match the Post ID. Active captions must match
+form, primary mode, time focus and public-reply permission. No fallback ever drops
+these constraints. Publication positions are positive one-based integers:
+
+1. Every 30th: follow -> save_return -> reflect/journal.
+2. Otherwise every 9th: save_return -> reflect/journal.
+3. Otherwise every 3rd: comment_reply -> save_return -> reflect/journal.
+4. Other positions: reflect/journal only.
+
+Within **each lane**, prefer exact Category/Subcategory, then compatible General.
+Only after both fail, try the next safe lane. This lane-first ordering allows rare
+General follow invitations without replacing every scheduled CTA with targeted
+quiet copy. A private Post in a comment slot gets a compatible save/return caption,
+then quiet copy if needed. Quiet positions never escalate to a strong CTA.
+No candidate raises a clear Post-ID-only error.
+
+Equally eligible candidates sort by immutable CAP ID; choose
+`(numeric_post_id + position - 2) % candidate_count`. Caller ordering, process hash
+seed and global random state cannot affect selection. There is no second queue or
+stateful anti-repetition algorithm. Changing snapshots/position can change selected
+copy; callers requiring historical copy must retain it at a future publication
+boundary.
+
+Position is a required keyword. Explicit `position=None` means **quiet preview**,
+using `(numeric_post_id - 1) % candidate_count`, not an invented publication slot.
+Launch review instead uses actual positions in a pure seed-42 400-Post preview
+queue. It never reads, replaces or advances the persisted queue.
+
+`caption_catalog.py` owns CSV I/O; `copy_policy.py` has none and emits no logs.
+SQLite remains schema v2: profiles are versioned copy policy, not core Post state.
+Domain, importer, repository and queue-service behavior are unchanged.
+
+## Hashtags (unchanged)
 
 Hashtags are enabled by default, limited to one five-tag set:
 
@@ -61,28 +145,20 @@ not a new TOML setting or special sentinel in the Sheet dropdown. Future publica
 assembly should preserve the selected caption and append the selected set in its
 stored order after a blank line; append nothing when disabled/no set resolves.
 
-## Pure policy and runtime boundary
+## Review and maintenance
 
-`ask_every_day.copy_policy` supplies frozen `Caption`/`HashtagSet` values plus
-`select_caption` and `select_hashtag_set`. Callers supply editorial data and optional
-overrides. It performs no file/database/network access and no logging. IDs, active
-flags, blank copy, hashtag syntax, duplicate IDs/names/tags and ambiguous selection
-are validated. Current supported hashtag tokens use ASCII letters, digits and
-underscores after `#`; do not silently broaden this when editing the snapshot.
+Run `make caption-review` for 100 real queues (seeds 0–99), an ignored seed-42
+400-row CSV and aggregate JSON in `output/`. Run `make launch-review` to judge the
+20 production JPEG/caption combinations. See [caption review](caption-review.md)
+for measured distributions, repetition and editorial findings.
 
-AED-038 now retains nullable `Post.caption_override` and `Post.hashtag_set_id`
-through the versioned prompt snapshot and SQLite schema v2, automatically migrating
-existing v1 databases. Blank metadata becomes None; nonblank captions remain exact.
-Sheet display names resolve to stable TAG IDs at export preparation. The importer
-requires valid active IDs and preserves create-or-compare drift rejection. All 400
-Content overrides/references were still blank on 16 October 2026. Callers can pass
-these fields directly to the selection functions above. Automatically selected
-copy is still derived, not stored; final caption assembly and publication-history
-copy snapshots remain outside AED-038.
+Semantic suitability wins over percentage targets. In seed 42, quiet roles are
+66.75%, comment_reply 12.25%, save_return 17.75%, follow 3.25%. The comment share is
+below the aspirational 15–25% because private Posts redirect scheduled comments to
+save/return; no privacy flag is relaxed to hit a quota. Strong CTAs remain 33.25%.
 
-Config's Caption Selection and Hashtag Selection rows now describe these rules.
-Other Config settings and Content rows are unchanged. Edit the Sheet first, export
-the same columns in immutable ID order without altering values, verify exact
-readback against CSV, then run `make setup` and `make check`. Tests validate the
-snapshot, ten mappings, overrides, disabled/inactive behavior and cross-process
-determinism. No live Sheets access is needed in tests or at runtime.
+For AED-043 the repository snapshots are the authorized copy-authoring source;
+the existing Sheets tabs have not been expanded or synchronized. Prompt, taxonomy
+and hashtag authoring rules remain unchanged. Follow-up after owner acceptance:
+synchronize the expanded catalogue/profile vocabulary to editorial Sheets in a
+separate ticket. Runtime must continue using reviewed snapshots, never live Sheets.

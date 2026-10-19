@@ -33,6 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make caption-review` | Audit 100 preview queues and export a 400-Post caption review CSV |
 | `make launch-review` | Generate a 20-Post local visual/copy review gallery |
 | `make stage-media POST_ID=AED-0001` | Temporarily stage one validated JPEG over public HTTPS |
 | `make import-content` | Import the approved snapshot into configured local SQLite |

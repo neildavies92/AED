@@ -1,13 +1,135 @@
-id,caption,active,notes
-CAP-001,Take a few minutes with this one. 🪞,TRUE,General
-CAP-002,No right answer. Just your answer.,TRUE,General
-CAP-003,Write the first thing that comes to mind.,TRUE,Journaling
-CAP-004,Save this for your next quiet moment.,TRUE,Save CTA
-CAP-005,A question worth sitting with today.,TRUE,General
-CAP-006,Be honest with yourself on this one.,TRUE,Reflection
-CAP-007,What comes up for you?,TRUE,Engagement
-CAP-008,Give yourself five uninterrupted minutes with this.,TRUE,Journaling
-CAP-009,Your answer might surprise you.,TRUE,General
-CAP-010,Come back to this question tonight.,TRUE,Return CTA
-CAP-011,Write without editing yourself.,TRUE,Journaling
-CAP-012,One question. See where it takes you.,TRUE,Brand-aligned
+id,caption,active,category,subcategory,cta_role,prompt_forms,response_modes,time_focus,public_reply_required,notes
+CAP-001,Take a few minutes with this one. 🪞,TRUE,*,*,reflect,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-002,No right answer. Just your answer.,TRUE,*,*,reflect,question,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-003,Write the first thing that comes to mind.,TRUE,*,*,journal,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-004,Save this for your next quiet moment.,TRUE,*,*,save_return,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-005,A question worth sitting with today.,TRUE,*,*,reflect,question,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-006,Be honest with yourself on this one.,TRUE,*,*,reflect,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-007,What comes up for you?,TRUE,*,*,reflect,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-008,Give yourself five uninterrupted minutes with this.,TRUE,*,*,reflect,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-009,Your answer might surprise you.,TRUE,*,*,reflect,question,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-010,Come back to this question tonight.,TRUE,*,*,save_return,question,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-011,Write without editing yourself.,TRUE,*,*,journal,*,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-012,One question. See where it takes you.,TRUE,*,*,reflect,question,*,*,FALSE,Preserved AED-008 text; General fallback.
+CAP-013,Leave the labels aside for a moment.,TRUE,Self-awareness,Identity,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-014,Save this for a moment when you can hear your own thoughts. 🪞,TRUE,Self-awareness,Identity,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-015,"If you want, share a little of what feels like you.",TRUE,Self-awareness,Identity,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-016,Write what matters in your own words.,TRUE,Self-awareness,Values,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-017,Keep this for your next check-in with what matters.,TRUE,Self-awareness,Values,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-018,Which value came to mind? Share it if you like.,TRUE,Self-awareness,Values,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-019,Leave room on the page for a belief to be questioned.,TRUE,Self-awareness,Beliefs,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-020,Return to this when you have space to consider another view. ✍️,TRUE,Self-awareness,Beliefs,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-021,"If you feel like replying, what belief did this bring to mind?",TRUE,Self-awareness,Beliefs,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-022,Notice the pattern without asking yourself to solve it. 🪞,TRUE,Self-awareness,Patterns,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-023,Save this to revisit when a familiar pattern shows up.,TRUE,Self-awareness,Patterns,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-024,A private page can hold the version you rarely explain.,TRUE,Self-awareness,Patterns,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-025,"Give the change a name, even if it is still taking shape.",TRUE,Growth,Change,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-026,Keep this for a pause in the middle of change.,TRUE,Growth,Change,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-027,What part of change stood out? Share it if you want.,TRUE,Growth,Change,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-028,"Consider what the habit gives you, as well as what it asks.",TRUE,Growth,Habits,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-029,Save this for your next look at the routines in your day.,TRUE,Growth,Habits,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-030,"If you want to reply, which routine came to mind? 🌿",TRUE,Growth,Habits,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-031,Let a few private lines hold what that experience meant. ✍️,TRUE,Growth,Resilience,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-032,Return to this at a pace that feels comfortable for you.,TRUE,Growth,Resilience,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-033,There is room to reflect without making a lesson of everything.,TRUE,Growth,Resilience,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-034,"Stay curious about the uncomfortable part, if you have room today.",TRUE,Growth,Discomfort,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-035,Keep this for a moment when curiosity feels possible.,TRUE,Growth,Discomfort,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-036,"If you like, share one thought about being outside your comfort zone.",TRUE,Growth,Discomfort,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-037,Spend a moment with the person this brings to mind.,TRUE,Relationships,Connection,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-038,Save this for a quiet check-in with your connections.,TRUE,Relationships,Connection,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-039,What does connection look like for you? Reply if you want. 💭,TRUE,Relationships,Connection,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-040,Write the boundary as you would want to say it to yourself.,TRUE,Relationships,Boundaries,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-041,Return to this before giving an answer you want time to consider.,TRUE,Relationships,Boundaries,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-042,You can keep the honest version of this entirely private. ✍️,TRUE,Relationships,Boundaries,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-043,Try a few words on paper before finding the ones you mean.,TRUE,Relationships,Communication,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-044,Save this for a moment with enough space to find your words.,TRUE,Relationships,Communication,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-045,"If you want, share a thought about listening or being understood. ✍️",TRUE,Relationships,Communication,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-046,"Consider the small details of trust, without naming anyone.",TRUE,Relationships,Trust,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-047,Keep this for a quiet moment to think about trust. 🌿,TRUE,Relationships,Trust,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-048,What does trust look like in everyday life? Reply only if you like.,TRUE,Relationships,Trust,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-049,Let the memory take the shape it has for you now. ✍️,TRUE,Past & Healing,Memories,reflect,question,*,past|mixed,FALSE,Targeted; private reflection remains optional.
+CAP-050,Save this for a gentle return to a memory.,TRUE,Past & Healing,Memories,save_return,question,recall|compare|reflect|relate|imagine,past|mixed,FALSE,Targeted; private reflection remains optional.
+CAP-051,"If you want to share, which ordinary detail stayed with you?",TRUE,Past & Healing,Memories,comment_reply,question,recall,past|mixed,TRUE,Targeted; private reflection remains optional.
+CAP-052,Put what experience taught you into your own words.,TRUE,Past & Healing,Lessons,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-053,Keep this for another look at what experience has taught you.,TRUE,Past & Healing,Lessons,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-054,What lesson stayed with you? Share only what feels comfortable.,TRUE,Past & Healing,Lessons,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-055,Give the past some space on a private page. ✍️,TRUE,Past & Healing,Regret,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-056,Save this for a moment when looking back feels right.,TRUE,Past & Healing,Regret,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-057,You can leave this reflection unfinished for now.,TRUE,Past & Healing,Regret,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-058,"Let this stay private, with no deadline for an answer.",TRUE,Past & Healing,Forgiveness,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-059,Return to this only when you want to. 🌿,TRUE,Past & Healing,Forgiveness,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-060,"Write what forgiveness means to you, without deciding what comes next.",TRUE,Past & Healing,Forgiveness,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-061,Write down what matters about the goal before planning the route.,TRUE,Future,Goals,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-062,Keep this beside your plans for a quieter check-in.,TRUE,Future,Goals,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-063,Which part of a goal came into focus? Reply if you like. ✍️,TRUE,Future,Goals,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-064,Picture the direction before worrying about the whole map.,TRUE,Future,Direction,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-065,Save this for the next time you pause to consider your path. 💭,TRUE,Future,Direction,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-066,"If you want, share one thought about the direction you are taking.",TRUE,Future,Direction,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-067,Leave a few words for the person you are becoming. ✍️,TRUE,Future,Future Self,journal,question,imagine|act|decide|notice,future|mixed,FALSE,Targeted; private reflection remains optional.
+CAP-068,Keep this for a conversation with your future self.,TRUE,Future,Future Self,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-069,What would you like your future self to know? Reply if you want.,TRUE,Future,Future Self,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-070,Let the possibility exist on paper before making it a plan.,TRUE,Future,Possibility,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-071,Save this for a moment when you want to explore another possibility.,TRUE,Future,Possibility,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-072,What possibility came to mind? Share it if you like. 💭,TRUE,Future,Possibility,comment_reply,question,imagine|reflect|relate,future|mixed,TRUE,Targeted; private reflection remains optional.
+CAP-073,Give yourself room to name what feels brave to you.,TRUE,Confidence,Courage,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-074,Keep this for a moment when you want to consider courage quietly.,TRUE,Confidence,Courage,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-075,"If you want to reply, what does courage look like to you?",TRUE,Confidence,Courage,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-076,Look at the comparison from your own starting point.,TRUE,Confidence,Comparison,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-077,Return to this when you want some distance from a comparison.,TRUE,Confidence,Comparison,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-078,"If you like, share one thing this made you notice about comparison. 🪞",TRUE,Confidence,Comparison,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-079,Write your view down before looking for another opinion. ✍️,TRUE,Confidence,Self-trust,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-080,Save this for a pause before your next decision.,TRUE,Confidence,Self-trust,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-081,"If you want, share a thought this brought up about trusting your judgement.",TRUE,Confidence,Self-trust,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-082,Leave some space for the part of you that is not an achievement.,TRUE,Confidence,Self-worth,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-083,Keep this for a quieter moment with yourself. 🌿,TRUE,Confidence,Self-worth,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-084,Try writing to yourself with the care you would offer someone close.,TRUE,Confidence,Self-worth,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-085,Notice what makes the effort feel worth your time.,TRUE,Purpose & Work,Meaning,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-086,Save this for a pause to consider what feels meaningful.,TRUE,Purpose & Work,Meaning,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-087,"If you want, share what makes an effort feel worthwhile to you.",TRUE,Purpose & Work,Meaning,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-088,Describe the working life behind the title.,TRUE,Purpose & Work,Career,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-089,Keep this for your next quiet look at work.,TRUE,Purpose & Work,Career,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-090,What matters to you in an ordinary working day? Reply if you like. ✍️,TRUE,Purpose & Work,Career,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-091,Give the ambition and its cost a little space on the page.,TRUE,Purpose & Work,Ambition,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-092,Return to this when you want to check what you are reaching for.,TRUE,Purpose & Work,Ambition,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-093,"If you want, share a thought about what ambition means to you.",TRUE,Purpose & Work,Ambition,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-094,Let your own idea of satisfaction lead for a moment. 🌿,TRUE,Purpose & Work,Fulfilment,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-095,Save this for a pause at the end of a day.,TRUE,Purpose & Work,Fulfilment,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-096,What does a satisfying day mean to you? Share it if you want.,TRUE,Purpose & Work,Fulfilment,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-097,Give the overlooked detail a moment of attention.,TRUE,Gratitude & Perspective,Appreciation,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-098,Keep this for another look at what is already here.,TRUE,Gratitude & Perspective,Appreciation,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-099,"If you like, share one small thing you appreciate. 🌿",TRUE,Gratitude & Perspective,Appreciation,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-100,"Sit with what feels enough, without adding to the list.",TRUE,Gratitude & Perspective,Contentment,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-101,Save this for a moment of noticing what you already enjoy. 🌿,TRUE,Gratitude & Perspective,Contentment,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-102,"If you like, share one thought about what feels enough for you.",TRUE,Gratitude & Perspective,Contentment,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-103,Try describing this from one other point of view. 🪞,TRUE,Gratitude & Perspective,Perspective,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-104,Return to this when a little distance might offer another view.,TRUE,Gratitude & Perspective,Perspective,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-105,A private draft can leave room for more than one way of seeing things.,TRUE,Gratitude & Perspective,Perspective,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-106,"Write down where enough might be, in your own terms. ✍️",TRUE,Gratitude & Perspective,Enough,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-107,Keep this for the next time you want to consider a stopping point.,TRUE,Gratitude & Perspective,Enough,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-108,What does enough mean to you? Share a thought if you like.,TRUE,Gratitude & Perspective,Enough,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-109,Let the first step be a thought on the page for now.,TRUE,Life Audit,Start,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-110,Save this for a moment when you want to explore a beginning.,TRUE,Life Audit,Start,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-111,"If you want, share a small beginning you are considering. 🌿",TRUE,Life Audit,Start,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-112,"Consider what you would put down, without deciding today.",TRUE,Life Audit,Stop,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-113,Keep this for a quiet look at what still deserves your time.,TRUE,Life Audit,Stop,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-114,What might you make less room for? Reply only if you like.,TRUE,Life Audit,Stop,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-115,Give what is quietly working a little attention. 🌿,TRUE,Life Audit,Continue,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-116,Save this as a place to return to what you want to keep.,TRUE,Life Audit,Continue,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-117,What is worth continuing for you? Share it if you want.,TRUE,Life Audit,Continue,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-118,Sketch one possible adjustment before making a new plan.,TRUE,Life Audit,Change,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-119,Keep this for your next look at how the week works. ✍️,TRUE,Life Audit,Change,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-120,"If you like, share a small adjustment that came to mind.",TRUE,Life Audit,Change,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-121,Notice how your day feels from the inside.,TRUE,Everyday Life,Time,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-122,Save this for a pause with a little time of your own. 🌿,TRUE,Everyday Life,Time,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-123,"If you want, share one thought this brought up about your time.",TRUE,Everyday Life,Time,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-124,Let your attention stay here for a moment. 💭,TRUE,Everyday Life,Attention,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-125,Keep this for a break from the things asking for your attention.,TRUE,Everyday Life,Attention,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-126,What did this bring into focus? Share it if you like.,TRUE,Everyday Life,Attention,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-127,Notice what your energy is telling you today.,TRUE,Everyday Life,Energy,reflect,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-128,Return to this when you have room to check in with your energy.,TRUE,Everyday Life,Energy,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-129,"If you like, share what this made you notice about your energy. 🌿",TRUE,Everyday Life,Energy,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-130,Write the priorities in the order that feels honest to you. ✍️,TRUE,Everyday Life,Priorities,journal,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-131,Save this for your next pause before saying yes.,TRUE,Everyday Life,Priorities,save_return,question,*,*,FALSE,Targeted; private reflection remains optional.
+CAP-132,"If you like, share what you want to make room for.",TRUE,Everyday Life,Priorities,comment_reply,question,*,*,TRUE,Targeted; private reflection remains optional.
+CAP-133,Follow @ask.every.day for one question a day.,TRUE,*,*,follow,*,*,*,FALSE,General retention lane; every 30th publication position.
+CAP-134,"For a daily question to sit with, follow @ask.every.day.",TRUE,*,*,follow,*,*,*,FALSE,General retention lane; every 30th publication position.

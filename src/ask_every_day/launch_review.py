@@ -6,16 +6,22 @@ import logging
 import os
 import sqlite3
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import closing
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
+from ask_every_day.caption_catalog import (
+    load_captions,
+    load_profiles,
+    validate_reachability,
+)
 from ask_every_day.config import load_config
 from ask_every_day.content_import import load_hashtag_snapshot
 from ask_every_day.copy_policy import (
     Caption,
+    CaptionProfile,
     HashtagSet,
     select_caption,
     select_hashtag_set,
@@ -24,6 +30,7 @@ from ask_every_day.domain import Post, RendererConfig
 from ask_every_day.jpeg_export import export_jpeg
 from ask_every_day.logging_config import configure_logging
 from ask_every_day.png_export import export_png
+from ask_every_day.queue_generation import generate_queue
 from ask_every_day.renderer import render_svg
 from ask_every_day.repository import SQLiteRepository
 
@@ -59,27 +66,19 @@ class ReviewItem:
     post: Post
     caption: str
     hashtags: HashtagSet | None
-
-
-def load_captions(path: Path) -> tuple[Caption, ...]:
-    """Read the existing four-column snapshot, rejecting malformed editorial rows."""
-    with path.open(encoding="utf-8-sig", newline="") as stream:
-        rows = csv.reader(stream, strict=True)
-        if next(rows, []) != ["id", "caption", "active", "notes"]:
-            raise ValueError("Unexpected caption snapshot columns")
-        captions = []
-        for row in rows:
-            if len(row) != 4 or row[2] not in {"TRUE", "FALSE"}:
-                raise ValueError("Malformed caption snapshot row")
-            captions.append(Caption(row[0], row[1], row[2] == "TRUE"))
-    select_caption("AED-0001", captions)
-    return tuple(captions)
+    profile: CaptionProfile
+    position: int
+    caption_id: str | None
+    cta_role: str | None
 
 
 def select_review(
-    posts: Sequence[Post], captions: Sequence[Caption], hashtags: Sequence[HashtagSet]
+    posts: Sequence[Post],
+    captions: Sequence[Caption],
+    hashtags: Sequence[HashtagSet],
+    profiles: Mapping[str, CaptionProfile],
 ) -> tuple[ReviewItem, ...]:
-    """Select by immutable IDs, independently of caller ordering or queue state."""
+    """Use real seed-42 preview queue positions without reading/writing stored queues."""
     by_id = {post.id: post for post in posts}
     if len(by_id) != len(posts):
         raise ValueError("Duplicate Post IDs")
@@ -87,18 +86,29 @@ def select_review(
         raise ValueError(
             "Review Posts missing; import the approved production snapshot"
         )
-    return tuple(
-        ReviewItem(
-            by_id[post_id],
-            select_caption(post_id, captions, override=by_id[post_id].caption_override),
-            select_hashtag_set(
-                by_id[post_id].category,
-                hashtags,
-                explicit_set=by_id[post_id].hashtag_set_id,
-            ),
+    if set(profiles) != set(by_id):
+        raise ValueError("Caption profiles must match review database Post IDs exactly")
+    positions = {p.id: n for n, p in enumerate(generate_queue(posts, seed=42), 1)}
+    items = []
+    for post_id in REVIEW_IDS:
+        post = by_id[post_id]
+        selected = select_caption(
+            post, captions, profiles[post_id], position=positions[post_id]
         )
-        for post_id in REVIEW_IDS
-    )
+        items.append(
+            ReviewItem(
+                post,
+                selected.caption,
+                select_hashtag_set(
+                    post.category, hashtags, explicit_set=post.hashtag_set_id
+                ),
+                profiles[post_id],
+                positions[post_id],
+                selected.caption_id,
+                selected.cta_role,
+            )
+        )
+    return tuple(items)
 
 
 def gallery_html(items: Sequence[ReviewItem]) -> str:
@@ -111,6 +121,10 @@ def gallery_html(items: Sequence[ReviewItem]) -> str:
  width="1080" height="1350"><h2>{escape(p.id)}</h2>
 <p>{escape(p.category)} / {escape(p.subcategory)}</p>
 <p class="copy">{escape(item.caption)}</p>
+<p class="metadata">Preview queue position: {item.position} · seed 42<br>
+Caption: {escape(item.caption_id or "exact override")} · CTA: {escape(item.cta_role or "owner override")}<br>
+{escape(item.profile.prompt_form)} · {escape(item.profile.response_mode)} · {escape(item.profile.time_focus)}<br>
+Public reply: {"yes" if item.profile.public_reply_ok else "no"}</p>
 <p>{escape(tags.id + " — " + tags.name if tags else "No hashtag set")}</p>
 <p class="copy">{escape(" ".join(tags.hashtags) if tags else "")}</p>
 <p>Caption override: {"yes" if p.caption_override else "no"} · Hashtag override:
@@ -122,9 +136,10 @@ def gallery_html(items: Sequence[ReviewItem]) -> str:
 body{margin:2rem;background:#ece9e3;color:#25231f;font:16px system-ui}
 main{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:2rem}
 article{background:white;padding:1rem;min-width:0}img{width:100%;height:auto}
-h2{font-size:1.1rem}p{overflow-wrap:anywhere}.copy{white-space:pre-wrap}
+.metadata{font-size:.85rem;color:#595d55}h2{font-size:1.1rem}p{overflow-wrap:anywhere}.copy{white-space:pre-wrap}
 </style><h1>Ask Every Day — launch review</h1>
 <p>REVIEW_ITEM_COUNT production Posts · curated review order, not the publication queue.
+Captions use an in-memory seed-42 queue; stored queue state is untouched.
 All production Posts have highlights; no-highlight coverage is synthetic in tests.</p>
 <p>Owner visual and copy sign-off remains required before launch.</p><main>"""
         + "\n".join(cards)
@@ -183,6 +198,10 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("aed.toml"))
     parser.add_argument("--captions", type=Path, default=Path("data/captions.csv"))
     parser.add_argument("--hashtags", type=Path, default=Path("data/hashtags.csv"))
+    parser.add_argument(
+        "--profiles", type=Path, default=Path("data/caption_profiles.csv")
+    )
+    parser.add_argument("--taxonomy", type=Path, default=Path("data/taxonomy.csv"))
     args = parser.parse_args()
     configure_logging()
     try:
@@ -191,8 +210,11 @@ def main() -> None:
             sqlite3.connect(config.database_path.as_uri() + "?mode=ro", uri=True)
         ) as connection:
             posts = SQLiteRepository(connection).list_posts()
+        captions = load_captions(args.captions, args.taxonomy)
+        profiles = load_profiles(args.profiles, [p.id for p in posts])
+        validate_reachability(posts, captions, profiles)
         items = select_review(
-            posts, load_captions(args.captions), load_hashtag_snapshot(args.hashtags)
+            posts, captions, load_hashtag_snapshot(args.hashtags), profiles
         )
         path = generate_review(
             items,
