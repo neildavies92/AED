@@ -345,7 +345,7 @@ def stage_media(
     config: AppConfig,
     post_id: str,
     *,
-    startup_timeout: float = 30,
+    startup_timeout: float = 120,
     fetch_timeout: float = 15,
 ) -> Iterator[StagedMedia]:
     """Keep one validated JPEG public until context exit; never contact Instagram."""
