@@ -104,7 +104,7 @@ length when present, and exact complete staged bytes, bounded to image length + 
 Retry readiness GETs within the startup window to tolerate initial tunnel routing
 propagation. No downstream Instagram calls or POST retries occur here.
 
-Defaults: startup budget 30 seconds and fetch socket timeout 15 seconds; both must
+Defaults: startup budget 120 seconds and fetch socket timeout 15 seconds; both must
 be finite, positive and at most 120 seconds. Read chunks check an elapsed deadline
 between reads, preventing indefinite body trickling. These are not a hard total
 wall-clock limit: DNS resolution is OS-controlled, response headers are parsed by
@@ -141,17 +141,47 @@ process-group descendant cleanup, forced termination fallback, no-auth byte
 verification, redirects, bounded reads, safe diagnostics/logs and CLI interruption.
 Normal tests forbid external socket connections; CI never needs Cloudflare.
 
-**Live public HTTPS acceptance has not occurred.** `cloudflared` is absent on this
-machine (rechecked 18 October); no installation/download was authorized or performed.
-Fake-provider tests and localhost GETs are not evidence of a public tunnel or Meta
-fetch. After separately installing/approving the binary and confirming outbound
-access, use one generated nonsensitive JPEG, fetch the printed HTTPS URL without
-credentials from outside the origin, compare exact bytes, close staging, and
-confirm the URL no longer serves an active session. Do not leave a background
-process or record its URL in logs/PRs/Kanban.
+### Readiness investigation — 20 October 2026
 
-AED-041 stays In Progress, Completed blank, pending PR review/merge, integrated-main
-CI and that live acceptance. AED-022 remains Blocked on public staging and owner
+On main `7b72311b56d4036a58b2b3130f2576cacb48eff4`, `cloudflared` 2026.10.1
+was already installed. `make setup` and `make check` passed (691 tests,
+Ruff/Pyright clean); integrated-main CI run 39253619228 was green.
+The real `make stage-media POST_ID=AED-0001` still exhausted its former
+30-second startup budget. The generated RGB 1080×1350 JPEG (96,129 bytes)
+passed authoritative validation, and its local origin stayed healthy.
+
+Temporary diagnostics confirmed that AED captured exactly the emitted provider
+URL and hostname. Independently launching the same binary, arguments and isolated
+environment reproduced initial system DNS failures (`gaierror`, errno 8).
+In two correctly paired fresh sessions, public DNS-over-HTTPS had A records by
+5.21/5.18 seconds after URL emission, but system DNS recovered only at
+81.77/81.72 seconds. Unauthenticated HTTPS returned HTTP 200 `image/jpeg` and
+the exact canonical bytes at 82.03/82.01 seconds; unchanged `_verify()` passed.
+URL emission itself took 5.10/4.17 seconds after subprocess launch.
+Deferring the first system lookup until public DNS resolved in a separate
+diagnostic reached exact-byte HTTPS at 1.53 seconds after emission.
+
+These observations support an initial negative DNS answer remaining cached beyond
+the old startup budget; the particular cache layer was not identified. AED-045
+raises the default to the existing 120-second maximum to cover the observed
+86–87-second total startup with headroom. It retains bounded retries, the
+15-second fetch timeout and all verification/security checks. DNS-over-HTTPS
+was diagnostic only; production still uses standard system resolution.
+Tunnel processes, origin listeners and temporary configuration were cleaned up.
+No account/login/token/domain setup, sensitive logging or Instagram request
+was involved. Earlier malformed-hostname and stale-tunnel timing measurements
+are excluded; a stopped manual origin's 502 was not a staging defect.
+
+**Full real-command live acceptance remains pending.** Diagnostic helper success
+does not complete AED-041. After AED-045 review/merge and green integrated-main
+CI, rerun the production command, independently fetch its HTTPS URL without
+credentials, compare exact bytes, close staging, and confirm the old URL no
+longer serves the asset. Do not leave a background process or record its URL
+in logs/PRs/Kanban.
+
+AED-041 stays Blocked, Completed blank, pending AED-045 and full live acceptance.
+Any subsequent evidence PR must also be merged with green integrated-main CI
+before completion. AED-022 remains Blocked on public staging and owner
 account/app/scoped-token/identity/explicit-post authorization. AED-023 remains
 Backlog. No OAuth, posting, scheduler, retry/reconciliation, permanent hosting,
 secret storage or downstream ticket is implemented here.

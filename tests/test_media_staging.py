@@ -14,8 +14,9 @@ from contextlib import contextmanager
 from email.message import Message
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 import pytest
 from PIL import Image
@@ -444,6 +445,55 @@ def test_failed_fetch_sanitized_and_origin_closed(source, monkeypatch):
             pytest.fail("Bad fetch became ready")
     assert caught.value.__context__ is None
     assert "secret" not in str(caught.value)
+    assert stopped == [True]
+    assert not any(t.name == "aed-media-origin" for t in threading.enumerate())
+
+
+@pytest.mark.parametrize("dns_recovers", [True, False])
+def test_default_readiness_budget_handles_cached_dns_failure(
+    source, monkeypatch, dns_recovers
+):
+    repository, config, data = source
+    elapsed = 0.0
+    stopped = []
+    attempts = []
+    process = Mock()
+    process.poll.return_value = None
+
+    def advance(seconds):
+        nonlocal elapsed
+        elapsed += seconds
+
+    @contextmanager
+    def tunnel(port, timeout):
+        advance(5)
+        try:
+            yield "https://private-example.trycloudflare.com", process
+        finally:
+            stopped.append(True)
+
+    def fetch(request, *, timeout):
+        attempts.append(elapsed)
+        assert 0 < timeout <= 15
+        # Live evidence: about 5s to emit the URL, then 82s for DNS recovery.
+        if not dns_recovers or elapsed < 87:
+            raise URLError(socket.gaierror(socket.EAI_NONAME, "DNS not ready"))
+        return Response(data)
+
+    monkeypatch.setattr(
+        module, "time", SimpleNamespace(monotonic=lambda: elapsed, sleep=advance)
+    )
+    monkeypatch.setattr(module, "_tunnel", tunnel)
+    monkeypatch.setattr(module, "build_opener", lambda *args: Mock(open=fetch))
+    if dns_recovers:
+        with module.stage_media(repository, config, "AED-0001"):
+            assert 87 <= elapsed < 120
+    else:
+        with pytest.raises(module.StagingError, match="readiness timed out"):
+            with module.stage_media(repository, config, "AED-0001"):
+                pytest.fail("Unresolved provider became ready")
+        assert elapsed == 120
+    assert attempts[0] == 5
     assert stopped == [True]
     assert not any(t.name == "aed-media-origin" for t in threading.enumerate())
 
