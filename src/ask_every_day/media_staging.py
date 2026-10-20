@@ -12,6 +12,7 @@ import shutil
 import signal
 import socket
 import sqlite3
+import ssl
 import stat
 import subprocess
 import tempfile
@@ -19,10 +20,10 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import ExitStack, closing, contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from ask_every_day.config import load_config
@@ -38,6 +39,46 @@ logger = logging.getLogger(
 
 class StagingError(ValueError):
     """Safe operational diagnostic; never includes a URL, payload or raw output."""
+
+
+@dataclass(frozen=True)
+class _VerifyFailure:
+    failure_category: str
+    error_type: str
+    errno: int | None = None
+    http_status: int | None = None
+
+
+class _VerificationError(StagingError):
+    def __init__(self, category: str, message: str, status: int | None = None):
+        super().__init__(message)
+        self.failure = _VerifyFailure(category, "StagingError", http_status=status)
+
+
+def _classify_failure(error: BaseException) -> _VerifyFailure:
+    for _ in range(4):
+        if isinstance(error, _VerificationError):
+            return error.failure
+        if isinstance(error, HTTPError):
+            status = error.code if type(error.code) is int else None
+            return _VerifyFailure("http_status", "HTTPError", http_status=status)
+        if isinstance(error, URLError) and isinstance(error.reason, BaseException):
+            error = error.reason
+        else:
+            break
+    if isinstance(error, URLError):
+        return _VerifyFailure("unknown", "Exception")
+    for kind, category in (
+        (socket.gaierror, "dns"),
+        (TimeoutError, "timeout"),
+        (ssl.SSLError, "tls"),
+        (ConnectionError, "connect"),
+        (OSError, "os_error"),
+    ):
+        if isinstance(error, kind):
+            code = error.errno if type(error.errno) is int else None
+            return _VerifyFailure(category, kind.__name__, errno=code)
+    return _VerifyFailure("unknown", "Exception")
 
 
 @dataclass(frozen=True)
@@ -245,6 +286,8 @@ def _tunnel(port: int, timeout: float) -> Iterator[tuple[str, subprocess.Popen]]
                 "--config",
                 str(config),
                 "--no-autoupdate",
+                "--protocol",
+                "http2",
                 "--url",
                 f"http://127.0.0.1:{port}",
             ],
@@ -304,27 +347,40 @@ def _verify(url: str, data: bytes, timeout: float) -> None:
     try:
         response = opener.open(request, timeout=timeout)
     except HTTPError as error:
+        status = error.code if type(error.code) is int else None
         error.close()
-        raise StagingError("Public fetch returned an unsuccessful status") from None
+        raise _VerificationError(
+            "http_status", "Public fetch returned an unsuccessful status", status
+        ) from None
     with response:
-        if (
-            response.status != 200
-            or response.headers.get_content_type() != "image/jpeg"
-        ):
-            raise StagingError("Public fetch did not return HTTP 200 image/jpeg")
+        if response.status != 200:
+            status = response.status if type(response.status) is int else None
+            raise _VerificationError(
+                "http_status", "Public fetch did not return HTTP 200", status
+            )
+        if response.headers.get_content_type() != "image/jpeg":
+            raise _VerificationError(
+                "content_type", "Public fetch did not return image/jpeg"
+            )
         length = response.headers.get("Content-Length")
         if length is not None and length != str(len(data)):
-            raise StagingError("Public fetch length differs from the staged JPEG")
+            raise _VerificationError(
+                "content_length", "Public fetch length differs from the staged JPEG"
+            )
         received = bytearray()
         while len(received) <= len(data):
             if time.monotonic() >= deadline:
-                raise StagingError("Public fetch exceeded its read deadline")
+                raise _VerificationError(
+                    "read_deadline", "Public fetch exceeded its read deadline"
+                )
             chunk = response.read1(min(65536, len(data) + 1 - len(received)))
             if not chunk:
                 break
             received.extend(chunk)
         if received != data:
-            raise StagingError("Public fetch bytes differ from the staged JPEG")
+            raise _VerificationError(
+                "byte_mismatch", "Public fetch bytes differ from the staged JPEG"
+            )
 
 
 def _close(stack: ExitStack) -> None:
@@ -377,23 +433,53 @@ def stage_media(
     # Setup exceptions are sanitized without retaining a secret-bearing chain.
     stack = ExitStack()
     diagnostic = "Media staging failed; check tunnel availability and public fetch"
+    started = time.monotonic()
+    attempts = 0
+    last_failure: _VerifyFailure | None = None
+    next_retry_log = 0.0
+    tunnel_ready_ms: int | None = None
+
+    def readiness_context() -> dict[str, object]:
+        return {
+            "operation": "public_verify",
+            "attempt_count": attempts,
+            "elapsed_ms": int((time.monotonic() - started) * 1000),
+            "tunnel_ready_ms": tunnel_ready_ms,
+            **(asdict(last_failure) if last_failure else {}),
+        }
+
     try:
-        deadline = time.monotonic() + startup_timeout
+        deadline = started + startup_timeout
         port, route = stack.enter_context(_origin(data))
         base, process = stack.enter_context(
             _tunnel(port, max(0.001, deadline - time.monotonic()))
         )
         public_url = _provider_url(base) + route
+        tunnel_ready_ms = int((time.monotonic() - started) * 1000)
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise StagingError("Public HTTPS readiness timed out")
+                category = last_failure.failure_category if last_failure else "unknown"
+                raise StagingError(
+                    f"Public HTTPS readiness timed out (last failure: {category})"
+                )
             verified = False
+            attempts += 1
             try:
                 _verify(public_url, data, min(fetch_timeout, remaining))
                 verified = True
-            except Exception:
-                pass
+            except Exception as error:
+                last_failure = _classify_failure(error)
+                if time.monotonic() >= next_retry_log:
+                    logger.info(
+                        "media_staging_readiness_retry",
+                        extra={
+                            "event": "media_staging_readiness_retry",
+                            **context,
+                            **readiness_context(),
+                        },
+                    )
+                    next_retry_log = time.monotonic() + 10
             if verified:
                 break
             if process.poll() is not None:
@@ -418,12 +504,14 @@ def stage_media(
                     "event": "media_staging_failed",
                     "error_type": "StagingError",
                     **context,
+                    **readiness_context(),
                 },
             )
         raise StagingError(diagnostic)
     try:
         logger.info(
-            "media_staging_ready", extra={"event": "media_staging_ready", **context}
+            "media_staging_ready",
+            extra={"event": "media_staging_ready", **context, **readiness_context()},
         )
         yield StagedMedia(post_id, public_url)
     finally:

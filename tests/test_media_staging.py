@@ -6,6 +6,7 @@ import logging
 import os
 import signal
 import socket
+import ssl
 import subprocess
 import sys
 import threading
@@ -227,6 +228,8 @@ while True: time.sleep(1)
         assert process.poll() is None
         arguments = process.args
         assert isinstance(arguments, list) and isinstance(arguments[3], str)
+        assert "--protocol" in arguments
+        assert arguments[arguments.index("--protocol") + 1] == "http2"
         directory = Path(arguments[3]).parent
         assert directory.is_dir()
     assert process.poll() is not None
@@ -570,3 +573,186 @@ def test_cli_missing_database_never_creates_it(source, monkeypatch, capsys):
     output = capsys.readouterr()
     assert output.out == ""
     assert "Cannot stage media" in output.err
+
+
+@pytest.mark.parametrize("wrapped", [False, True])
+@pytest.mark.parametrize(
+    "error, category, error_type, code",
+    [
+        (socket.gaierror(8, "private URL"), "dns", "gaierror", 8),
+        (TimeoutError("private URL"), "timeout", "TimeoutError", None),
+        (ssl.SSLError(1, "private URL"), "tls", "SSLError", 1),
+        (ConnectionRefusedError(61, "private URL"), "connect", "ConnectionError", 61),
+        (OSError(5, "private URL"), "os_error", "OSError", 5),
+        (ValueError("private URL"), "unknown", "Exception", None),
+    ],
+)
+def test_verification_failure_classification(
+    wrapped, error, category, error_type, code
+):
+    failure = module._classify_failure(URLError(error) if wrapped else error)
+    assert failure == module._VerifyFailure(category, error_type, errno=code)
+    assert "private URL" not in repr(failure)
+
+
+def test_http_error_classification_without_headers_or_reason():
+    error = HTTPError("private URL", 502, "private reason", Message(), None)
+    error.headers["Set-Cookie"] = "private cookie"
+    assert module._classify_failure(error) == module._VerifyFailure(
+        "http_status", "HTTPError", http_status=502
+    )
+
+
+def test_unknown_and_cyclic_url_errors_are_safe():
+    error = URLError("private URL")
+    assert module._classify_failure(error).failure_category == "unknown"
+    error.reason = error
+    assert module._classify_failure(error).failure_category == "unknown"
+    secret_type = type("private-secret", (Exception,), {})
+    assert module._classify_failure(secret_type()).error_type == "Exception"
+
+
+def test_real_urllib_connection_error_wrapping(monkeypatch):
+    assert socket.timeout is TimeoutError
+
+    def refused(self):
+        raise ConnectionRefusedError(61, "private URL")
+
+    monkeypatch.setattr(http.client.HTTPConnection, "connect", refused)
+    with pytest.raises(URLError) as caught:
+        module._verify("http://127.0.0.1:1/private", b"", 1)
+    assert isinstance(caught.value.reason, ConnectionRefusedError)
+    assert module._classify_failure(caught.value).failure_category == "connect"
+
+
+@pytest.mark.parametrize(
+    "response, category, status",
+    [
+        (Response(b"jpeg", status=502), "http_status", 502),
+        (Response(b"jpeg", content_type="text/html"), "content_type", None),
+        (Response(b"jpeg", length=3), "content_length", None),
+        (Response(b"nope"), "byte_mismatch", None),
+    ],
+)
+def test_response_failure_categories(monkeypatch, response, category, status):
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(return_value=response))
+    )
+    with pytest.raises(module.StagingError) as caught:
+        module._verify("https://private.test/private.jpg", b"jpeg", 1)
+    assert module._classify_failure(caught.value) == module._VerifyFailure(
+        category, "StagingError", http_status=status
+    )
+    assert response.closed
+
+
+def test_read_deadline_classification(source, monkeypatch):
+    _, _, data = source
+    response = Response(data)
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(return_value=response))
+    )
+    monkeypatch.setattr(module.time, "monotonic", Mock(side_effect=[0, 3]))
+    with pytest.raises(module.StagingError) as caught:
+        module._verify("https://private.test/private.jpg", data, 2)
+    assert module._classify_failure(caught.value).failure_category == "read_deadline"
+
+
+def test_readiness_diagnostics_are_safe_and_rate_limited(source, monkeypatch, caplog):
+    repository, config, data = source
+    elapsed = 0.0
+    attempts = 0
+    process = Mock()
+    process.poll.return_value = None
+    secret = "https://private.test/private-route caption hashtag token cookie"
+
+    def advance(seconds):
+        nonlocal elapsed
+        elapsed += seconds
+
+    @contextmanager
+    def tunnel(port, timeout):
+        yield "https://private-example.trycloudflare.com", process
+
+    def verify(*args):
+        nonlocal attempts
+        attempts += 1
+        error = socket.gaierror(8, secret) if attempts % 2 else ssl.SSLError(1, secret)
+        raise URLError(error)
+
+    monkeypatch.setattr(module, "_tunnel", tunnel)
+    monkeypatch.setattr(module, "_verify", verify)
+    monkeypatch.setattr(
+        module, "time", SimpleNamespace(monotonic=lambda: elapsed, sleep=advance)
+    )
+    with caplog.at_level(logging.INFO):
+        with pytest.raises(
+            module.StagingError, match="last failure: (dns|tls)"
+        ) as caught:
+            with module.stage_media(repository, config, "AED-0001"):
+                pytest.fail("Unverified provider became ready")
+    records = [r for r in caplog.records if r.name == module.__name__]
+    retries = [r for r in records if r.event == "media_staging_readiness_retry"]
+    assert 1 <= len(retries) <= 12
+    assert all(
+        b.elapsed_ms - a.elapsed_ms >= 9999 for a, b in zip(retries, retries[1:])
+    )
+    final = json.loads(JSONFormatter().format(records[-1]))
+    assert final["event"] == "media_staging_failed"
+    assert final["attempt_count"] == attempts
+    assert final["elapsed_ms"] == 120000
+    assert final["failure_category"] in {"dns", "tls"}
+    assert final["errno"] in {1, 8}
+    output = caplog.text + str(caught.value) + repr(caught.value.__context__)
+    output += "".join(JSONFormatter().format(r) for r in records)
+    for private in (
+        secret,
+        "private-route",
+        "private-example",
+        "Private prompt",
+        repr(data),
+    ):
+        assert private not in output
+
+
+def test_dns_recovery_does_not_accept_disconnected_tunnel(source, monkeypatch, caplog):
+    repository, config, _ = source
+    elapsed = 0.0
+    process = Mock()
+    process.poll.return_value = None
+    stopped = []
+
+    def advance(seconds):
+        nonlocal elapsed
+        elapsed += seconds
+
+    @contextmanager
+    def tunnel(port, timeout):
+        advance(5)
+        try:
+            yield "https://private-example.trycloudflare.com", process
+        finally:
+            stopped.append(True)
+
+    def fetch(request, *, timeout):
+        assert 0 < timeout <= 15
+        if elapsed < 80:
+            raise URLError(socket.gaierror(8, "private hostname"))
+        raise HTTPError(request.full_url, 530, "private response", Message(), BytesIO())
+
+    monkeypatch.setattr(
+        module, "time", SimpleNamespace(monotonic=lambda: elapsed, sleep=advance)
+    )
+    monkeypatch.setattr(module, "_tunnel", tunnel)
+    monkeypatch.setattr(module, "build_opener", lambda *args: Mock(open=fetch))
+    with caplog.at_level(logging.INFO):
+        with pytest.raises(module.StagingError, match="last failure: http_status"):
+            with module.stage_media(repository, config, "AED-0001"):
+                pytest.fail("Disconnected tunnel became ready")
+    records = [r for r in caplog.records if r.name == module.__name__]
+    assert records[1].failure_category == "dns"
+    assert records[-1].failure_category == "http_status"
+    assert records[-1].http_status == 530
+    assert elapsed == 120
+    assert stopped == [True]
+    assert not any(t.name == "aed-media-origin" for t in threading.enumerate())

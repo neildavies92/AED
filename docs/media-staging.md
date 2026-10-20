@@ -94,7 +94,9 @@ Exceptions from the caller propagate after cleanup.
 Use a subprocess argument array with no shell and a new POSIX session/process
 group. An isolated temporary HOME, explicit empty config, minimal environment and
 `--no-autoupdate` avoid inheriting user tunnel credentials/config or updating the
-binary. Capture and drain provider output into a bounded buffer without logging
+binary. Explicit `--protocol http2` uses Cloudflare's TLS-protected TCP transport
+instead of waiting for automatic QUIC fallback on networks where UDP fails.
+Capture and drain provider output into a bounded buffer without logging
 it. Accept only a base `https://<single-label>.trycloudflare.com` URL: no userinfo,
 port, path, query, fragment or suffix-host tricks. Add only the generated route.
 
@@ -123,9 +125,16 @@ failure, not proof that an Instagram operation succeeded. This is POSIX tooling
 for the current macOS development/Linux CI environments.
 
 Operational events are `media_staging_started`, `media_staging_ready`,
-`media_staging_failed`, `media_staging_stopped`, with only safe post ID/operation/
-error-type context. No URL, random route, payload, editorial copy, credentials or
-raw provider output is logged. The library never configures logging handlers.
+`media_staging_failed`, `media_staging_stopped`, and `media_staging_readiness_retry`.
+Retry summaries appear on the first failure and at most once per ten seconds;
+the final ready/failed event includes the attempt count, elapsed milliseconds,
+tunnel URL discovery milliseconds, and last verification failure if present.
+Safe categories distinguish DNS, connect, TLS, timeout, HTTP status, content type,
+content length, byte mismatch, read deadline, other OS errors and unknown errors.
+Only known exception class names and numeric errno/status are retained, never
+exception messages. A timeout names its last failure category. No URL, hostname,
+random route, payload, editorial copy, credentials or raw provider output is
+logged. The library never configures logging handlers.
 
 ## Verification and remaining acceptance
 
@@ -172,14 +181,60 @@ No account/login/token/domain setup, sensitive logging or Instagram request
 was involved. Earlier malformed-hostname and stale-tunnel timing measurements
 are excluded; a stopped manual origin's 502 was not a staging defect.
 
-**Full real-command live acceptance remains pending.** Diagnostic helper success
-does not complete AED-041. After AED-045 review/merge and green integrated-main
-CI, rerun the production command, independently fetch its HTTPS URL without
-credentials, compare exact bytes, close staging, and confirm the old URL no
-longer serves the asset. Do not leave a background process or record its URL
-in logs/PRs/Kanban.
+### AED-046 follow-up — 20 October 2026
 
-AED-041 stays Blocked, Completed blank, pending AED-045 and full live acceptance.
+AED-045 merged into `e98fe1c298ce86b2b6b14aa45ef5a33d8511f0f1`, with green
+integrated CI run 39433518348 and 693 passing tests. The real command still
+exhausted 120 seconds. Tested diagnostic-only instrumentation reproduced this:
+788 attempts, URL discovery at 4.366 seconds, initial `gaierror` errno 8, then
+HTTP 530 through the final failure at 120.011 seconds. The original suppressed
+exceptions concealed the change from DNS failure to an unsuccessful HTTP status.
+
+A second production-path run with temporary observers counted 645 DNS failures,
+then 140 HTTP 530 responses, transitioning at 79.831 seconds. For that same fresh
+hostname, system `dig`, direct `dig @1.1.1.1` and Cloudflare DNS-over-HTTPS had A
+records by the 26.928-second observation; Python and curl still failed resolution
+until roughly 80 seconds. Both clients then received HTTP 530. This places the
+resolution lag in the OS resolver path rather than Python alone; no cache daemon
+was conclusively identified. DNS recovered within 120 seconds and was not the
+remaining blocker. No resolver override, cache flush or system setting change
+was made.
+
+A further reproduction confirmed the captured URL matched the provider banner.
+The origin thread remained alive and its exact route returned HTTP 200 with the
+canonical bytes throughout. The tunnel process remained alive, but provider
+output inspected only in memory showed six QUIC dial timeouts and zero registered
+connections before the deadline. Process liveness did not establish tunnel
+connectivity. Automatic transport selection had not produced a working connection
+within the startup budget; increasing the DNS allowance could not fix that.
+
+A controlled diagnostic changed only the subprocess transport to `http2`.
+It registered one connection with no QUIC dial failures. After 641 initial DNS
+failures, unchanged `_verify()` accepted HTTP 200, `image/jpeg`, advertised length
+and exact bytes at 78.805 seconds. Origin/tunnel cleanup completed. This supports
+explicit HTTP/2 as the narrow correction for the observed QUIC transport failure;
+it does not identify which network device caused the UDP timeouts. Cloudflare
+documents [transport selection][transport] and [connection troubleshooting][troubleshooting].
+HTTP/2 retains TLS but does not support QUIC's post-quantum key agreement.
+
+The fix preserves the 120-second startup budget, 15-second fetch timeout, retry
+cadence, standard system DNS, no proxies/auth/cookies/redirects, loopback-only
+origin, secret exact route, JPEG validation, bounded reads, exact-byte verification,
+isolated subprocess environment and process-group cleanup. Deterministic tests
+pin the transport argument and reproduce DNS recovery followed by persistent 530
+without accepting an unverified tunnel. Classifier and log tests cover unsafe
+exception text and bounded summary output. No Instagram request occurred.
+
+**Full real-command live acceptance remains pending.** Diagnostic success does
+not complete AED-041. After AED-046 review/merge and green integrated-main CI,
+rerun the production command, independently fetch its HTTPS URL without credentials,
+compare exact bytes, close staging, and confirm the old URL no longer serves the
+asset. Do not leave a background process or record its URL in logs/PRs/Kanban.
+
+[transport]: https://developers.cloudflare.com/tunnel/reference/run-parameters/#protocol
+[troubleshooting]: https://developers.cloudflare.com/tunnel/troubleshooting/
+
+AED-041 stays Blocked, Completed blank, pending AED-046 and full live acceptance.
 Any subsequent evidence PR must also be merged with green integrated-main CI
 before completion. AED-022 remains Blocked on public staging and owner
 account/app/scoped-token/identity/explicit-post authorization. AED-023 remains

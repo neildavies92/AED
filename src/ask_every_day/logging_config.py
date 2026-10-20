@@ -21,6 +21,7 @@ _TEXT_FIELDS = frozenset(
         "config_path",
         "database_path",
         "error_type",
+        "failure_category",
     }
 )
 _INTEGER_FIELDS = frozenset(
@@ -43,6 +44,10 @@ _INTEGER_FIELDS = frozenset(
         "seed",
         "post_count",
         "attempts",
+        "attempt_count",
+        "elapsed_ms",
+        "tunnel_ready_ms",
+        "errno",
         "category_min_gap",
         "subcategory_min_gap",
     }
