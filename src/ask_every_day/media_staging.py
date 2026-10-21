@@ -47,12 +47,24 @@ class _VerifyFailure:
     error_type: str
     errno: int | None = None
     http_status: int | None = None
+    provider_error_code: int | None = None
 
 
 class _VerificationError(StagingError):
-    def __init__(self, category: str, message: str, status: int | None = None):
+    def __init__(
+        self,
+        category: str,
+        message: str,
+        status: int | None = None,
+        provider_error_code: int | None = None,
+    ):
         super().__init__(message)
-        self.failure = _VerifyFailure(category, "StagingError", http_status=status)
+        self.failure = _VerifyFailure(
+            category,
+            "StagingError",
+            http_status=status,
+            provider_error_code=provider_error_code,
+        )
 
 
 def _classify_failure(error: BaseException) -> _VerifyFailure:
@@ -228,7 +240,64 @@ def _provider_url(value: str) -> str:
     return value
 
 
-def _drain(stream, discovered: queue.Queue[str], stop: threading.Event) -> None:
+@dataclass
+class _TunnelState:
+    started: float
+    registered: set[int] = field(default_factory=set, repr=False)
+    registration_count: int = 0
+    disconnect_count: int = 0
+    transport_failures: int = 0
+    first_registered_ms: int | None = None
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def observe(self, line: bytes) -> None:
+        event = re.match(
+            rb"^\S+ (?:INF|ERR|WRN) (Registered tunnel connection|"
+            rb"Unregistered tunnel connection|Connection terminated|"
+            rb"Unable to establish connection with Cloudflare edge|"
+            rb"Failed to dial a quic connection)(?: |$)",
+            line,
+        )
+        index = re.search(rb"(?:^| )connIndex=([0-9]{1,3})(?: |$)", line)
+        if event is None or index is None or int(index[1]) > 255:
+            return
+        with self.lock:
+            if event[1] == b"Registered tunnel connection":
+                self.registered.add(int(index[1]))
+                self.registration_count += 1
+                if self.first_registered_ms is None:
+                    self.first_registered_ms = int(
+                        (time.monotonic() - self.started) * 1000
+                    )
+            else:
+                was_registered = int(index[1]) in self.registered
+                self.registered.discard(int(index[1]))
+                if event[1] in {
+                    b"Unregistered tunnel connection",
+                    b"Connection terminated",
+                }:
+                    self.disconnect_count += int(was_registered)
+                else:
+                    self.transport_failures += 1
+
+    def snapshot(self) -> dict[str, object]:
+        with self.lock:
+            return {
+                "tunnel_transport": "http2",
+                "connector_registered": bool(self.registered),
+                "connector_registration_count": self.registration_count,
+                "connector_disconnect_count": self.disconnect_count,
+                "connector_transport_failures": self.transport_failures,
+                "connector_first_registered_ms": self.first_registered_ms,
+            }
+
+
+def _drain(
+    stream,
+    discovered: queue.Queue[str],
+    stop: threading.Event,
+    state: _TunnelState | None = None,
+) -> None:
     buffer = b""
     try:
         while not stop.is_set():
@@ -240,6 +309,8 @@ def _drain(stream, discovered: queue.Queue[str], stop: threading.Event) -> None:
             buffer = (buffer + chunk)[-16384:]
             while b"\n" in buffer:
                 line, buffer = buffer.split(b"\n", 1)
+                if state is not None:
+                    state.observe(line)
                 for candidate in re.findall(rb"https?://[^\s|]+", line):
                     if b"trycloudflare" in candidate and discovered.empty():
                         try:
@@ -269,7 +340,9 @@ def _stop(process: subprocess.Popen) -> None:
 
 
 @contextmanager
-def _tunnel(port: int, timeout: float) -> Iterator[tuple[str, subprocess.Popen]]:
+def _tunnel(
+    port: int, timeout: float, state: _TunnelState | None = None
+) -> Iterator[tuple[str, subprocess.Popen]]:
     binary = shutil.which("cloudflared")
     if binary is None:
         raise StagingError(
@@ -303,7 +376,7 @@ def _tunnel(port: int, timeout: float) -> Iterator[tuple[str, subprocess.Popen]]
         stop_reader = threading.Event()
         reader = threading.Thread(
             target=_drain,
-            args=(process.stdout, discovered, stop_reader),
+            args=(process.stdout, discovered, stop_reader, state),
             name="aed-tunnel-output",
         )
         try:
@@ -339,6 +412,23 @@ class _NoRedirect(HTTPRedirectHandler):
         return None
 
 
+_ERROR_BODY_LIMIT = 8192
+
+
+def _provider_error_code(error: HTTPError, deadline: float) -> int | None:
+    body = bytearray()
+    try:
+        while len(body) < _ERROR_BODY_LIMIT and time.monotonic() < deadline:
+            chunk = error.read1(min(1024, _ERROR_BODY_LIMIT - len(body)))
+            if not chunk:
+                break
+            body.extend(chunk)
+    except Exception:
+        return None
+    match = re.search(rb"\b(?:Error[ \t\r\n]+|error code:[ \t]*)(1[0-9]{3})\b", body)
+    return int(match[1]) if match else None
+
+
 def _verify(url: str, data: bytes, timeout: float) -> None:
     # No cookies, auth handlers, environment proxy credentials or redirects.
     opener = build_opener(ProxyHandler({}), _NoRedirect())
@@ -348,9 +438,17 @@ def _verify(url: str, data: bytes, timeout: float) -> None:
         response = opener.open(request, timeout=timeout)
     except HTTPError as error:
         status = error.code if type(error.code) is int else None
-        error.close()
+        try:
+            provider_code = (
+                _provider_error_code(error, deadline) if status == 530 else None
+            )
+        finally:
+            error.close()
         raise _VerificationError(
-            "http_status", "Public fetch returned an unsuccessful status", status
+            "http_status",
+            "Public fetch returned an unsuccessful status",
+            status,
+            provider_code,
         ) from None
     with response:
         if response.status != 200:
@@ -435,6 +533,7 @@ def stage_media(
     diagnostic = "Media staging failed; check tunnel availability and public fetch"
     started = time.monotonic()
     attempts = 0
+    tunnel_state = _TunnelState(started)
     last_failure: _VerifyFailure | None = None
     next_retry_log = 0.0
     tunnel_ready_ms: int | None = None
@@ -445,6 +544,7 @@ def stage_media(
             "attempt_count": attempts,
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             "tunnel_ready_ms": tunnel_ready_ms,
+            **tunnel_state.snapshot(),
             **(asdict(last_failure) if last_failure else {}),
         }
 
@@ -452,7 +552,7 @@ def stage_media(
         deadline = started + startup_timeout
         port, route = stack.enter_context(_origin(data))
         base, process = stack.enter_context(
-            _tunnel(port, max(0.001, deadline - time.monotonic()))
+            _tunnel(port, max(0.001, deadline - time.monotonic()), tunnel_state)
         )
         public_url = _provider_url(base) + route
         tunnel_ready_ms = int((time.monotonic() - started) * 1000)
@@ -495,6 +595,7 @@ def stage_media(
         _close(stack)
         raise
     if failure:
+        failure_context = readiness_context()
         try:
             _close(stack)
         finally:
@@ -504,7 +605,7 @@ def stage_media(
                     "event": "media_staging_failed",
                     "error_type": "StagingError",
                     **context,
-                    **readiness_context(),
+                    **failure_context,
                 },
             )
         raise StagingError(diagnostic)

@@ -225,8 +225,79 @@ pin the transport argument and reproduce DNS recovery followed by persistent 530
 without accepting an unverified tunnel. Classifier and log tests cover unsafe
 exception text and bounded summary output. No Instagram request occurred.
 
+### AED-047 investigation — 21 October 2026
+
+AED-046 merged into `e250590ceebd1bf0e232cf8f163ea82bb5b08048`; integrated CI
+39563282247 passed. Baseline `make setup` and `make check` passed all 715 tests,
+Ruff and Pyright. The subsequent operator acceptance reported DNS errno 8 followed
+by HTTP 530 through the 120-second deadline despite explicit HTTP/2. The previous
+verifier discarded the error body, so that run's specific provider code remains
+unknown. Cloudflare documents that [530 carries a more specific 1XXX error][error530];
+530 alone does not establish connector failure or error 1033.
+
+The diagnostic change reads at most 8,192 error-body bytes, in chunks of at most
+1,024, only for HTTP 530 and within the existing fetch read deadline/socket timeout.
+It extracts a four-digit 1XXX code only after `Error ` or `error code:`; unknown
+formatting, absent bodies or read errors yield null. It closes HTTPError on all
+paths, including interruption, and never records body text or HTML.
+
+The bounded provider-output reader recognizes known cloudflared 2026.10.1
+registration, unregistration, termination and transport-failure markers. It keeps
+only bounded connection-slot state, counts and first-registration timing, discarding
+IDs, addresses and raw lines. Existing rate-limited summaries include
+`provider_error_code`, `connector_registered`, registration/disconnect/transport
+failure counts, `connector_first_registered_ms` and `tunnel_transport`.
+Registration timing is relative to staging start. False means no currently observed
+registered connection, not proof of provider health; unfamiliar output remains
+unclassified. Public exact-byte verification is still required. The final failure
+summary snapshots state before cleanup, so deliberate shutdown cannot masquerade
+as the cause of a failed fetch.
+
+Three fresh diagnostic-only runs while the operator reported the work VPN
+connected did **not** reproduce 530:
+
+| Run | URL discovery | First registration | Verified readiness | Verification attempts |
+| --- | --- | --- | --- | --- |
+| CLI with canonical config | 5.464s | 6.342s | 79.741s | 646 |
+| CLI with temporary health observers | 5.166s | 5.729s | 79.526s | 647 |
+| `make stage-media POST_ID=AED-0001` | 4.791s | 5.656s | 78.737s | 645 |
+| Same observed CLI after VPN disconnection | 4.861s | 5.394s | 78.994s | 643 |
+
+All registered one HTTP/2 connection with no observed pre-shutdown disconnect or
+transport failure. Initial DNS errors were followed by HTTP 200, `image/jpeg` and
+exact canonical bytes. In the observed run, local GETs repeatedly confirmed the
+origin thread/listener, exact route, content type and bytes remained healthy;
+the tunnel process stayed alive. System/direct dig and DoH had records by 6.171s,
+while Python/curl still reported DNS failure through the 77.056s observation;
+public verification succeeded at 79.526s. The CLI and make runs were intentionally
+interrupted after readiness; make received SIGINT. Owned tunnels, origins and
+temporary configuration were cleaned up. Endpoints and bodies were never persisted.
+
+The operator then disconnected the VPN and requested a comparison. The fourth
+run again saw DNS errors followed by verified HTTP 200, with no 530, disconnects
+or transport failures. Its local origin remained healthy and tunnel process alive;
+both closed after readiness. Python/curl still failed DNS at 76.523s before exact
+public verification at 78.994s. DoH first had records at 15.960s, direct dig at
+26.054s and system dig at 66.423s; intermediate resolver results varied. This
+single disconnected comparison falls within the connected runs' readiness range
+and does not establish the VPN as the cause of the earlier 530.
+
+The reported 530 remains unexplained: no live 1XXX code, first-530 timing or
+registration-to-530 correlation was obtained. These successes do not prove why
+HTTP/2 was insufficient in the operator's failed run. No root-cause fix, registration
+gate, restart/recreation, transport change or timeout increase is justified by
+this evidence. This PR closes the diagnostic gap only. Tests exercise bounded
+530 parsing, strict numeric markers, missing/oversized/erroring bodies, deadlines,
+interruption, state transitions, cleanup snapshots and redaction; synthetic 1033
+fixtures are not live evidence. AED-047 remains In Progress pending a captured
+recurrence and evidence-based resolution, review/merge, integrated CI and acceptance.
+The 120s/15s budgets, retry cadence and all existing security checks are unchanged.
+No Instagram request or downstream ticket work occurred.
+
+[error530]: https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-530/
+
 **Full real-command live acceptance remains pending.** Diagnostic success does
-not complete AED-041. After AED-046 review/merge and green integrated-main CI,
+not complete AED-041. After AED-047 review/merge and green integrated-main CI,
 rerun the production command, independently fetch its HTTPS URL without credentials,
 compare exact bytes, close staging, and confirm the old URL no longer serves the
 asset. Do not leave a background process or record its URL in logs/PRs/Kanban.
@@ -234,7 +305,7 @@ asset. Do not leave a background process or record its URL in logs/PRs/Kanban.
 [transport]: https://developers.cloudflare.com/tunnel/reference/run-parameters/#protocol
 [troubleshooting]: https://developers.cloudflare.com/tunnel/troubleshooting/
 
-AED-041 stays Blocked, Completed blank, pending AED-046 and full live acceptance.
+AED-041 stays Blocked, Completed blank, pending AED-047 and full live acceptance.
 Any subsequent evidence PR must also be merged with green integrated-main CI
 before completion. AED-022 remains Blocked on public staging and owner
 account/app/scoped-token/identity/explicit-post authorization. AED-023 remains
