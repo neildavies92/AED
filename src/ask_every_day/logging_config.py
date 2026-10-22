@@ -22,6 +22,7 @@ _TEXT_FIELDS = frozenset(
         "database_path",
         "error_type",
         "failure_category",
+        "tunnel_transport",
     }
 )
 _INTEGER_FIELDS = frozenset(
@@ -48,10 +49,17 @@ _INTEGER_FIELDS = frozenset(
         "elapsed_ms",
         "tunnel_ready_ms",
         "errno",
+        "provider_error_code",
+        "connector_registration_count",
+        "connector_disconnect_count",
+        "connector_transport_failures",
+        "connector_first_registered_ms",
         "category_min_gap",
         "subcategory_min_gap",
     }
 )
+
+_BOOLEAN_FIELDS = frozenset({"connector_registered"})
 
 
 class JSONFormatter(logging.Formatter):
@@ -69,12 +77,14 @@ class JSONFormatter(logging.Formatter):
             if isinstance(event, str) and _EVENT.fullmatch(event)
             else "log_record",
         }
-        for field in sorted(_TEXT_FIELDS | _INTEGER_FIELDS):
+        for field in sorted(_TEXT_FIELDS | _INTEGER_FIELDS | _BOOLEAN_FIELDS):
             if field not in record.__dict__:
                 continue
             value = record.__dict__[field]
             if value is None:
                 payload[field] = None
+            elif field in _BOOLEAN_FIELDS and type(value) is bool:
+                payload[field] = value
             elif field in _INTEGER_FIELDS and type(value) is int:
                 payload[field] = value
             elif (

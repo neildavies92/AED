@@ -390,7 +390,7 @@ def test_lifecycle_and_safe_logs_on_downstream_exception(source, monkeypatch, ca
     process.poll.return_value = None
 
     @contextmanager
-    def tunnel(port, timeout):
+    def tunnel(port, timeout, state=None):
         try:
             yield "https://private-example.trycloudflare.com", process
         finally:
@@ -433,7 +433,7 @@ def test_failed_fetch_sanitized_and_origin_closed(source, monkeypatch):
     stopped = []
 
     @contextmanager
-    def tunnel(port, timeout):
+    def tunnel(port, timeout, state=None):
         try:
             yield "https://private-example.trycloudflare.com", process
         finally:
@@ -468,7 +468,7 @@ def test_default_readiness_budget_handles_cached_dns_failure(
         elapsed += seconds
 
     @contextmanager
-    def tunnel(port, timeout):
+    def tunnel(port, timeout, state=None):
         advance(5)
         try:
             yield "https://private-example.trycloudflare.com", process
@@ -671,7 +671,7 @@ def test_readiness_diagnostics_are_safe_and_rate_limited(source, monkeypatch, ca
         elapsed += seconds
 
     @contextmanager
-    def tunnel(port, timeout):
+    def tunnel(port, timeout, state=None):
         yield "https://private-example.trycloudflare.com", process
 
     def verify(*args):
@@ -727,7 +727,7 @@ def test_dns_recovery_does_not_accept_disconnected_tunnel(source, monkeypatch, c
         elapsed += seconds
 
     @contextmanager
-    def tunnel(port, timeout):
+    def tunnel(port, timeout, state=None):
         advance(5)
         try:
             yield "https://private-example.trycloudflare.com", process
@@ -756,3 +756,229 @@ def test_dns_recovery_does_not_accept_disconnected_tunnel(source, monkeypatch, c
     assert elapsed == 120
     assert stopped == [True]
     assert not any(t.name == "aed-media-origin" for t in threading.enumerate())
+
+
+@pytest.mark.parametrize(
+    "status, body, code",
+    [
+        (530, b"<h1>Error 1033</h1>", 1033),
+        (530, b"error code: 1016\n", 1016),
+        (530, b"Error 1999", 1999),
+        (530, b"Error 999", None),
+        (530, b"Error 10330", None),
+        (530, b"Error 1033abc", None),
+        (530, b"<p>Ray 1033 year 1999</p>", None),
+        (530, b"malformed\xff body", None),
+        (530, b"", None),
+        (530, b"x" * module._ERROR_BODY_LIMIT + b" Error 1033", None),
+        (503, b"Error 1033", None),
+    ],
+)
+def test_bounded_provider_error_classification(monkeypatch, status, body, code):
+    class BoundedBody(BytesIO):
+        total = 0
+
+        def read1(self, size: int | None = -1):
+            assert size is not None and 0 < size <= 1024
+            result = super().read1(size)
+            self.total += len(result)
+            assert self.total <= module._ERROR_BODY_LIMIT
+            return result
+
+    stream = BoundedBody(body)
+    error = HTTPError(
+        "https://private.test/secret.jpg", status, "private", Message(), stream
+    )
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(side_effect=error))
+    )
+    with pytest.raises(module.StagingError) as caught:
+        module._verify(error.url, b"private image", 1)
+    failure = module._classify_failure(caught.value)
+    assert failure.http_status == status
+    assert failure.provider_error_code == code
+    assert stream.closed
+    assert stream.total == (
+        min(len(body), module._ERROR_BODY_LIMIT) if status == 530 else 0
+    )
+    assert "private" not in repr(failure)
+
+
+@pytest.mark.parametrize("mode", ["missing", "read_error", "expired"])
+def test_provider_body_failure_is_optional_and_closed(monkeypatch, mode):
+    stream = BytesIO(b"Error 1033") if mode != "missing" else None
+    error = HTTPError(
+        "https://private.test/secret.jpg", 530, "private", Message(), stream
+    )
+    if mode == "read_error":
+        monkeypatch.setattr(error, "read1", Mock(side_effect=OSError("private body")))
+    if mode == "expired":
+        monkeypatch.setattr(module.time, "monotonic", Mock(side_effect=[0, 2]))
+    close = Mock(wraps=error.close)
+    monkeypatch.setattr(error, "close", close)
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(side_effect=error))
+    )
+    with pytest.raises(module.StagingError) as caught:
+        module._verify(error.url, b"private image", 1)
+    assert module._classify_failure(caught.value).provider_error_code is None
+    close.assert_called_once()
+    if stream is not None:
+        assert stream.closed
+
+
+def test_connector_state_tracks_registration_and_disconnect_without_secrets(
+    monkeypatch,
+):
+    monkeypatch.setattr(module.time, "monotonic", lambda: 12.5)
+    state = module._TunnelState(10)
+    secret = b" connection=private-id ip=192.0.2.1 location=private https://private.test/secret"
+    state.observe(
+        b"2026-10-21T00:00:00Z INF Registered tunnel connection connIndex=0" + secret
+    )
+    state.observe(
+        b"2026-10-21T00:00:00Z INF Registered tunnel connection connIndex=1" + secret
+    )
+    state.observe(
+        b"2026-10-21T00:00:00Z INF Unregistered tunnel connection connIndex=0" + secret
+    )
+    assert state.snapshot()["connector_registered"] is True
+    state.observe(
+        b"2026-10-21T00:00:00Z ERR Connection terminated connIndex=1" + secret
+    )
+    snapshot = state.snapshot()
+    assert snapshot["connector_registered"] is False
+    assert snapshot["connector_registration_count"] == 2
+    assert snapshot["connector_disconnect_count"] == 2
+    assert snapshot["connector_first_registered_ms"] == 2500
+    assert "private" not in repr(state) + repr(snapshot)
+    before = snapshot.copy()
+    for line in (
+        b"raw Registered tunnel connection connIndex=0",
+        b"2026-10-21 INF Registered tunnel connection connIndex=999",
+        b"2026-10-21 INF Registered tunnel connection connIndex=0oops",
+        b"2026-10-21 INF request error=Registered tunnel connection connIndex=0",
+    ):
+        state.observe(line)
+    assert state.snapshot() == before
+
+
+def test_output_reader_collects_safe_state_and_keeps_cleanup(tmp_path, monkeypatch):
+    fake_binary(
+        tmp_path,
+        monkeypatch,
+        """import time
+print('https://quiet-test.trycloudflare.com', flush=True)
+print('2026-10-21T00:00:00Z INF Registered tunnel connection connIndex=0 connection=private-id ip=192.0.2.1 protocol=http2', flush=True)
+while True: time.sleep(1)
+""",
+    )
+    state = module._TunnelState(time.monotonic())
+    with module._tunnel(12345, 2, state) as (_, process):
+        deadline = time.monotonic() + 1
+        while (
+            not state.snapshot()["connector_registered"] and time.monotonic() < deadline
+        ):
+            time.sleep(0.01)
+        assert state.snapshot()["connector_registered"] is True
+        assert state.snapshot()["connector_registration_count"] == 1
+    assert process.poll() is not None
+    assert not any(t.name == "aed-tunnel-output" for t in threading.enumerate())
+
+
+def test_provider_code_and_connector_logs_never_include_raw_data(
+    source, monkeypatch, caplog
+):
+    repository, config, data = source
+    elapsed = 0.0
+    secret = b"<html>https://private.test/private-route Error 1033 private-id</html>"
+    process = Mock()
+    process.poll.return_value = None
+
+    def advance(seconds):
+        nonlocal elapsed
+        elapsed += seconds
+
+    @contextmanager
+    def tunnel(port, timeout, state):
+        state.observe(
+            b"2026-10-21 INF Registered tunnel connection connIndex=0 connection=private-id"
+        )
+        try:
+            yield "https://private-example.trycloudflare.com", process
+        finally:
+            state.observe(b"2026-10-21 INF Unregistered tunnel connection connIndex=0")
+
+    def fetch(*args, **kwargs):
+        raise HTTPError(
+            "https://private.test/private-route",
+            530,
+            "private",
+            Message(),
+            BytesIO(secret),
+        )
+
+    monkeypatch.setattr(
+        module, "time", SimpleNamespace(monotonic=lambda: elapsed, sleep=advance)
+    )
+    monkeypatch.setattr(module, "_tunnel", tunnel)
+    monkeypatch.setattr(module, "build_opener", lambda *args: Mock(open=fetch))
+    with caplog.at_level(logging.INFO):
+        with pytest.raises(module.StagingError):
+            with module.stage_media(repository, config, "AED-0001"):
+                pytest.fail("Unverified response became ready")
+    records = [r for r in caplog.records if r.name == module.__name__]
+    final = json.loads(JSONFormatter().format(records[-1]))
+    assert final["provider_error_code"] == 1033
+    assert final["connector_registered"] is True
+    assert final["connector_registration_count"] == 1
+    assert len([r for r in records if r.event == "media_staging_readiness_retry"]) <= 12
+    output = caplog.text + "".join(JSONFormatter().format(r) for r in records)
+    for value in (
+        "private.test",
+        "private-route",
+        "private-id",
+        "private-example",
+        "<html>",
+        repr(data),
+        secret.decode(),
+    ):
+        assert value not in output
+
+
+def test_provider_error_body_respects_existing_fetch_deadline(monkeypatch):
+    stream = BytesIO(b"x" * 2048 + b" Error 1033")
+    error = HTTPError("https://private.test/secret", 530, "private", Message(), stream)
+    read = Mock(wraps=error.read1)
+    monkeypatch.setattr(error, "read1", read)
+    monkeypatch.setattr(module.time, "monotonic", Mock(side_effect=[0, 0.5, 2]))
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(side_effect=error))
+    )
+    with pytest.raises(module.StagingError) as caught:
+        module._verify(error.url, b"private image", 1)
+    assert module._classify_failure(caught.value).provider_error_code is None
+    read.assert_called_once_with(1024)
+    assert stream.closed
+
+
+def test_provider_error_body_closes_on_interruption(monkeypatch):
+    stream = BytesIO(b"Error 1033")
+    error = HTTPError("https://private.test/secret", 530, "private", Message(), stream)
+    monkeypatch.setattr(error, "read1", Mock(side_effect=KeyboardInterrupt))
+    monkeypatch.setattr(
+        module, "build_opener", lambda *args: Mock(open=Mock(side_effect=error))
+    )
+    with pytest.raises(KeyboardInterrupt):
+        module._verify(error.url, b"private image", 1)
+    assert stream.closed
+
+
+def test_transport_failure_clears_observed_registration():
+    state = module._TunnelState(time.monotonic())
+    state.observe(b"2026-10-21 INF Registered tunnel connection connIndex=0")
+    state.observe(
+        b'2026-10-21 ERR Unable to establish connection with Cloudflare edge error="private timeout" connIndex=0'
+    )
+    assert state.snapshot()["connector_registered"] is False
+    assert state.snapshot()["connector_transport_failures"] == 1
