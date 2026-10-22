@@ -8,15 +8,17 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Protocol
 from urllib.error import HTTPError
-from urllib.parse import parse_qs, urlencode, urlsplit
+from urllib.parse import parse_qs, urlencode
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from ask_every_day.instagram_client import InstagramClient, InstagramIdentity
 
 SCOPES = frozenset({"instagram_business_basic", "instagram_business_content_publish"})
 EXPECTED_USERNAME = "ask.every.day"
+REDIRECT_URI = "https://localhost:8765/oauth/instagram/callback"
 _MAX_RESPONSE = 65_536
 _LOG = logging.getLogger(__name__)
 
@@ -72,28 +74,18 @@ def _unique_object(pairs: list[tuple[str, object]]) -> dict:
 class AuthConfig:
     app_id: str
     redirect_uri: str = field(repr=False)
+    tls_certificate: Path | None = field(default=None, repr=False)
+    tls_private_key: Path | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         _id(self.app_id)
-        valid = False
-        try:
-            parts = urlsplit(self.redirect_uri)
-            valid = (
-                parts.scheme == "https"
-                and bool(parts.hostname)
-                and parts.username is None
-                and parts.password is None
-                and not parts.query
-                and not parts.fragment
-                and bool(parts.path)
-                and parts.port != 0
-                and len(self.redirect_uri) <= 2048
-                and not any(c.isspace() or ord(c) < 32 for c in self.redirect_uri)
-            )
-        except (TypeError, ValueError, AttributeError):
-            pass
-        if not valid:
+        if self.redirect_uri != REDIRECT_URI:
             raise AuthError("redirect_configuration")
+        if (self.tls_certificate is None) != (self.tls_private_key is None) or any(
+            value is not None and not isinstance(value, Path)
+            for value in (self.tls_certificate, self.tls_private_key)
+        ):
+            raise AuthError("tls_configuration")
 
 
 @dataclass(frozen=True)

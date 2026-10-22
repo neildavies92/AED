@@ -1,4 +1,4 @@
-"""Local credential setup/status; browser login awaits a verified callback route."""
+"""Browser login and local credential setup/status with safe metadata output."""
 
 import argparse
 import getpass
@@ -11,6 +11,7 @@ from pathlib import Path
 
 from ask_every_day.credential_store import KeychainCredentialStore
 from ask_every_day.instagram_auth import AuthConfig, AuthError
+from ask_every_day.instagram_login import login
 from ask_every_day.logging_config import configure_logging
 
 _LOG = logging.getLogger("ask_every_day.instagram_auth")
@@ -24,8 +25,14 @@ def load_auth_config(path: Path) -> AuthConfig:
         if len(payload) > 8192:
             raise ValueError
         data = tomllib.loads(payload.decode("utf-8"))
-        if set(data) != {"app_id", "redirect_uri"}:
+        required = {"app_id", "redirect_uri"}
+        optional = {"tls_certificate", "tls_private_key"}
+        if not required <= set(data) or set(data) - required - optional:
             raise ValueError
+        for name in optional & set(data):
+            if not isinstance(data[name], str) or not data[name]:
+                raise ValueError
+            data[name] = Path(data[name]).expanduser()
         result = AuthConfig(**data)
     except Exception:
         pass
@@ -40,19 +47,20 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("instagram-auth.toml"))
     args = parser.parse_args()
     configure_logging()
-    if args.command == "login":
-        parser.exit(
-            2,
-            "Instagram browser login is blocked: establish a Meta-accepted callback "
-            "route first. The attempted HTTP loopback redirect was rejected; see "
-            "docs/instagram-auth.md. No authorization request was made.\n",
-        )
     failure = None
     output: dict[str, object] = {}
     try:
         config = load_auth_config(args.config)
         store = KeychainCredentialStore(config.app_id)
-        if args.command == "bootstrap":
+        if args.command == "login":
+            credential = login(config, store)
+            output = {
+                "connected": True,
+                "account": "@ask.every.day",
+                "credential_status": "valid",
+                "expires_at": credential.expires_at.isoformat(),
+            }
+        elif args.command == "bootstrap":
             if not sys.stdin.isatty():
                 raise AuthError("interactive_input_required")
             store.set_app_secret(getpass.getpass("Instagram App Secret (hidden): "))
@@ -78,6 +86,8 @@ def main() -> None:
                     expires_at=credential.expires_at.isoformat(),
                     refresh_due=credential.expires_at - now <= timedelta(days=7),
                 )
+    except KeyboardInterrupt:
+        failure = "cancelled"
     except AuthError as error:
         failure = error.operation
     except Exception:
@@ -91,7 +101,14 @@ def main() -> None:
                 "error_type": "AuthError",
             },
         )
-        parser.exit(1, "Instagram credential operation failed; check local setup.\n")
+        message = {
+            "localhost_certificate": "Configure trusted localhost TLS certificate files",
+            "missing_app_secret": "Run make instagram-auth-bootstrap first",
+            "browser_startup": "Could not open the system browser",
+            "callback_timeout": "Instagram login timed out; start a fresh login",
+            "cancelled": "Instagram login cancelled",
+        }.get(failure, "Instagram credential operation failed; check local setup")
+        parser.exit(1, message + "; see docs/instagram-auth.md.\n")
     print(json.dumps(output, separators=(",", ":")))
 
 

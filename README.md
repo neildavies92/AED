@@ -33,7 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
-| `make instagram-login` | Report the pending OAuth callback prerequisite; browser login is blocked |
+| `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
 | `make instagram-auth-bootstrap` | Store the App Secret through a hidden prompt in macOS Keychain |
 | `make instagram-auth-status` | Inspect safe local Instagram credential metadata |
 | `make instagram-logout` | Remove the local Instagram credential and App Secret |
@@ -113,7 +113,9 @@ For controlled manual acceptance, [public media staging](docs/media-staging.md)
 serves one canonical JPEG through an externally installed `cloudflared` Quick
 Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publish.
 
-[Instagram authentication](docs/instagram-auth.md) provides OAuth/token and macOS
-Keychain foundations for the direct Instagram client. Browser login remains
-blocked on verification of a Meta-accepted callback route. These commands do not
-create Instagram media or publish posts.
+[Instagram authentication](docs/instagram-auth.md) provides browser OAuth, a
+loopback HTTPS callback, account binding and macOS Keychain credential lifecycle.
+Meta accepted the localhost redirect and the owner accepted the tester invitation.
+Local TLS/config/secret setup and safe live login acceptance remain pending.
+These commands do not create Instagram media or publish posts. Webhooks are not
+required for this scope, and App Review is deferred for tester acceptance.

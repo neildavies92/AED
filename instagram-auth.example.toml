@@ -1,3 +1,7 @@
-# Non-secret settings only. Copy to ignored instagram-auth.toml after callback setup.
+# Non-secret settings only. Copy to ignored instagram-auth.toml.
+# Replace the fake App ID and paths. Never put App Secret/token or TLS PEM here.
+# Keep this exact Meta-accepted redirect; no trailing slash.
 app_id = "YOUR_INSTAGRAM_APP_ID"
-redirect_uri = "https://callback.example.invalid/oauth/instagram/callback"
+redirect_uri = "https://localhost:8765/oauth/instagram/callback"
+tls_certificate = "/REPLACE_WITH_PRIVATE_DIRECTORY/localhost-cert.pem"
+tls_private_key = "/REPLACE_WITH_PRIVATE_DIRECTORY/localhost-key.pem"

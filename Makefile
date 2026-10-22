@@ -6,7 +6,7 @@ CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-c
 .PHONY: help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
-	@echo "make instagram-login Explain the current OAuth callback setup blocker"
+	@echo "make instagram-login Connect Instagram using browser login and local HTTPS"
 	@echo "make instagram-auth-bootstrap Store the Instagram App Secret in macOS Keychain"
 	@echo "make instagram-auth-status Inspect safe local credential metadata"
 	@echo "make instagram-logout Remove local Instagram credential and App Secret"

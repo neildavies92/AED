@@ -16,7 +16,7 @@ def setup(tmp_path, monkeypatch):
     config = tmp_path / "auth.toml"
     config.write_text(
         'app_id="100000000000001"\n'
-        'redirect_uri="https://callback.example.invalid/oauth/"\n'
+        'redirect_uri="https://localhost:8765/oauth/instagram/callback"\n'
     )
     store = Mock()
     store.load.return_value = None
@@ -30,16 +30,33 @@ def run(monkeypatch, config, command):
     cli.main()
 
 
-def test_login_stops_before_secret_access_or_authorization(setup, monkeypatch, capsys):
+def test_login_runs_orchestration_and_prints_only_safe_metadata(
+    setup, monkeypatch, capsys
+):
     config, store = setup
+    connected = Mock(expires_at=datetime(2026, 12, 1, tzinfo=UTC))
+    operation = Mock(return_value=connected)
+    monkeypatch.setattr(cli, "login", operation)
+    run(monkeypatch, config, "login")
+    assert operation.call_args.args[1] is store
+    assert json.loads(capsys.readouterr().out) == {
+        "connected": True,
+        "account": "@ask.every.day",
+        "credential_status": "valid",
+        "expires_at": "2026-12-01T00:00:00+00:00",
+    }
+
+
+@pytest.mark.parametrize(
+    "error", [AuthError("localhost_certificate"), KeyboardInterrupt()]
+)
+def test_login_setup_and_cancellation_are_safe(setup, monkeypatch, capsys, error):
+    config, _ = setup
+    monkeypatch.setattr(cli, "login", Mock(side_effect=error))
     with pytest.raises(SystemExit) as caught:
         run(monkeypatch, config, "login")
-    assert caught.value.code == 2
-    assert "Meta-accepted callback" in capsys.readouterr().err
-    assert not store.mock_calls
-    factory = cli.KeychainCredentialStore
-    assert isinstance(factory, Mock)
-    factory.assert_not_called()
+    assert caught.value.code == 1
+    assert "docs/instagram-auth.md" in capsys.readouterr().err
 
 
 def test_missing_status_is_safe_and_offline(setup, monkeypatch, capsys):
@@ -71,7 +88,7 @@ def test_status_contains_no_token_id_or_redirect(setup, monkeypatch, capsys, exp
     data = json.loads(output)
     assert data["connected"] and data["credential_valid"] is (not expired)
     assert data["account"] == "@ask.every.day" and data["refresh_due"]
-    for private in ("SYNTHETIC_PRIVATE_TOKEN", "100000000000001", "callback.example"):
+    for private in ("SYNTHETIC_PRIVATE_TOKEN", "100000000000001", "localhost"):
         assert private not in output
 
 
@@ -118,6 +135,8 @@ def test_cli_error_never_prints_raw_exception(setup, monkeypatch, capsys, caplog
     [
         'app_id="123"\napp_secret="SYNTHETIC_PRIVATE_SECRET"',
         'app_id="123"\nredirect_uri="http://127.0.0.1/callback"',
+        'app_id="123"\nredirect_uri="https://localhost:8765/oauth/instagram/callback"\ntls_certificate="/fake/path"',
+        'app_id="123"\nredirect_uri="https://localhost:8765/oauth/instagram/callback"\ntls_certificate=42\ntls_private_key="/fake/path"',
         "SYNTHETIC_PRIVATE" * 8192,
         "not toml SYNTHETIC_PRIVATE",
     ],
@@ -129,3 +148,14 @@ def test_config_is_strict_bounded_and_sanitized(tmp_path, text):
         cli.load_auth_config(path)
     assert caught.value.__context__ is None
     assert "SYNTHETIC_PRIVATE" not in str(caught.value)
+
+
+def test_optional_tls_paths_are_local_config_only(setup):
+    path, _ = setup
+    with path.open("a") as stream:
+        stream.write('tls_certificate="~/aed-test/cert.pem"\n')
+        stream.write('tls_private_key="~/aed-test/key.pem"\n')
+    loaded = cli.load_auth_config(path)
+    assert loaded.tls_certificate is not None and loaded.tls_certificate.is_absolute()
+    assert loaded.tls_private_key is not None and loaded.tls_private_key.is_absolute()
+    assert "aed-test" not in repr(loaded)

@@ -19,7 +19,9 @@ from ask_every_day.instagram_client import InstagramIdentity
 from ask_every_day.logging_config import JSONFormatter
 
 NOW = datetime(2026, 10, 22, tzinfo=UTC)
-CONFIG = auth.AuthConfig("100000000000001", "https://callback.example.invalid/oauth/")
+CONFIG = auth.AuthConfig(
+    "100000000000001", "https://localhost:8765/oauth/instagram/callback"
+)
 IDENTITY = InstagramIdentity("100000000000002", "ask.every.day", "Business")
 
 
@@ -229,6 +231,14 @@ def test_cancel_and_authorization_expiry():
     "uri",
     [
         "http://127.0.0.1:8765/oauth/instagram/callback",
+        "https://127.0.0.1:8765/oauth/instagram/callback",
+        "http://localhost:8765/oauth/instagram/callback",
+        "https://localhost:8766/oauth/instagram/callback",
+        "https://localhost:8765/oauth/instagram/callback/",
+        "https://LOCALHOST:8765/oauth/instagram/callback",
+        "https://localhost:8765/oauth/instagram/callback?",
+        "https://localhost:8765/oauth/instagram/callback#",
+        "https://callback.example.invalid/oauth/instagram/callback",
         "https://example.invalid",
         "https://user:password@example.invalid/callback",
         "https://example.invalid/c?state=x",
