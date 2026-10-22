@@ -33,6 +33,10 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
+| `make instagram-auth-bootstrap` | Store the App Secret through a hidden prompt in macOS Keychain |
+| `make instagram-auth-status` | Inspect safe local Instagram credential metadata |
+| `make instagram-logout` | Remove the local Instagram credential and App Secret |
 | `make caption-review` | Audit 100 preview queues and export a 400-Post caption review CSV |
 | `make launch-review` | Generate a 20-Post local visual/copy review gallery |
 | `make stage-media POST_ID=AED-0001` | Temporarily stage one validated JPEG over public HTTPS |
@@ -108,3 +112,10 @@ Generate a curated visual and copy review with `make launch-review`; see
 For controlled manual acceptance, [public media staging](docs/media-staging.md)
 serves one canonical JPEG through an externally installed `cloudflared` Quick
 Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publish.
+
+[Instagram authentication](docs/instagram-auth.md) provides browser OAuth, a
+loopback HTTPS callback, account binding and macOS Keychain credential lifecycle.
+Meta accepted the localhost redirect and the owner accepted the tester invitation.
+Local TLS/config/secret setup and safe live login acceptance remain pending.
+These commands do not create Instagram media or publish posts. Webhooks are not
+required for this scope, and App Review is deferred for tester acceptance.

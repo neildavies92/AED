@@ -41,3 +41,4 @@ htmlcov/
 
 # Machine-local application configuration
 /aed.toml
+/instagram-auth.toml

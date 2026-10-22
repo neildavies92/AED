@@ -3,9 +3,13 @@
 # Carry any Make-supplied fallback through macOS's protected shell boundary.
 CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-cairo.sh
 
-.PHONY: help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review
+.PHONY: help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make instagram-login Connect Instagram using browser login and local HTTPS"
+	@echo "make instagram-auth-bootstrap Store the Instagram App Secret in macOS Keychain"
+	@echo "make instagram-auth-status Inspect safe local credential metadata"
+	@echo "make instagram-logout Remove local Instagram credential and App Secret"
 	@echo "make caption-review Audit captions across 100 queues; write local review CSV"
 	@echo "make launch-review  Generate the curated local launch QA gallery"
 	@echo "make stage-media POST_ID=AED-0001 Temporarily expose one JPEG over HTTPS"
@@ -61,3 +65,15 @@ stage-media:
 
 caption-review:
 	uv run python -m ask_every_day.caption_review
+
+instagram-login:
+	uv run python -m ask_every_day.instagram_auth_cli login
+
+instagram-auth-bootstrap:
+	uv run python -m ask_every_day.instagram_auth_cli bootstrap
+
+instagram-auth-status:
+	uv run python -m ask_every_day.instagram_auth_cli status
+
+instagram-logout:
+	uv run python -m ask_every_day.instagram_auth_cli logout

@@ -7,15 +7,14 @@ research and source links.
 
 ## Version and evidence
 
-Checked official Meta documentation on **16 October 2026**: the
-[Graph changelog](https://developers.facebook.com/docs/graph-api/changelog/),
-[publishing guide](https://developers.facebook.com/docs/instagram-platform/content-publishing/)
+Rechecked official Meta documentation on **22 October 2026** during AED-049.
+The documentation reader returned login/429 responses, but direct public HTTPS
+retrieval of the [Graph changelog](https://developers.facebook.com/docs/graph-api/changelog/)
 and [Instagram Login get-started guide](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/get-started/)
-returned HTTP 429 through the documentation reader. Consequently this client
-preserves the project's **v26.0** research from 13 October; **no newer version or
-changed endpoint contract could be verified**. This is not a claim that v26.0 is
-still the newest version. Recheck these official sources before live acceptance.
-No third-party tutorial supplies endpoint assumptions.
+succeeded. The changelog identifies **v26.0** as current, so the existing version
+is retained. The [authentication evidence](instagram-auth.md) records the verified
+OAuth contract and remaining callback/app-access uncertainty. Publishing live
+acceptance remains separate; no third-party tutorial supplies endpoint assumptions.
 
 The fixed base is `https://graph.instagram.com/v26.0`. Use an Instagram User token
 with `instagram_business_basic` and `instagram_business_content_publish`, passed
@@ -23,6 +22,13 @@ explicitly as `InstagramClient(access_token, timeout=15.0)`. Construction makes 
 request. The token is only sent in the bearer Authorization header; it is absent
 from query strings, result values, reprs and diagnostics. This module neither
 loads configuration/environment variables nor persists credentials.
+
+The [authentication layer](instagram-auth.md) now provides account-bound credential
+metadata, secure local storage and expiry/refresh handling. Its
+`CredentialManager.client()` supplies a validated bearer token to this client;
+the publishing primitives retain their existing responsibilities. Browser login
+is still blocked on a verified callback route, so normal operator connection has
+not been accepted and no automatic publishing flow is enabled.
 
 ## Independent operations
 
