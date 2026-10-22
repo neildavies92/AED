@@ -1,0 +1,3 @@
+# Non-secret settings only. Copy to ignored instagram-auth.toml after callback setup.
+app_id = "YOUR_INSTAGRAM_APP_ID"
+redirect_uri = "https://callback.example.invalid/oauth/instagram/callback"
