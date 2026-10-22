@@ -29,6 +29,9 @@ class SecretBackend(Protocol):
 class MacOSKeychain:
     """Generic-password entries in the user's default local Keychain."""
 
+    _cf: ctypes.CDLL
+    _security: ctypes.CDLL
+
     def __init__(self):
         if sys.platform != "darwin":
             raise AuthError("secure_store_unavailable")
