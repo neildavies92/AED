@@ -88,6 +88,11 @@ def main() -> None:
                             "account": plan.account,
                             "prompt": plan.post.prompt,
                             "asset_path": str(plan.asset_path),
+                            "background_color": plan.background_color,
+                            "palette_sequence": plan.palette_sequence,
+                            "asset_action": "ready"
+                            if plan.asset_sha256
+                            else "run_make_render_next",
                             "asset_valid": plan.asset_sha256 is not None,
                             "asset_sha256": plan.asset_sha256,
                             "caption": plan.caption,
@@ -115,6 +120,9 @@ def main() -> None:
                 )
                 print(
                     f"Prompt: {plan.post.prompt}\nJPEG: {plan.asset_path}\nSHA256: {plan.asset_sha256}"
+                )
+                print(
+                    f"Background: {plan.background_color} (palette publication {plan.palette_sequence})"
                 )
                 print(f"Complete caption:\n{plan.caption}\n")
                 print(

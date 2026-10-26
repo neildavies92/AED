@@ -24,6 +24,8 @@ htmlcov/
 *.sqlite3
 *.sqlite3-*
 *.publish.lock
+*.palette.json
+.aed-palette-*
 
 # Generated local assets
 /assets/generated/

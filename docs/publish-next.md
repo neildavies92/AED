@@ -7,12 +7,17 @@ or regenerates a queue, renders assets, or changes editorial CSVs.
 
 ## Preview
 
+Run `make render-next` first to prepare the next success-sequenced blue background.
+A valid bulk-rendered JPEG is a draft until its colour/sequence and byte hash are
+persisted by this preparation step. See [background rotation](background-rotation.md)
+for the one-time historical-publication bootstrap and metadata backup contract.
+
 ```sh
 make publish-next
 ```
 
 The default is a local preview: Post ID, original queue position, exact account,
-prompt, JPEG path/validity/SHA256, complete caption and hashtags, and offline
+prompt, background colour/sequence, JPEG path/validity/SHA256, complete caption and hashtags, and offline
 Keychain credential readiness. Quota is explicitly `not_checked`. There is no
 Instagram request, token refresh, public staging, or publication attempt. Missing
 credentials or an invalid asset appear as not ready; an empty queue exits cleanly.
@@ -34,7 +39,7 @@ make publish-next CONFIRM=1
 Both input and output must be interactive terminals. The command displays the
 account, Post, full copy, JPEG path and SHA256 again. Inspect that image and type
 the exact displayed `PUBLISH ...` challenge. Its fingerprint binds the account,
-Post snapshot, queue position, asset path/bytes and complete caption. `yes`, a
+Post snapshot, queue position, colour/sequence, asset path/bytes and complete caption. `yes`, a
 stale challenge, a redirected stdin, or the flag alone cannot authorize a post.
 A second post always requires a new confirmation.
 

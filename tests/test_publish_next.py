@@ -34,6 +34,7 @@ from ask_every_day.instagram_client import (
 )
 from ask_every_day.logging_config import JSONFormatter
 from ask_every_day.media_staging import StagedMedia
+from ask_every_day.publication_assets import prepare_next_asset
 from ask_every_day.publication_service import PublicationService, PublicationState
 from ask_every_day.publish_next import (
     CopyCatalog,
@@ -163,6 +164,7 @@ def run(tmp_path):
                     **kwargs,
                 )
 
+        prepare_next_asset(repo, config)
         yield Run()
 
 
@@ -675,3 +677,16 @@ def test_real_versioned_catalog_loads():
 
     catalog = CopyCatalog.load(Path("data"))
     assert len(catalog.profiles) == 400 and catalog.captions and catalog.hashtags
+
+
+def test_two_confirmed_fake_publications_use_distinct_prepared_colours(run):
+    first = run.preview()
+    run.publish(plan=first)
+    assert run.preview().asset_sha256 is None
+    prepare_next_asset(run.repo, run.config)
+    second = run.preview()
+    assert second.palette_sequence == first.palette_sequence + 1
+    assert second.background_color != first.background_color
+    run.publish(plan=second)
+    assert run.client.publish_container.call_count == 2
+    assert run.repo.list_queue() == []

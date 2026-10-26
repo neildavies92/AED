@@ -131,7 +131,7 @@ def test_centered_brand_raster_matches_unsplit_text_geometry(size):
     brand = root.find(".//{http://www.w3.org/2000/svg}text[@id='classic-brand']")
     assert brand is not None
     for span in brand:
-        span.set("fill", "#343B35")
+        span.set("fill", config.text_color)
     actual = export_png(ElementTree.tostring(root, encoding="unicode"), config)
     text = "".join(brand.itertext())
     brand[:] = []

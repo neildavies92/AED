@@ -5,7 +5,7 @@ import logging
 import os
 import sqlite3
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ask_every_day.config import load_config
@@ -30,6 +30,7 @@ class BatchRenderResult:
     post_count: int
     png_count: int
     jpeg_count: int
+    skipped_count: int = 0
 
 
 def _write_pair(directory: Path, post_id: str, png: bytes, jpeg: bytes) -> None:
@@ -57,6 +58,7 @@ def render_assets(repository: Repository, config: AppConfig) -> BatchRenderResul
     Unknown files are left alone. PNG and JPEG export finish before staging either.
     """
     completed = 0
+    skipped = 0
     post_id: str | None = None
     logger.info(
         "batch_render_started",
@@ -72,11 +74,26 @@ def render_assets(repository: Repository, config: AppConfig) -> BatchRenderResul
         config.assets_path.mkdir(parents=True, exist_ok=True)
         for post in posts:
             post_id = post.id
-            svg = render_svg(post, config.renderer)
-            png = export_png(svg, config.renderer)
-            jpeg = export_jpeg(png)
-            _write_pair(config.assets_path, post.id, png, jpeg)
-            completed += 1
+            from ask_every_day.publication_assets import read_ledger
+
+            with repository.transaction():
+                ledger = read_ledger(config)
+                if repository.publication_history(post.id) or (
+                    ledger and post.id in ledger.assets
+                ):
+                    skipped += 1
+                    continue
+                settings = replace(
+                    config.renderer,
+                    background_color=config.palette.backgrounds[0],
+                    text_color=config.palette.text_color,
+                    accent_color=config.palette.accent_color,
+                )
+                svg = render_svg(post, settings)
+                png = export_png(svg, settings)
+                jpeg = export_jpeg(png)
+                _write_pair(config.assets_path, post.id, png, jpeg)
+                completed += 1
     except Exception as error:
         logger.error(
             "batch_render_failed",
@@ -103,7 +120,7 @@ def render_assets(repository: Repository, config: AppConfig) -> BatchRenderResul
             "output_path": str(config.assets_path),
         },
     )
-    return BatchRenderResult(completed, completed, completed)
+    return BatchRenderResult(completed, completed, completed, skipped)
 
 
 def main() -> None:
@@ -119,7 +136,8 @@ def main() -> None:
             result = render_assets(repository, config)
         print(
             f"Rendered {result.post_count} Posts: "
-            f"{result.png_count} PNG and {result.jpeg_count} JPEG assets"
+            f"{result.png_count} PNG and {result.jpeg_count} JPEG assets; "
+            f"{result.skipped_count} protected Posts skipped"
         )
     except (OSError, ValueError, sqlite3.Error) as error:
         if not isinstance(error, BatchRenderError):

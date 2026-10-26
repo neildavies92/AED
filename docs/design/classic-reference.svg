@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title description">
   <title id="title">Who are you when no one needs anything from you?</title>
   <desc id="description">Ask Every Day. A question to sit with.</desc>
-  <rect width="1080" height="1350" fill="#F4F0E8"/>
-  <g fill="#343B35" font-family="Arial, Helvetica, sans-serif">
-    <text id="classic-brand" x="540" y="147" text-anchor="middle" font-size="23" letter-spacing="1.5"><tspan fill="#8D957F">@</tspan><tspan fill="#343B35">ask.every.day</tspan></text>
-    <path d="M512 190 H568" stroke="#8D957F" stroke-width="2"/>
+  <rect width="1080" height="1350" fill="#E2EFF9"/>
+  <g fill="#1C3651" font-family="Arial, Helvetica, sans-serif">
+    <text id="classic-brand" x="540" y="147" text-anchor="middle" font-size="23" letter-spacing="1.5"><tspan fill="#2F608C">@</tspan><tspan fill="#1C3651">ask.every.day</tspan></text>
+    <path d="M512 190 H568" stroke="#2F608C" stroke-width="2"/>
   </g>
-  <g font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="#292E29" letter-spacing="-2">
+  <g font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="#1C3651" letter-spacing="-2">
 
-    <text x="112" y="586">Who are you when<tspan fill="#717A60"></tspan></text>
+    <text x="112" y="586">Who are you when<tspan fill="#2F608C"></tspan></text>
 
-    <text x="112" y="688"><tspan fill="#717A60">no one needs</tspan></text>
+    <text x="112" y="688"><tspan fill="#2F608C">no one needs</tspan></text>
 
-    <text x="112" y="790"><tspan fill="#717A60">anything from you</tspan>?</text>
+    <text x="112" y="790"><tspan fill="#2F608C">anything from you</tspan>?</text>
 
   </g>
-  <g font-family="Arial, Helvetica, sans-serif" fill="#62695F">
+  <g font-family="Arial, Helvetica, sans-serif" fill="#1C3651">
     <text x="112" y="1138" font-size="20" letter-spacing="1.5">A QUESTION TO SIT WITH.</text>
   </g>
 </svg>

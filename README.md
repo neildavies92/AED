@@ -33,6 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make render-next` | Prepare the next queued Post with its success-sequenced background |
 | `make publish-next` | Preview next queued post; `CONFIRM=1` requires exact interactive approval |
 | `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
 | `make instagram-auth-bootstrap` | Store the App Secret through a hidden prompt in macOS Keychain |
@@ -125,3 +126,8 @@ required for this scope, and App Review is deferred for tester acceptance.
 
 See [publish next](docs/publish-next.md) for preview, one-post approval, state
 persistence, cleanup and reconciliation limits.
+
+[Background rotation](docs/background-rotation.md) configures the blue brand
+palette and explains `make render-next`, persisted assignments and one-time
+initialization for historical publications. Bulk renders are review drafts;
+prepare the next canonical image before approving it.
