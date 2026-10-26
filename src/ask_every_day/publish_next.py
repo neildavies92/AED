@@ -31,11 +31,11 @@ from ask_every_day.instagram_client import (
     PublishedMedia,
     PublishingQuota,
 )
-from ask_every_day.media_staging import StagedMedia, _jpeg, stage_media
+from ask_every_day.media_staging import StagedMedia, stage_media
+from ask_every_day.publication_assets import AssetError, asset_preview, queued_post
 from ask_every_day.publication_service import (
     PublicationService,
     PublicationState,
-    publication_state,
 )
 from ask_every_day.repository import Repository
 
@@ -90,6 +90,9 @@ class PublishPlan:
     asset_sha256: str | None
     caption: str
     hashtags: tuple[str, ...]
+    background_color: str
+    palette_sequence: int
+    palette_key: str
 
     @property
     def fingerprint(self) -> str:
@@ -110,24 +113,17 @@ def preview_next(
     if config.account_handle != "@ask.every.day":
         raise PublishError("account_configuration")
     with repository.transaction():
-        queue = repository.list_queue()
-        queued = {entry.post_id for entry in queue}
-        for post in repository.list_posts():
-            state = publication_state(
-                repository.publication_history(post.id), queued=post.id in queued
-            )
-            if state is PublicationState.PUBLISHING:
-                raise PublishError("unresolved_publication")
-        entry = repository.next_queue_entry()
-        if entry is None:
+        failure = None
+        chosen = None
+        try:
+            chosen = queued_post(repository)
+        except AssetError as error:
+            failure = str(error)
+        if failure:
+            raise PublishError(failure)
+        if chosen is None:
             return None
-        post = repository.get_post(entry.post_id)
-        if post is None:
-            raise PublishError("unknown_post")
-        if publication_state(
-            repository.publication_history(post.id), queued=True
-        ) is not (PublicationState.QUEUED):
-            raise PublishError("invalid_state")
+        post, entry = chosen
         selected = select_caption(
             post,
             catalog.captions,
@@ -141,11 +137,15 @@ def preview_next(
         caption = selected.caption + ("\n\n" + " ".join(hashtags) if hashtags else "")
         if len(caption) > 2200 or len(re.findall(r"(?<!\w)#\w+", caption)) > 30:
             raise PublishError("caption_limits")
+        assignment = None
         digest = None
         try:
-            digest = hashlib.sha256(_jpeg(repository, config, post.id)).hexdigest()
-        except (OSError, ValueError):
-            pass
+            assignment, digest = asset_preview(repository, config, post, entry)
+        except AssetError as error:
+            failure = str(error)
+        if failure:
+            raise PublishError(failure)
+        assert assignment is not None
         return PublishPlan(
             post,
             entry,
@@ -154,6 +154,9 @@ def preview_next(
             digest,
             caption,
             hashtags,
+            assignment.background,
+            assignment.sequence,
+            assignment.palette_key,
         )
 
 
@@ -297,6 +300,9 @@ def publish_approved(
                 "event": "publish_next_failed",
                 "post_id": plan.post.id,
                 "publication_id": attempt_id,
+                "palette_colour": plan.background_color,
+                "palette_sequence": plan.palette_sequence,
+                "queue_position": plan.entry.position,
                 "operation": failure.reason,
                 "error_type": "PublishError",
             },
@@ -309,6 +315,9 @@ def publish_approved(
             "event": "publish_next_completed",
             "post_id": plan.post.id,
             "publication_id": attempt_id,
+            "palette_colour": plan.background_color,
+            "palette_sequence": plan.palette_sequence,
+            "queue_position": plan.entry.position,
         },
     )
     return PublishResult(plan.post.id, attempt_id, container_id, media_id)

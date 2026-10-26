@@ -33,13 +33,13 @@ This preserves typography and spacing without inventing responsive layouts.
 
 The single attribution is a centered `@ask.every.day` at x=540, baseline y=147,
 with `text-anchor="middle"`. One Arial/Helvetica text element uses 23px type and
-1.5px letter spacing; adjacent spans give `@` the muted sage `#8D957F` and
-`ask.every.day` the stronger charcoal `#343B35`, without a heavier weight.
-The 56px underline runs from (512,190) to (568,190), with the existing sage stroke
+1.5px letter spacing; adjacent spans give `@` the blue accent `#2F608C` and
+`ask.every.day` the primary blue `#1C3651`, without a heavier weight.
+The 56px underline runs from (512,190) to (568,190), with the blue accent stroke
 and 2px width. Centering follows the complete SVG text, not a guessed left offset.
 
 The footer contains only `A QUESTION TO SIT WITH.` at x=112/y=1138, retaining
-its 20px sans-serif type, 1.5px spacing and `#62695F` fill. The duplicate bottom
+its 20px sans-serif type, 1.5px spacing and `#1C3651` fill. The duplicate bottom
 handle is removed. Prompt layout/highlights, background, canvas and accessible
 description are unchanged. The deliberate SVG/PNG specimen in `docs/design/`
 reflects this canonical branding; prompt layout policy is unchanged.
@@ -131,7 +131,7 @@ policy leaves the existing domain contract unchanged. All 400 Approved prompts
 pass it without editorial changes. Renderer failures raise `RenderError`, with a
 `HighlightError` cause; errors contain no prompt or highlight payload.
 
-The existing sage `#717A60` tspan changes fill only. The charcoal prompt, left
+The blue accent `#2F608C` tspan changes fill only. The primary blue prompt, left
 anchor x=112, centered baseline block, font, line spacing, footer and canvas remain
 unchanged. XML escaping stays in Jinja. Pure highlight helpers do not log; renderer
 records add `highlight_segment_count` (including any space-only intersections).
@@ -146,3 +146,17 @@ XML-sensitive text, ambiguity (including overlaps), absent highlights, determini
 output, all 400 prompts' geometry, and a real SVG-to-PNG integration. Short, sample
 and longest-post PNGs were visually checked on macOS using the supported Cairo
 wrapper; no clipping or alignment change was observed. No dependencies added.
+
+## Configurable colours — AED-051
+
+`RendererConfig` supplies validated `background_color`, `text_color` and
+`accent_color` values. Defaults are Ice Blue `#E2EFF9`, primary `#1C3651` and
+accent `#2F608C`. Only fills and the underline stroke change; all geometry,
+typography, exact highlights and XML escaping retain their existing contracts.
+`load_config` reads the central `[palette]` table. The standalone specimen
+uses a fixed Ice Blue background and remains byte-deterministic.
+
+Publication rotation belongs to [asset preparation](background-rotation.md),
+which chooses a colour from actual successful history and passes explicit renderer
+values. Rendering an arbitrary Post does not advance that sequence. Both deliberate
+SVG and PNG design references were refreshed for this intentional palette change.

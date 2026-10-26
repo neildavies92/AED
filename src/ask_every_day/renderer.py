@@ -33,6 +33,7 @@ def render_svg(
         "template": config.template,
         "width": config.width,
         "height": config.height,
+        "palette_colour": config.background_color,
     }
     try:
         if config.template not in _TEMPLATES:

@@ -68,14 +68,14 @@ def test_automatic_svg_structure(
     assert root.findtext(SVG + "title") == post.prompt
     background = root.find(SVG + "rect")
     assert background is not None
-    assert background.attrib == {"width": "1080", "height": "1350", "fill": "#F4F0E8"}
+    assert background.attrib == {"width": "1080", "height": "1350", "fill": "#E2EFF9"}
     groups = root.findall(SVG + "g")
     assert len(groups) == 3
     prompt_group = groups[1]
     assert prompt_group.attrib == {
         "font-family": "Georgia, 'Times New Roman', serif",
         "font-size": "76",
-        "fill": "#292E29",
+        "fill": "#1C3651",
         "letter-spacing": "-2",
     }
     text_lines = list(prompt_group)
@@ -96,14 +96,14 @@ def test_automatic_svg_structure(
         assert line.width <= 856
         assert len(element) == 1
         span = element[0]
-        assert span.tag == SVG + "tspan" and span.attrib == {"fill": "#717A60"}
+        assert span.tag == SVG + "tspan" and span.attrib == {"fill": "#2F608C"}
         highlights.append(span.text or "")
     assert sum(bool(text) for text in highlights) == highlight_count
     assert "".join(highlights) == post.highlight_text
     assert "".join("".join(line.itertext()) for line in text_lines) == post.prompt
     header = groups[0]
     assert header.attrib == {
-        "fill": "#343B35",
+        "fill": "#1C3651",
         "font-family": "Arial, Helvetica, sans-serif",
     }
     brand = header.find(SVG + "text")
@@ -118,21 +118,21 @@ def test_automatic_svg_structure(
         "letter-spacing": "1.5",
     }
     assert [(span.text, span.get("fill")) for span in brand] == [
-        ("@", "#8D957F"),
-        ("ask.every.day", "#343B35"),
+        ("@", "#2F608C"),
+        ("ask.every.day", "#1C3651"),
     ]
     underline = header.find(SVG + "path")
     assert underline is not None
     assert underline.attrib == {
         "d": "M512 190 H568",
-        "stroke": "#8D957F",
+        "stroke": "#2F608C",
         "stroke-width": "2",
     }
     assert "".join(root.itertext()).count("@ask.every.day") == 1
     assert root.findtext(SVG + "desc") == "Ask Every Day. A question to sit with."
     assert groups[2].attrib == {
         "font-family": "Arial, Helvetica, sans-serif",
-        "fill": "#62695F",
+        "fill": "#1C3651",
     }
     footer = groups[2].findall(SVG + "text")
     assert [(text.get("x"), text.get("y"), text.text) for text in footer] == [

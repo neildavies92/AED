@@ -8,3 +8,10 @@ account_handle = "@ask.every.day"
 template = "Classic"
 width = 1080
 height = 1350
+
+# Rotates by successfully published themed images, independently of Post IDs.
+[palette]
+backgrounds = ["#E2EFF9", "#EDF4FB", "#D3E6F5"]
+text_color = "#1C3651"
+accent_color = "#2F608C"
+seed = 42

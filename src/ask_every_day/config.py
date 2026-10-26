@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import cast
 
 from ask_every_day.domain import AppConfig, RendererConfig
+from ask_every_day.palette import PaletteConfig
 
 logger = logging.getLogger(__name__)
 
@@ -57,24 +58,57 @@ def load_config(path: str | Path = "aed.toml") -> AppConfig:
         with source.open("rb") as stream:
             data = cast(dict[str, object], tomllib.load(stream))
         _keys(
-            data, {"database_path", "assets_path", "account_handle", "renderer"}, "root"
+            data,
+            {"database_path", "assets_path", "account_handle", "renderer", "palette"},
+            "root",
         )
         raw_renderer = data.get("renderer", {})
         if not isinstance(raw_renderer, dict):
             raise TypeError("renderer must be a TOML table")
         renderer = cast(dict[str, object], raw_renderer)
         _keys(renderer, {"template", "width", "height"}, "renderer")
+        raw_palette = data.get("palette", {})
+        if not isinstance(raw_palette, dict):
+            raise ValueError("palette must be a TOML table")
+        palette_values = cast(dict[str, object], raw_palette)
+        _keys(
+            palette_values,
+            {"backgrounds", "text_color", "accent_color", "seed"},
+            "palette",
+        )
+        palette_defaults = PaletteConfig()
+        backgrounds = palette_values.get(
+            "backgrounds", list(palette_defaults.backgrounds)
+        )
+        if not isinstance(backgrounds, list) or any(
+            not isinstance(c, str) for c in backgrounds
+        ):
+            raise ValueError("palette.backgrounds must be an array of hex strings")
+        palette = PaletteConfig(
+            backgrounds=tuple(backgrounds),
+            text_color=_string(palette_values, "text_color")
+            if "text_color" in palette_values
+            else palette_defaults.text_color,
+            accent_color=_string(palette_values, "accent_color")
+            if "accent_color" in palette_values
+            else palette_defaults.accent_color,
+            seed=cast(int, palette_values.get("seed", palette_defaults.seed)),
+        )
         defaults = RendererConfig()
         config = AppConfig(
             database_path=_path(data, "database_path", source.parent),
             assets_path=_path(data, "assets_path", source.parent),
             account_handle=_string(data, "account_handle"),
+            palette=palette,
             renderer=RendererConfig(
                 template=(
                     _string(renderer, "template")
                     if "template" in renderer
                     else defaults.template
                 ),
+                background_color=palette.backgrounds[0],
+                text_color=palette.text_color,
+                accent_color=palette.accent_color,
                 width=_dimension(renderer, "width", defaults.width),
                 height=_dimension(renderer, "height", defaults.height),
             ),

@@ -59,3 +59,15 @@ are committed.
 
 After rendering, run `make validate-assets`; the [inventory validator](asset-inventory.md)
 reports missing, unexpected or malformed assets without modifying them.
+
+## Publication-safe preparation — AED-051
+
+Bulk rendering uses the first configured palette background as a review draft;
+ID order never assigns publication colours. Posts with any attempt history or
+a persisted prepared asset are skipped, preserving their bytes even if the palette
+changes. `BatchRenderResult.skipped_count` reports protected Posts; other counts
+report actual completed renders. Malformed asset metadata stops bulk rendering.
+
+Use `make render-next` for the next queued canonical asset before approval.
+See [background rotation](background-rotation.md) for success-driven sequencing,
+explicit re-preparation and sidecar backup/recovery requirements.

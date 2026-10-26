@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 
+from ask_every_day.palette import ACCENT, BACKGROUNDS, TEXT, PaletteConfig, colour
+
 
 def _text(value: str, field: str) -> None:
     if not isinstance(value, str):
@@ -137,11 +139,16 @@ class RendererConfig:
     template: str = "Classic"
     width: int = 1080
     height: int = 1350
+    background_color: str = BACKGROUNDS[0]
+    text_color: str = TEXT
+    accent_color: str = ACCENT
 
     def __post_init__(self) -> None:
         _text(self.template, "template")
         _positive_int(self.width, "width")
         _positive_int(self.height, "height")
+        for value in (self.background_color, self.text_color, self.accent_color):
+            colour(value)
 
 
 @dataclass(frozen=True)
@@ -156,6 +163,7 @@ class AppConfig:
     assets_path: Path
     account_handle: str
     renderer: RendererConfig = RendererConfig()
+    palette: PaletteConfig = PaletteConfig()
 
     def __post_init__(self) -> None:
         for field in ("database_path", "assets_path"):
@@ -164,3 +172,5 @@ class AppConfig:
         _text(self.account_handle, "account_handle")
         if not isinstance(self.renderer, RendererConfig):
             raise TypeError("renderer must be a RendererConfig")
+        if not isinstance(self.palette, PaletteConfig):
+            raise TypeError("palette must be a PaletteConfig")

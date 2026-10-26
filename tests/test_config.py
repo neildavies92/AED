@@ -156,3 +156,35 @@ def test_structured_success_log(
 def test_documented_example_loads() -> None:
     example = Path(__file__).parents[1] / "aed.example.toml"
     assert load_config(example).renderer == RendererConfig()
+
+
+def test_configurable_brand_palette(tmp_path):
+    text = (
+        BASE
+        + '\n[palette]\nbackgrounds=["#e2eff9","#EDF4FB","#D3E6F5"]\ntext_color="#112233"\naccent_color="#234567"\nseed=7\n'
+    )
+    config = load_config(write_config(tmp_path, text))
+    assert config.palette.seed == 7 and config.palette.backgrounds[0] == "#e2eff9"
+    assert (
+        config.renderer.text_color == "#112233"
+        and config.renderer.accent_color == "#234567"
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "palette=1",
+        "[palette]\nseed=true",
+        "[palette]\nseed=-1",
+        "[palette]\nextra=1",
+        '[palette]\nbackgrounds=["#fff"]',
+        "[palette]\nbackgrounds=[1,2,3]",
+        '[palette]\nbackgrounds="blue"',
+        '[palette]\ntext_color="#FFFFFF"',
+        '[palette]\naccent_color="not-a-colour"',
+    ],
+)
+def test_invalid_brand_configuration_fails_closed(tmp_path, text):
+    with pytest.raises(ConfigError):
+        load_config(write_config(tmp_path, BASE + "\n" + text))
