@@ -33,6 +33,7 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make publish-next` | Preview next queued post; `CONFIRM=1` requires exact interactive approval |
 | `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
 | `make instagram-auth-bootstrap` | Store the App Secret through a hidden prompt in macOS Keychain |
 | `make instagram-auth-status` | Inspect safe local Instagram credential metadata |
@@ -117,6 +118,10 @@ Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publi
 loopback HTTPS callback, account binding and macOS Keychain credential lifecycle.
 Meta accepted the localhost redirect and the owner accepted the tester invitation.
 Safe live login and account verification passed on 26 October using the AED-050
-response-parser fix; controlled image-publication acceptance remains pending.
-These commands do not create Instagram media or publish posts. Webhooks are not
+response-parser fix. Controlled publication acceptance passed on 26 October:
+one approved image/caption was published and recorded as Published.
+Authentication commands do not create Instagram media or publish posts. Webhooks are not
 required for this scope, and App Review is deferred for tester acceptance.
+
+See [publish next](docs/publish-next.md) for preview, one-post approval, state
+persistence, cleanup and reconciliation limits.

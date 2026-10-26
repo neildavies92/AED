@@ -982,3 +982,18 @@ def test_transport_failure_clears_observed_registration():
     )
     assert state.snapshot()["connector_registered"] is False
     assert state.snapshot()["connector_transport_failures"] == 1
+
+
+@pytest.mark.parametrize("expected", ["0" * 64, "not-a-digest"])
+def test_approved_digest_mismatch_never_starts_public_origin(
+    source, monkeypatch, expected
+):
+    repository, config, _ = source
+    origin = Mock(side_effect=AssertionError("must not expose changed content"))
+    monkeypatch.setattr(module, "_origin", origin)
+    with pytest.raises(module.StagingError):
+        with module.stage_media(
+            repository, config, "AED-0001", expected_sha256=expected
+        ):
+            pytest.fail("changed JPEG was exposed")
+    origin.assert_not_called()
