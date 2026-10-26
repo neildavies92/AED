@@ -23,6 +23,7 @@ htmlcov/
 *.sqlite-*
 *.sqlite3
 *.sqlite3-*
+*.publish.lock
 
 # Generated local assets
 /assets/generated/

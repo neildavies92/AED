@@ -1,6 +1,7 @@
 """One-file, operator-controlled HTTPS staging through Cloudflare Quick Tunnel."""
 
 import argparse
+import hashlib
 import logging
 import math
 import os
@@ -501,6 +502,7 @@ def stage_media(
     *,
     startup_timeout: float = 120,
     fetch_timeout: float = 15,
+    expected_sha256: str | None = None,
 ) -> Iterator[StagedMedia]:
     """Keep one validated JPEG public until context exit; never contact Instagram."""
     _timeout(startup_timeout)
@@ -510,6 +512,10 @@ def stage_media(
     public_url = ""
     try:
         data = _jpeg(repository, config, post_id)
+        if expected_sha256 is not None and (
+            hashlib.sha256(data).hexdigest() != expected_sha256
+        ):
+            raise StagingError("JPEG changed since approval")
     except Exception:
         failure = True
     if failure:
