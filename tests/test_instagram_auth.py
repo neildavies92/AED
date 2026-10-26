@@ -282,6 +282,109 @@ def test_connect_uses_verified_flow_and_preserves_distinct_account_ids():
         assert secret not in repr(result)
 
 
+def test_connect_accepts_observed_flat_grant_with_numeric_id_and_scope_list():
+    transport = Transport(
+        response(
+            {
+                "access_token": "SYNTHETIC_SHORT_TOKEN",
+                "user_id": 100000000000003,
+                "permissions": sorted(auth.SCOPES),
+            }
+        ),
+        long_token(),
+    )
+    store = Store()
+    result = manager(transport, store).connect("SYNTHETIC_CODE", "SYNTHETIC_APP_SECRET")
+    assert result.authorization_user_id == "100000000000003"
+    assert result.user_id == IDENTITY.user_id
+    assert result.scopes == auth.SCOPES
+    assert store.saved == [result]
+    assert len(transport.calls) == 2
+
+
+@pytest.mark.parametrize("wrapped", [False, True])
+@pytest.mark.parametrize("numeric_id", [False, True])
+@pytest.mark.parametrize("scope_list", [False, True])
+def test_grant_representations_normalize_without_inventing_permissions(
+    wrapped, numeric_id, scope_list
+):
+    row = {
+        "access_token": "SYNTHETIC_SHORT_TOKEN",
+        "user_id": 100000000000003 if numeric_id else "100000000000003",
+        "permissions": sorted(auth.SCOPES)
+        if scope_list
+        else ",".join(sorted(auth.SCOPES)),
+    }
+    transport = Transport(response({"data": [row]} if wrapped else row))
+    result = auth.InstagramAuthClient(CONFIG, transport=transport).exchange_code(
+        "SYNTHETIC_CODE", "SYNTHETIC_APP_SECRET"
+    )
+    assert result.authorization_user_id == "100000000000003"
+    assert result.scopes == auth.SCOPES
+    assert len(transport.calls) == 1
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"user_id": True},
+        {"user_id": False},
+        {"user_id": 0},
+        {"user_id": -1},
+        {"user_id": 1.0},
+        {"user_id": None},
+        {"user_id": 10**128},
+        {"user_id": "SYNTHETIC_PRIVATE_ID"},
+        {"access_token": ""},
+        {"access_token": 123},
+        {"permissions": []},
+        {"permissions": None},
+        {"permissions": {}},
+        {"permissions": ["instagram_business_basic"]},
+        {"permissions": [*sorted(auth.SCOPES), 1]},
+        {"permissions": [*sorted(auth.SCOPES), {"permission": "SYNTHETIC_PRIVATE"}]},
+        {"permissions": [*sorted(auth.SCOPES), "instagram_business_basic"]},
+        {"permissions": [*sorted(auth.SCOPES), "SYNTHETIC_PRIVATE"]},
+        {"permissions": [*sorted(auth.SCOPES), "instagram_business_é"]},
+        {"permissions": [*sorted(auth.SCOPES), "instagram_business_" + "x" * 100]},
+        {"permissions": [*sorted(auth.SCOPES), *["instagram_business_x"] * 15]},
+        {"permissions": ",".join(sorted(auth.SCOPES)) + ","},
+        {"permissions": ",".join(sorted(auth.SCOPES)) + ",instagram_business_basic"},
+        {"error": {"message": "SYNTHETIC_PRIVATE"}},
+    ],
+)
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_bad_flat_or_wrapped_grants_are_not_retried_or_persisted(
+    changes, wrapped, caplog
+):
+    row = {
+        "access_token": "SYNTHETIC_PRIVATE_SHORT_TOKEN",
+        "user_id": 100000000000003,
+        "permissions": sorted(auth.SCOPES),
+        **changes,
+    }
+    transport = Transport(response({"data": [row]} if wrapped else row))
+    store = Store()
+    with pytest.raises(auth.AuthError) as caught:
+        manager(transport, store).connect("SYNTHETIC_CODE", "SYNTHETIC_APP_SECRET")
+    assert caught.value.outcome_uncertain
+    assert caught.value.__context__ is None and caught.value.__cause__ is None
+    assert "SYNTHETIC_PRIVATE" not in str(caught.value) + caplog.text
+    assert len(transport.calls) == 1 and not store.saved
+
+
+@pytest.mark.parametrize("field", ["access_token", "user_id", "permissions"])
+def test_mixed_grant_envelopes_fail_closed(field):
+    data = json.loads(grant()[1])
+    data[field] = data["data"][0][field]
+    transport = Transport(response(data))
+    with pytest.raises(auth.AuthError, match="exchange_schema"):
+        auth.InstagramAuthClient(CONFIG, transport=transport).exchange_code(
+            "SYNTHETIC_CODE", "SYNTHETIC_APP_SECRET"
+        )
+    assert len(transport.calls) == 1
+
+
 @pytest.mark.parametrize("refresh", [False, True])
 def test_token_receipt_time_does_not_overstate_refresh_age_or_expiry(refresh):
     now = [NOW]

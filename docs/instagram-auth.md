@@ -25,13 +25,16 @@ with a generic validation error; no general localhost prohibition is inferred.
 
 The owner also confirms professional account setup and an accepted `@ask.every.day`
 Instagram tester invitation. Business Login redirect registration is configured.
-Local certificate provisioning/trust, ignored local auth configuration and App
-Secret bootstrap remain operator setup. **Live OAuth/identity acceptance has not
-run.** Browser trust is not inferred from dashboard acceptance or synthetic tests.
+On 26 October, operator-provisioned TLS passed the native trust preflight and a
+fresh login using the AED-050 response-parser fix completed code/long-lived
+exchange, verified exact `@ask.every.day` Creator identity and saved the credential
+in Keychain. Offline status then reported connected and locally valid. No raw
+response, token, code or provider/account ID was recorded in the repository.
 
-AED-049 remains In Progress until review/merge, integrated-main CI and safe login
-acceptance succeed. AED-022 remains Blocked on AED-049; AED-023/024/028 remain
-Backlog. Webhooks are not required; App Review is deferred for tester acceptance.
+AED-049 is owner-confirmed Done. AED-050 remains In Progress pending review/merge
+and integrated-main verification. AED-022 still requires controlled image
+publication with explicit operator approval; AED-023/024/027/028 remain Backlog.
+Webhooks are not required; App Review is deferred for tester acceptance.
 
 ## Provider evidence — 22 October 2026
 
@@ -55,7 +58,14 @@ The [Business Login guide][login] confirms the following operations:
 Request only `instagram_business_basic` and
 `instagram_business_content_publish`. The current code-exchange example uses one
 `data` row containing `access_token`, `user_id` and comma-separated `permissions`.
-The client requires both permissions and rejects ambiguous/malformed responses.
+On 26 October a fresh live diagnostic returned HTTP 200 with the grant at the
+root, an integer `user_id` and list-valued `permissions`. Only field types were
+recorded; the response and short-lived token were discarded without persistence.
+The code-exchange parser accepts both envelopes, converts positive integer IDs
+to strings and validates granted scope lists or comma-separated strings. It
+requires both publishing scopes; it never substitutes requested scopes for a
+missing grant. Ambiguous envelopes, invalid IDs/scopes and error payloads fail
+closed without retrying the single-use code or logging response values.
 It sends multipart form fields as shown by Meta. Authorization codes are single-use
 and last one hour; short-lived tokens last one hour. The long-lived exchange and
 refresh return `token_type` and `expires_in`; persist those actual lifetimes,
@@ -111,8 +121,9 @@ both certificate and private-key paths.
 The App Secret is never an argument, environment dump, config value or chat input.
 On macOS, `make instagram-auth-bootstrap` prompts for it using `getpass` only from
 an interactive terminal and stores it in Keychain. A noninteractive invocation
-fails before reading input. No real App Secret has been supplied or stored during
-implementation. Configure trusted local HTTPS before bootstrapping secrets.
+fails before reading input. The operator has completed this bootstrap locally;
+the App Secret was not provided through chat or configuration. Configure trusted
+local HTTPS before bootstrapping secrets.
 
 ## Local HTTPS certificate
 
@@ -172,7 +183,8 @@ material and macOS SSL server trust for `localhost` using a five-second, local-o
 that command; no private key or OAuth secret is an argument. TLS 1.2 is the minimum.
 This uses macOS trust; confirm the selected system browser honors that trust.
 If its local callback shows a certificate warning, stop without bypassing it.
-No browser-trusted certificate has yet been provisioned or live-tested by AED.
+The operator's existing certificate passed native preflight and the HTTPS callback
+completed during the 26 October live login. AED installed no certificate or trust.
 
 ## Callback and login flow
 
@@ -296,10 +308,12 @@ fresh synthetic TLS files generated in private temporary directories by OpenSSL
 only that synthetic certificate; tests never modify OS trust, contact Meta, open
 a browser or use real Keychain credentials.
 
-**No live OAuth request, identity verification, media container or publish request
-occurred.** After TLS/config/Keychain setup, run `make instagram-login`, complete
-browser authorization as the accepted tester, then `make instagram-auth-status`.
-Safe acceptance is authorize → exchange → verify `@ask.every.day` → store → status.
+**Safe OAuth/identity acceptance completed on 26 October using the AED-050 fix;
+no media container or publish request occurred.** After TLS/config/Keychain setup,
+run `make instagram-login`, complete browser authorization as the accepted tester,
+then `make instagram-auth-status`. Safe acceptance is authorize → exchange →
+verify `@ask.every.day` → store → status. Authorization codes are single-use: a
+failed exchange requires a fresh login, never replaying its callback or code.
 Do not share the authorization URL, callback query, code, state or secrets in logs
 or chat. Media creation/publishing remains behind separate AED-022 authorization.
 
