@@ -116,6 +116,7 @@ Tunnel. It verifies public bytes and stays alive until Ctrl+C; it does not publi
 [Instagram authentication](docs/instagram-auth.md) provides browser OAuth, a
 loopback HTTPS callback, account binding and macOS Keychain credential lifecycle.
 Meta accepted the localhost redirect and the owner accepted the tester invitation.
-Local TLS/config/secret setup and safe live login acceptance remain pending.
+Safe live login and account verification passed on 26 October using the AED-050
+response-parser fix; controlled image-publication acceptance remains pending.
 These commands do not create Instagram media or publish posts. Webhooks are not
 required for this scope, and App Review is deferred for tester acceptance.

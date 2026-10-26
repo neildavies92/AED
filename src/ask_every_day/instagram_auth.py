@@ -313,18 +313,44 @@ class InstagramAuthClient:
         )
         result = None
         try:
-            rows = data["data"]
-            if not isinstance(rows, list) or len(rows) != 1:
+            row = data
+            if "data" in data:
+                rows = data["data"]
+                if (
+                    not isinstance(rows, list)
+                    or len(rows) != 1
+                    or any(
+                        k in data for k in ("access_token", "user_id", "permissions")
+                    )
+                ):
+                    raise ValueError
+                row = rows[0]
+            if not isinstance(row, dict) or "error" in row:
                 raise ValueError
-            row = rows[0]
             permissions = row["permissions"]
-            if not isinstance(permissions, str):
+            if isinstance(permissions, str):
+                permissions = permissions.split(",")
+            if (
+                not isinstance(permissions, list)
+                or not 1 <= len(permissions) <= 16
+                or any(
+                    not isinstance(s, str)
+                    or not s.startswith("instagram_business_")
+                    or not s.replace("_", "").isascii()
+                    or not s.replace("_", "").isalpha()
+                    or len(s) > 100
+                    for s in permissions
+                )
+            ):
                 raise ValueError
-            scopes = frozenset(permissions.split(","))
-            if not SCOPES <= scopes:
+            scopes = frozenset(permissions)
+            if len(scopes) != len(permissions) or not SCOPES <= scopes:
                 raise ValueError
+            user_id = row["user_id"]
+            if type(user_id) is int and user_id > 0:
+                user_id = str(user_id)
             result = _AuthorizationGrant(
-                _secret(row["access_token"]), _id(row["user_id"]), scopes
+                _secret(row["access_token"]), _id(user_id), scopes
             )
         except (ValueError, KeyError, TypeError, AuthError):
             pass
