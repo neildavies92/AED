@@ -68,7 +68,12 @@ def main(argv: list[str] | None = None) -> None:
         "--credential-dir", type=Path, default=Path("/var/lib/aed-credentials")
     )
     parser.add_argument("--backup-dir", type=Path, default=Path("/var/lib/aed/backups"))
+    parser.add_argument(
+        "--log-file", type=Path, help="Persistent bounded scheduler JSON log"
+    )
     args = parser.parse_args(argv)
+    if args.log_file is not None and not args.command.startswith("schedule-"):
+        parser.error("--log-file requires a schedule-* command")
     configure_logging()
     failure = False
     _LOG.info(
@@ -82,18 +87,21 @@ def main(argv: list[str] | None = None) -> None:
         if args.command.startswith("schedule-"):
             # No substitute publisher or policy: capability is present only after A merges.
             module = importlib.import_module("ask_every_day.scheduler_cli")
+            forwarded = [
+                args.command.removeprefix("schedule-"),
+                "--config",
+                str(args.config),
+                "--auth-config",
+                str(args.auth_config),
+                "--schedule-config",
+                str(args.schedule_config),
+                "--data-dir",
+                str(args.data_dir),
+            ]
+            if args.log_file is not None:
+                forwarded.extend(["--log-file", str(args.log_file)])
             module.main(
-                [
-                    args.command.removeprefix("schedule-"),
-                    "--config",
-                    str(args.config),
-                    "--auth-config",
-                    str(args.auth_config),
-                    "--schedule-config",
-                    str(args.schedule_config),
-                    "--data-dir",
-                    str(args.data_dir),
-                ],
+                forwarded,
                 credential_factory=lambda path: credential_factory(
                     path, args.credential_dir
                 ),

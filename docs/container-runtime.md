@@ -81,7 +81,8 @@ Default `preview` is offline/read-only: queue selection, canonical JPEG/hash and
 palette checks only. It never reads credentials or starts staging/Meta calls.
 Output omits editorial text and secrets. `publication-status` uses existing safe
 read-only recovery reports. Configuration flags are `--config`, `--auth-config`,
-`--schedule-config`, `--data-dir`, `--credential-dir` and `--backup-dir`.
+`--schedule-config`, `--data-dir`, `--credential-dir`, `--backup-dir` and
+`--log-file` (scheduler commands only).
 
 The agreed AED-027 interface is `ask_every_day.scheduler_cli.main(argv=None, *,
 credential_factory)` with `preview/run/status/enable/disable/check-credentials` and
@@ -202,7 +203,7 @@ explicit approval**:
 # Only on a host cron implementation supporting CRON_TZ; otherwise use UTC frequent
 # triggers and rely on AED's Europe/London window, never the host cron zone alone.
 CRON_TZ=Europe/London
-# * * * * * cd /private/deployment && /usr/bin/docker compose -f compose.yaml run --rm --no-deps publisher schedule-run
+# * * * * * cd /private/deployment && /usr/bin/docker compose -f compose.yaml run --rm --no-deps publisher schedule-run --log-file /var/lib/aed/scheduler.jsonl
 ```
 
 This is a disabled once-per-minute trigger example, not an installed cron job.
@@ -211,7 +212,14 @@ the configured window or they can miss an otherwise valid run. DST, repeated/mis
 one post per local day (including manual successes), account/policy approval and
 unresolved checkpoints are enforced by A's application workflow. There is no missed
 run bulk backfill. Inspect cron's actual timezone support and absolute Docker path
-on the chosen host. Cron alone supplies no idempotency.
+on the chosen host. Cron alone supplies no idempotency. Docker's bounded json-file logs disappear
+when `run --rm` removes the container. Pass A's `--log-file` through the adapter to
+`/var/lib/aed/scheduler.jsonl` on persistent state: it provides bounded private
+0600 structured logs, including safe returned container/media IDs needed when a
+later SQLite commit fails. Preserve/export that exact operational evidence through
+an authorized private channel before rotation; do not lose a known response mapping
+or treat a missing log as proof of remote failure. No tokens, raw responses or
+staging URLs belong in these logs. Default offline preview writes no log file.
 
 Before container-first activation: accept/merge A and B with green integrated CI;
 verify target credentials, native rendering and staging without publishing; disable
@@ -255,10 +263,10 @@ Primary sources: [uv Docker integration](https://docs.astral.sh/uv/guides/integr
 ## Verified development results — 27 October 2026
 
 Baseline `cfb33fa590afb70f6eeb3549b8309fe206c1b1eb` passed setup/check with 1,244
-existing tests. Final `make setup` / `make check` passed **1,271 tests**, Ruff lint,
-Ruff format (118 files) and Pyright (zero errors/warnings). The 27 focused backend/
+existing tests. Final `make setup` / `make check` passed **1,273 tests**, Ruff lint,
+Ruff format (118 files) and Pyright (zero errors/warnings). The 29 focused backend/
 adapter tests passed. Actual pinned Linux arm64 runtime/test builds passed;
-**139 native tests** passed with networking disabled, including rendering fixtures
+**141 native tests** passed with networking disabled, including rendering fixtures
 and staging process cleanup. The disposable smoke passed recreation, checkpoint/
 queue/palette/credential continuity, exact canonical bytes, repeat rendering and
 coordinated SQL/palette/assets restore. The final excluded-secret probe scanned

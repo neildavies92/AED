@@ -216,3 +216,21 @@ def test_bad_interactive_import_preserves_prior_credential(
     output = capsys.readouterr()
     assert "SYNTHETIC_PRIVATE" not in output.out + output.err
     assert store.load() == credential()
+
+
+def test_scheduler_persistent_log_path_is_forwarded_without_new_policy(monkeypatch):
+    entry = Mock()
+    monkeypatch.setattr(
+        cli.importlib, "import_module", Mock(return_value=SimpleNamespace(main=entry))
+    )
+    cli.main(["schedule-run", "--log-file", "/var/lib/aed/scheduler.jsonl"])
+    assert entry.call_args.args[0][-2:] == [
+        "--log-file",
+        "/var/lib/aed/scheduler.jsonl",
+    ]
+
+
+def test_log_flag_cannot_silently_promise_persistence_for_other_commands():
+    with pytest.raises(SystemExit) as caught:
+        cli.main(["preview", "--log-file", "/var/lib/aed/scheduler.jsonl"])
+    assert caught.value.code == 2
