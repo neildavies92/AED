@@ -1,0 +1,9 @@
+database_path = "/var/lib/aed/aed.sqlite3"
+assets_path = "/var/lib/aed/assets"
+account_handle = "@ask.every.day"
+
+[palette]
+backgrounds = ["#E2EFF9", "#EDF4FB", "#D3E6F5"]
+text_color = "#1C3651"
+accent_color = "#2F608C"
+seed = 42

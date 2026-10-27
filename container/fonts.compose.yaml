@@ -1,0 +1,10 @@
+# Optional operator-provided licensed fonts; never part of the build context.
+services:
+  publisher:
+    volumes:
+      - type: bind
+        source: ./fonts
+        target: /usr/local/share/fonts/aed
+        read_only: true
+        bind:
+          create_host_path: false

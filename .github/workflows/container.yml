@@ -1,0 +1,33 @@
+name: Container
+
+on:
+  pull_request:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, 'container/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
+  push:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, 'container/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build pinned runtime and test image
+        run: |
+          make -f container/Makefile build
+          make -f container/Makefile test
+      - name: Verify persistence, backup/restore and rendering without network
+        run: make -f container/Makefile smoke
+      - name: Verify excluded synthetic secrets never reach image layers/history/logs
+        run: make -f container/Makefile audit
