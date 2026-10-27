@@ -46,3 +46,17 @@ context. JSON escaping keeps embedded newlines within a single record.
 `configure_logging("WARNING")` (or another stdlib level) changes the threshold.
 No environment variables, config-file keys, logging framework or runtime
 dependency are added.
+
+## Scheduled execution evidence
+
+The scheduler adds safe numeric `container_id`/`media_id` fields for known responses
+when a later local commit fails. The formatter accepts only nonempty ASCII-digit
+strings up to 128 characters in these fields. Tokens, capability URLs, raw provider
+bodies/errors and editorial content remain excluded. Other repository loggers keep
+their existing fields. These operational IDs can support explicit AED-024 recovery;
+they are not credentials or proof of a container/media mapping on their own.
+
+The LaunchAgent's application log rotates at 1 MiB, retaining three older files;
+all files are private (0600). Preserve relevant evidence securely before rotation.
+Functional failure output also includes known IDs. Inspect scheduler failures before
+attempting recovery; the scheduler never automatically retries an uncertain POST.

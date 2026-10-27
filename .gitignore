@@ -45,3 +45,8 @@ htmlcov/
 # Machine-local application configuration
 /aed.toml
 /instagram-auth.toml
+
+# Machine-local unattended authorization and configuration
+/schedule.toml
+*.schedule.json
+.aed-schedule-*
