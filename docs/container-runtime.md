@@ -49,6 +49,10 @@ fail rather than silently creating root-owned storage.
 
 ## Filesystem and command contract
 
+Build or securely load the reviewed image first using the source-root Makefile;
+choose a reviewed version tag/image ID in the deployment YAML. `pull_policy: never`
+fails closed if that image is missing. Deployment Compose has no build context, so
+copying it cannot accidentally build from a private deployment parent directory.
 Copy the deployment YAML to a private operator-owned deployment directory outside
 Git; its relative mounts are `config/`, `state/`, and `credentials/`. Provision
 ownership for UID/GID 10001 on Linux (or a deliberately reviewed equivalent user

@@ -2,9 +2,8 @@
 services:
   publisher:
     image: ask-every-day:local
-    build:
-      context: ..
-      target: runtime
+    # Build/load the reviewed image separately; external deployment paths are not build contexts.
+    pull_policy: never
     user: "10001:10001"
     init: true
     read_only: true
