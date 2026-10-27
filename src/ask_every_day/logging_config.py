@@ -10,6 +10,8 @@ _HANDLER_NAME = "ask_every_day_json_stderr"
 _EVENT = re.compile(r"[a-z][a-z0-9_]{0,79}\Z")
 _TEXT_FIELDS = frozenset(
     {
+        "checkpoint_phase",
+        "resolution",
         "palette_colour",
         "post_id",
         "operation",
@@ -30,6 +32,7 @@ _INTEGER_FIELDS = frozenset(
     {
         "palette_sequence",
         "queue_position",
+        "checkpoint_revision",
         "publication_id",
         "http_status",
         "width",

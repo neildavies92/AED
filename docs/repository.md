@@ -12,8 +12,8 @@ with open_repository(load_config()) as repository:
     posts = repository.list_posts()
 ```
 
-Each connection initializes/checks schema version 2 (migrating version 1 atomically) and enables/verifies foreign
-keys using AED-004's initializer. The context closes it on success, caller failure,
+Each mutable connection initializes/checks schema version 3 (migrating versions 1/2
+atomically) and enables/verifies foreign keys using AED-004's initializer. The context closes it on success, caller failure,
 or initialization failure. No global connections, pooling or asynchronous I/O.
 The lower-level `SQLiteRepository(connection)` initializes a caller-owned
 connection; its caller must close it and must not run transactions or SQL alongside
@@ -65,3 +65,9 @@ No new frequent developer command or dependency is needed. Metrics storage remai
 in the schema; a typed metrics API is deferred until a metrics consumer defines
 its requirements. State-machine policy (AED-020), queue generation, content import
 (AED-033), rendering, publishing, scheduling and analytics are out of scope.
+
+Recovery adds typed checkpoint CRUD with revision compare-and-swap and a publication
+list query. `open_repository(config, read_only=True)` uses SQLite read-only/query-only
+mode and a read transaction, supports legacy v1/v2 inspection without migration, and
+rejects writes. Normal mutable sessions still use BEGIN IMMEDIATE; network activity
+belongs outside these transactions. See [recovery](publication-recovery.md).

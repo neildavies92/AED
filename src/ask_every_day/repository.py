@@ -15,7 +15,12 @@ from ask_every_day.domain import (
     PublicationStatus,
     QueueEntry,
 )
-from ask_every_day.schema import initialize_schema
+from ask_every_day.recovery_domain import (
+    CheckpointPhase,
+    PublicationCheckpoint,
+    Resolution,
+)
+from ask_every_day.schema import SCHEMA_VERSION, initialize_schema
 
 _LOGGER = logging.getLogger(__name__)
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -71,6 +76,10 @@ class Repository(Protocol):
     def update_publication(
         self, publication_id: int, publication: Publication
     ) -> None: ...
+    def list_publications(self) -> list[PublicationRecord]: ...
+    def get_checkpoint(self, publication_id: int) -> PublicationCheckpoint | None: ...
+    def create_checkpoint(self, checkpoint: PublicationCheckpoint) -> None: ...
+    def update_checkpoint(self, checkpoint: PublicationCheckpoint) -> None: ...
     def replace_queue(self, entries: Sequence[QueueEntry]) -> None: ...
     def list_queue(self) -> list[QueueEntry]: ...
     def next_queue_entry(self) -> QueueEntry | None: ...
@@ -120,8 +129,19 @@ class SQLiteRepository:
     reads and writes. No implicit transaction spans a repository session.
     """
 
-    def __init__(self, connection: sqlite3.Connection) -> None:
-        initialize_schema(connection)
+    def __init__(
+        self, connection: sqlite3.Connection, *, read_only: bool = False
+    ) -> None:
+        if read_only:
+            connection.execute("PRAGMA query_only = ON")
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+            if version not in (1, 2, SCHEMA_VERSION):
+                raise ValueError("Unsupported read-only SQLite schema")
+        else:
+            initialize_schema(connection)
+            version = SCHEMA_VERSION
+        self._schema_version = version
+        self._read_only = read_only
         connection.row_factory = sqlite3.Row
         self._connection = connection
         self._transaction_active = False
@@ -155,7 +175,7 @@ class SQLiteRepository:
             raise ValueError(
                 "Repository operations require no active caller transaction"
             )
-        self._connection.execute("BEGIN IMMEDIATE")
+        self._connection.execute("BEGIN" if self._read_only else "BEGIN IMMEDIATE")
         try:
             yield
             self._connection.execute("COMMIT")
@@ -324,6 +344,73 @@ class SQLiteRepository:
             if cursor.rowcount == 0:
                 raise KeyError("Unknown publication ID or mismatched post ID")
 
+    def list_publications(self) -> list[PublicationRecord]:
+        return [
+            _publication(row)
+            for row in self._connection.execute(
+                "SELECT * FROM publications ORDER BY id"
+            )
+        ]
+
+    def get_checkpoint(self, publication_id: int) -> PublicationCheckpoint | None:
+        if self._schema_version < 3:
+            return None
+        row = self._connection.execute(
+            "SELECT * FROM publication_checkpoints WHERE publication_id=?",
+            (publication_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        values = dict(row)
+        values["phase"] = CheckpointPhase(values["phase"])
+        values["resolution"] = (
+            Resolution(values["resolution"]) if values["resolution"] else None
+        )
+        for name in ("checkpoint_at", "create_intent_at", "publish_intent_at"):
+            values[name] = (
+                from_microseconds(values[name]) if values[name] is not None else None
+            )
+        return PublicationCheckpoint(**values)
+
+    @staticmethod
+    def _checkpoint_values(checkpoint: PublicationCheckpoint) -> tuple[object, ...]:
+        checkpoint.__post_init__()
+        return (
+            checkpoint.publication_id,
+            checkpoint.account_id,
+            checkpoint.username,
+            checkpoint.asset_sha256,
+            checkpoint.phase.value,
+            to_microseconds(checkpoint.checkpoint_at),
+            checkpoint.revision,
+            to_microseconds(checkpoint.create_intent_at)
+            if checkpoint.create_intent_at
+            else None,
+            to_microseconds(checkpoint.publish_intent_at)
+            if checkpoint.publish_intent_at
+            else None,
+            checkpoint.container_id,
+            checkpoint.resolution.value if checkpoint.resolution else None,
+            checkpoint.evidence_sha256,
+        )
+
+    def create_checkpoint(self, checkpoint: PublicationCheckpoint) -> None:
+        with self._write("create_checkpoint", publication_id=checkpoint.publication_id):
+            self._connection.execute(
+                "INSERT INTO publication_checkpoints VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                self._checkpoint_values(checkpoint),
+            )
+
+    def update_checkpoint(self, checkpoint: PublicationCheckpoint) -> None:
+        values = self._checkpoint_values(checkpoint)
+        with self._write("update_checkpoint", publication_id=checkpoint.publication_id):
+            cursor = self._connection.execute(
+                "UPDATE publication_checkpoints SET account_id=?,username=?,asset_sha256=?,phase=?,checkpoint_at=?,revision=?,create_intent_at=?,publish_intent_at=?,container_id=?,resolution=?,evidence_sha256=? WHERE publication_id=? AND revision=?",
+                (*values[1:], checkpoint.publication_id, checkpoint.revision - 1),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("Stale or missing publication checkpoint")
+
     def replace_queue(self, entries: Sequence[QueueEntry]) -> None:
         with self._write("replace_queue", row_count=len(entries)):
             self._connection.execute("DELETE FROM publication_queue")
@@ -358,11 +445,17 @@ class SQLiteRepository:
 
 
 @contextmanager
-def open_repository(config: AppConfig) -> Iterator[SQLiteRepository]:
+def open_repository(
+    config: AppConfig, *, read_only: bool = False
+) -> Iterator[SQLiteRepository]:
     """Open the configured database; its parent directory must already exist."""
-    connection = sqlite3.connect(config.database_path)
+    connection = (
+        sqlite3.connect(config.database_path.absolute().as_uri() + "?mode=ro", uri=True)
+        if read_only
+        else sqlite3.connect(config.database_path)
+    )
     try:
-        repository = SQLiteRepository(connection)
+        repository = SQLiteRepository(connection, read_only=read_only)
         _LOGGER.info("Repository opened", extra={"event": "repository_opened"})
         yield repository
     finally:

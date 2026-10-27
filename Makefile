@@ -3,9 +3,13 @@
 # Carry any Make-supplied fallback through macOS's protected shell boundary.
 CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-cairo.sh
 
-.PHONY: render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
+.PHONY: backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make backup-state  Back up SQLite and palette together without migration"
+	@echo "make migrate-state Back up state, then migrate SQLite without publishing"
+	@echo "make publication-status Inspect durable publication state offline"
+	@echo "make reconcile-publication ATTEMPT_ID=1 Inspect one attempt; REMOTE=1 enables GETs"
 	@echo "make render-next   Prepare the next queued Post with its publication colour"
 	@echo "make publish-next  Preview next post; CONFIRM=1 requires interactive approval"
 	@echo "make instagram-login Connect Instagram using browser login and local HTTPS"
@@ -85,3 +89,15 @@ publish-next:
 
 render-next:
 	$(CAIRO_RUN) uv run python -m ask_every_day.render_next
+
+publication-status:
+	uv run python -m ask_every_day.publication_recovery_cli status $(if $(ATTEMPT_ID),--attempt-id "$(ATTEMPT_ID)",) $(if $(filter 1,$(SHOW_IDS)),--show-ids,)
+
+reconcile-publication:
+	uv run python -m ask_every_day.publication_recovery_cli reconcile --attempt-id "$(ATTEMPT_ID)" $(if $(filter 1,$(REMOTE)),--remote,) $(if $(RESOLVE),--resolve "$(RESOLVE)",) $(if $(EVIDENCE),--evidence "$(EVIDENCE)",) $(if $(filter 1,$(CONFIRM)),--confirm,) $(if $(filter 1,$(SHOW_IDS)),--show-ids,)
+
+backup-state:
+	uv run python -m ask_every_day.publication_recovery_cli backup
+
+migrate-state:
+	uv run python -m ask_every_day.publication_recovery_cli migrate

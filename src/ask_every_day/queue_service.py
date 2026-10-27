@@ -10,6 +10,7 @@ from ask_every_day.publication_service import (
 )
 from ask_every_day.queue_generation import generate_queue
 from ask_every_day.queue_rules import QueueRules
+from ask_every_day.recovery_domain import validate_checkpoint
 from ask_every_day.repository import Repository
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,10 +42,12 @@ def generate_and_store_queue(
                 raise InvalidTransition("Queue references unknown runtime posts")
             eligible = []
             for post in posts:
-                state = publication_state(
-                    repository.publication_history(post.id),
-                    queued=post.id in queued_ids,
-                )
+                history = repository.publication_history(post.id)
+                for record in history:
+                    validate_checkpoint(
+                        record.publication, repository.get_checkpoint(record.id)
+                    )
+                state = publication_state(history, queued=post.id in queued_ids)
                 if state in (PublicationState.READY, PublicationState.QUEUED):
                     eligible.append(post)
             ordered = generate_queue(
