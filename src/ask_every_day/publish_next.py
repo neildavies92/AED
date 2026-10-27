@@ -30,13 +30,21 @@ from ask_every_day.instagram_client import (
     InstagramIdentity,
     PublishedMedia,
     PublishingQuota,
+    _id,
 )
 from ask_every_day.media_staging import StagedMedia, stage_media
-from ask_every_day.publication_assets import AssetError, asset_preview, queued_post
+from ask_every_day.publication_assets import (
+    AssetError,
+    asset_preview,
+    queued_post,
+    validate_palette_success,
+)
+from ask_every_day.publication_checkpoints import CheckpointService
 from ask_every_day.publication_service import (
     PublicationService,
     PublicationState,
 )
+from ask_every_day.recovery_domain import PublicationContext
 from ask_every_day.repository import Repository
 
 _LOG = logging.getLogger(__name__)
@@ -197,9 +205,14 @@ class PublishResult:
 
 
 def _provider_id(value: str) -> str:
-    if not isinstance(value, str) or re.fullmatch(r"[0-9]{1,64}", value) is None:
+    result = None
+    try:
+        result = _id(value)
+    except ValueError:
+        pass
+    if result is None:
         raise PublishError("invalid_provider_result")
-    return value
+    return result
 
 
 def publish_approved(
@@ -251,13 +264,24 @@ def publish_approved(
                 raise PublishError("preview_changed")
             service = PublicationService(repository)
             phase = "begin_attempt"
-            attempt_id = service.begin_publish(plan.post.id, clock()).id
+            attempt_id = service.begin_publish(
+                plan.post.id,
+                clock(),
+                context=PublicationContext(
+                    account_id, identity.username, plan.asset_sha256
+                ),
+            ).id
+            checkpoints = CheckpointService(repository)
+            phase = "create_intent"
+            checkpoints.create_intent(attempt_id, clock())
             phase = "create_container"
             container_id = _provider_id(
                 client.create_image_container(
                     account_id, media.public_url, caption=plan.caption
                 ).id
             )
+            phase = "record_container"
+            checkpoints.container_known(attempt_id, container_id, clock())
             phase = "container_readiness"
             for index in range(5):
                 status = client.container_status(container_id)
@@ -265,7 +289,9 @@ def publish_approved(
                     break
                 if status in (ContainerStatus.ERROR, ContainerStatus.EXPIRED):
                     service.record_failure(
-                        attempt_id, f"container_{status.value.lower()}"
+                        attempt_id,
+                        f"container_{status.value.lower()}",
+                        checkpoint_at=clock(),
                     )
                     raise PublishError("container_terminal")
                 if status is not ContainerStatus.IN_PROGRESS:
@@ -273,12 +299,21 @@ def publish_approved(
                 if index == 4:
                     raise PublishError("container_timeout")
                 sleep(60)
+            phase = "publish_intent"
+            checkpoints.publish_intent(attempt_id, clock())
             phase = "publish_container"
             media_id = _provider_id(
                 client.publish_container(account_id, container_id).id
             )
             phase = "record_success"
-            service.record_success(attempt_id, clock(), external_id=media_id)
+            service.record_success(
+                attempt_id,
+                clock(),
+                external_id=media_id,
+                validate_result=lambda: validate_palette_success(
+                    repository, config, plan.post.id, plan.asset_sha256
+                ),
+            )
             if service.state(plan.post.id) is not PublicationState.PUBLISHED:
                 raise PublishError("local_result_unverified")
             phase = "cleanup"

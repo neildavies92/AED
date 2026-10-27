@@ -23,6 +23,7 @@ from ask_every_day.media_staging import _jpeg
 from ask_every_day.palette import Assignment, colour, next_assignment
 from ask_every_day.png_export import export_png
 from ask_every_day.publication_service import PublicationState, publication_state
+from ask_every_day.recovery_domain import validate_checkpoint
 from ask_every_day.renderer import render_svg
 from ask_every_day.repository import PublicationRecord, Repository
 
@@ -152,9 +153,12 @@ def queued_post(repository: Repository) -> tuple[Post, QueueEntry] | None:
     """Fail closed on unresolved attempts before choosing or preparing any asset."""
     queued = {entry.post_id for entry in repository.list_queue()}
     for post in repository.list_posts():
-        state = publication_state(
-            repository.publication_history(post.id), queued=post.id in queued
-        )
+        history = repository.publication_history(post.id)
+        for record in history:
+            validate_checkpoint(
+                record.publication, repository.get_checkpoint(record.id)
+            )
+        state = publication_state(history, queued=post.id in queued)
         if state is PublicationState.PUBLISHING:
             raise AssetError("unresolved_publication")
     entry = repository.next_queue_entry()
@@ -389,3 +393,13 @@ def prepare_next_asset(
         )
         raise AssetError(reason)
     return result
+
+
+def validate_palette_success(
+    repository: Repository, config: AppConfig, post_id: str, asset_sha256: str | None
+) -> None:
+    """Run inside the result transaction; a mismatch rolls back local success."""
+    ledger, _ = _history(repository, config)
+    asset = ledger.assets.get(post_id)
+    if asset is None or asset.jpeg_sha256 != asset_sha256:
+        raise AssetError("recovered_palette_asset_conflict")

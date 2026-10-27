@@ -26,11 +26,17 @@ def test_initialization(
     db: sqlite3.Connection, caplog: pytest.LogCaptureFixture
 ) -> None:
     assert db.execute("PRAGMA foreign_keys").fetchone() == (1,)
-    assert db.execute("PRAGMA user_version").fetchone() == (2,)
+    assert db.execute("PRAGMA user_version").fetchone() == (3,)
     assert {
         row[0]
         for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
-    } == {"posts", "publication_queue", "publications", "performance_metrics"}
+    } == {
+        "posts",
+        "publication_queue",
+        "publications",
+        "performance_metrics",
+        "publication_checkpoints",
+    }
     db.execute("PRAGMA foreign_keys = OFF")
     initialize_schema(db)
     assert db.execute("PRAGMA foreign_keys").fetchone() == (1,)
@@ -41,7 +47,7 @@ def test_initialization(
     assert caplog.records[-1].__dict__["event"] == "sqlite_schema_initialized"
 
 
-@pytest.mark.parametrize("version", [3, 99])
+@pytest.mark.parametrize("version", [4, 99])
 def test_unknown_version(version: int) -> None:
     with sqlite3.connect(":memory:") as connection:
         connection.execute(f"PRAGMA user_version = {version}")
@@ -215,4 +221,4 @@ def test_initialization_failure_rolls_back() -> None:
         assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
         connection.set_authorizer(None)
         initialize_schema(connection)
-        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (3,)

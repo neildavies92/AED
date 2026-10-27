@@ -118,8 +118,8 @@ untracked tool require reconciliation, not guessed metadata.
 Structured events include colour, Post ID, queue position, palette sequence and
 publication attempt ID when available. Editorial text, image payloads, capability
 URLs and credentials are excluded. This feature adds no live API calls or
-scheduler and does not implement AED-024 recovery. Reposting a deleted post needs
-an explicit recovery policy; historical Published records remain terminal.
+scheduler. AED-024 adds explicit recovery without requeueing attempts; historical
+Published records remain terminal.
 
 ## Verification — 26 October 2026
 
@@ -133,3 +133,11 @@ Ice Blue, Mist Blue and Soft Blue JPEGs of AED-0395 and a long-prompt PNG of AED
 were generated locally and visually checked at 1080×1350: readable ink, unchanged
 Classic placement/highlights and no clipping. The deliberate SVG/PNG specimen
 was refreshed; local review images remain ignored under `output/aed-051-review/`.
+
+## Publication recovery — AED-024
+
+Recovery retains the original assignment and JPEG digest, validates the resulting
+Published ordering and matching palette metadata inside the local success
+transaction, and never rewrites attempted images. Missing/mismatched sidecars keep
+the attempt unresolved. `make backup-state` / `make migrate-state` back up SQLite
+and the palette together; see [publication recovery](publication-recovery.md).

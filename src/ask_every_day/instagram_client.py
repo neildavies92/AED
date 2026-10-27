@@ -6,6 +6,7 @@ import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 from typing import Protocol, cast
 from urllib.error import HTTPError
@@ -39,6 +40,26 @@ class Container:
 @dataclass(frozen=True)
 class PublishedMedia:
     id: str
+
+
+@dataclass(frozen=True)
+class MediaDetails:
+    id: str
+    owner_id: str
+    media_type: str
+    published_at: datetime
+
+    def __post_init__(self) -> None:
+        _id(self.id)
+        _id(self.owner_id)
+        if self.media_type not in {"IMAGE", "VIDEO", "CAROUSEL_ALBUM"}:
+            raise ValueError("Unexpected media type")
+        if (
+            not isinstance(self.published_at, datetime)
+            or self.published_at.tzinfo is None
+            or self.published_at.utcoffset() is None
+        ):
+            raise ValueError("Expected an aware media timestamp")
 
 
 class ContainerStatus(StrEnum):
@@ -151,6 +172,18 @@ def _quota(data: dict) -> PublishingQuota:
     )
 
 
+def _media_details(data: dict) -> MediaDetails:
+    owner = data["owner"]
+    if not isinstance(owner, dict):
+        raise ValueError("Expected media owner object")
+    return MediaDetails(
+        _id(data["id"]),
+        _id(owner["id"]),
+        _text(data["media_type"]),
+        datetime.fromisoformat(_text(data["timestamp"])),
+    )
+
+
 def _image_url(value: object) -> str:
     valid = False
     if isinstance(value, str) and not any(c.isspace() or ord(c) < 32 for c in value):
@@ -257,6 +290,16 @@ class InstagramClient:
             f"{_id(account_id)}/media_publish",
             {"creation_id": _id(container_id)},
             lambda data: PublishedMedia(_id(data["id"])),
+        )
+
+    def media_details(self, media_id: str) -> MediaDetails:
+        """GET only; owner is required, never infer identity by caption or likeness."""
+        return self._call(
+            "media_details",
+            "GET",
+            _id(media_id),
+            {"fields": "id,owner,media_type,timestamp"},
+            _media_details,
         )
 
     def _call[T](

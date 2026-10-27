@@ -74,7 +74,7 @@ def test_snapshot_to_published_with_representative_batch(tmp_path: Path) -> None
         selected = by_id[queue[0].post_id]
     # user_version is the public SQLite schema version, not a private table layout.
     with sqlite3.connect(config.database_path) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
 
     with open_repository(config) as repo:
         assert repo.list_queue() == queue

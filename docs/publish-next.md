@@ -85,13 +85,15 @@ container and media IDs. A media ID means Meta reported publication even if loca
 persistence or cleanup failed. Inspect SQLite and provider evidence before any
 further action. A Published record is terminal and cannot be selected again.
 
-**AED-024 remains required for recovery:** the current schema persists attempt
-state and the successful media ID, but has no durable container ID or remote
-operation checkpoint. IDs printed during this process can be lost on a hard
-crash. Blocking unresolved attempts prevents blind restart; it does not provide
-full cross-crash idempotency or automatic reconciliation. Do not edit SQLite to
-work around that block. Abrupt process death can also require operator cleanup
-of surviving staging resources; normal exceptions and Ctrl+C use context cleanup.
+**AED-024 recovery is implemented:** schema-v3 checkpoints retain account/asset
+binding, create and publish intent, and the returned container ID. Media ID and
+Published commit together with completion and palette validation. No POST is
+resumed after restart. Use `make publication-status` or read-only
+`make reconcile-publication ATTEMPT_ID=...`; remote GETs and local mutation require
+explicit options. See [publication recovery](publication-recovery.md) before
+`make migrate-state`, recovery or any interpretation of an uncertain result.
+An ID can still be lost between receiving it and a failed/crashed SQLite commit;
+its prior intent blocks replay but does not implement provider exactly-once delivery.
 
 This ticket supplies an interactive one-post workflow. Scheduling, retries and
 unattended approval policy are separate work and are not enabled here.

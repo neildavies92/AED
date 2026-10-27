@@ -1,8 +1,8 @@
 # Ask Every Day
 
 Ask Every Day is a local-first Python automation project for the Instagram account
-@ask.every.day. This foundation provides an installable package and development
-tools, plus validated domain models. Application workflows will be added in later tickets.
+@ask.every.day. It provides approved content, deterministic queues, rendering, interactive
+publishing and explicit recovery with validated domain models.
 
 ## Prerequisites
 
@@ -33,6 +33,10 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make publication-status` | Inspect publication/checkpoint state offline without migration |
+| `make reconcile-publication ATTEMPT_ID=1` | Inspect one attempt; remote reads and local resolution require explicit options |
+| `make backup-state` | Back up SQLite and the palette together |
+| `make migrate-state` | Back up state, then migrate the schema without publishing |
 | `make render-next` | Prepare the next queued Post with its success-sequenced background |
 | `make publish-next` | Preview next queued post; `CONFIRM=1` requires exact interactive approval |
 | `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
@@ -131,3 +135,8 @@ persistence, cleanup and reconciliation limits.
 palette and explains `make render-next`, persisted assignments and one-time
 initialization for historical publications. Bulk renders are review drafts;
 prepare the next canonical image before approving it.
+
+[Publication recovery](docs/publication-recovery.md) documents schema-v3 migration,
+coordinated backups, durable POST checkpoints and explicit evidence-based local
+resolution. Uncertain outcomes block automatic replay; this is not a provider
+exactly-once guarantee or an enabled scheduler.

@@ -110,7 +110,7 @@ def test_fresh_and_migrated_metadata_constraints(migrated: bool) -> None:
         if migrated:
             genuine_v1(connection)
         initialize_schema(connection)
-        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (3,)
         assert connection.execute("PRAGMA foreign_keys").fetchone() == (1,)
         if migrated:
             with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
@@ -198,7 +198,7 @@ def test_second_alter_failure_rolls_back_schema_and_version() -> None:
         assert connection.execute("PRAGMA user_version").fetchone() == (1,)
         assert not connection.in_transaction
         initialize_schema(connection)
-        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (3,)
 
 
 @pytest.mark.parametrize(

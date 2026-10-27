@@ -22,8 +22,9 @@ silently repairs it or discards history. All reads check that the Post exists.
 
 Every other pair, including self-transitions, is rejected. Published is terminal.
 Failed is also terminal for now: an error can represent an uncertain remote side
-effect, so neither Failed → Queued nor Failed → Publishing is exposed. Operator
-reconciliation/retry policy belongs to AED-024. No automatic retry or reset exists.
+effect, so neither Failed → Queued nor Failed → Publishing is exposed. Explicit
+operator reconciliation is documented in [publication recovery](publication-recovery.md).
+No automatic retry or reset exists.
 A pre-existing, coherent sequence of failed attempts followed by one active attempt
 can finish; earlier failure records remain untouched. The service does not itself
 create multiple attempts for a post until a future safe retry policy exists.
@@ -68,7 +69,21 @@ logging configuration remains external to the service.
 
 This is **local state validity**, not protection against duplicate Instagram posts.
 A crash after a remote action still requires reconciliation. Network publishing,
-idempotency/recovery (AED-024), queue generation, scheduling and rendering are
-excluded. No schema changes or dependencies are needed. `make setup` and
-`make check` exercise the full state matrix, timestamp/history contracts, atomic
+queue generation, scheduling and rendering are separate services. AED-024 adds
+internal checkpoint persistence and explicit recovery as described below; it adds
+no dependencies. `make setup` and `make check` exercise the full state matrix, timestamp/history contracts, atomic
 rollback, independent connections and safe logging.
+
+## Durable remote checkpoints — AED-024
+
+New publish-next attempts atomically add Prepared context when consuming the queue.
+Independent CreateIntent and PublishIntent commits precede each remote POST; the
+container ID is committed before polling. Successful media ID, Published and
+Completed checkpoint commit together, including palette-history validation. Public
+states and terminal policy are unchanged. Legacy records receive no guessed context.
+
+Reconciliation defaults to read-only. Exact account-bound captured-response evidence
+and interactive snapshot confirmation can complete a known success locally. Only
+provably pre-publish failures can close as Failed; no attempt is deleted or requeued.
+Uncertain requests stay Publishing. See the [recovery guide](publication-recovery.md)
+for evidence limits, atomicity, rollback, commands and explicit production migration.

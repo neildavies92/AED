@@ -687,6 +687,8 @@ def test_two_confirmed_fake_publications_use_distinct_prepared_colours(run):
     second = run.preview()
     assert second.palette_sequence == first.palette_sequence + 1
     assert second.background_color != first.background_color
+    run.client.create_image_container.return_value = Container("106")
+    run.client.publish_container.return_value = PublishedMedia("107")
     run.publish(plan=second)
     assert run.client.publish_container.call_count == 2
     assert run.repo.list_queue() == []

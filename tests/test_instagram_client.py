@@ -360,3 +360,52 @@ def test_invalid_unicode_is_sanitized():
 def test_invalid_identity(data):
     with pytest.raises(ResponseError):
         client(Fake(data)).identify_account()
+
+
+def test_media_evidence_uses_only_documented_instagram_login_get_fields():
+    fake = Fake(
+        {
+            "id": "105",
+            "owner": {"id": "103"},
+            "media_type": "IMAGE",
+            "timestamp": "2026-10-26T21:00:00+0000",
+        }
+    )
+    result = client(fake).media_details("105")
+    assert result.id == "105" and result.owner_id == "103"
+    offset = result.published_at.utcoffset()
+    assert offset is not None and offset.total_seconds() == 0
+    method, url, _, body, _ = fake.calls[0]
+    assert method == "GET" and body is None
+    assert url.startswith(BASE_URL + "/105?")
+    assert parse_qs(urlsplit(url).query) == {
+        "fields": ["id,owner,media_type,timestamp"]
+    }
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"id": 123},
+        {"id": "１２３"},
+        {"owner": None},
+        {"owner": {"id": 123}},
+        {"media_type": "UNKNOWN"},
+        {"timestamp": "2026-10-26T21:00:00"},
+        {"timestamp": "SYNTHETIC_PRIVATE_BODY"},
+    ],
+)
+def test_media_evidence_malformed_response_is_sanitized(change):
+    fake = Fake(
+        {
+            "id": "105",
+            "owner": {"id": "103"},
+            "media_type": "IMAGE",
+            "timestamp": "2026-10-26T21:00:00+0000",
+            **change,
+        }
+    )
+    with pytest.raises(ResponseError) as caught:
+        client(fake).media_details("105")
+    assert not caught.value.outcome_uncertain and caught.value.__context__ is None
+    assert "SYNTHETIC_PRIVATE" not in str(caught.value)
