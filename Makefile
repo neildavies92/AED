@@ -3,9 +3,16 @@
 # Carry any Make-supplied fallback through macOS's protected shell boundary.
 CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-cairo.sh
 
-.PHONY: backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
+.PHONY: schedule-preview schedule-run schedule-status schedule-enable schedule-disable schedule-check-credentials schedule-launchd backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make schedule-preview Inspect daily policy without publishing or authorizing"
+	@echo "make schedule-run  Run at most one authorized publication; disabled by default"
+	@echo "make schedule-status Inspect/revalidate unattended authorization"
+	@echo "make schedule-enable Explicit interactive opt-in for future daily posts"
+	@echo "make schedule-disable Revoke unattended authorization"
+	@echo "make schedule-check-credentials Check local credentials without network/refresh"
+	@echo "make schedule-launchd Generate an inactive LaunchAgent; never install it"
 	@echo "make backup-state  Back up SQLite and palette together without migration"
 	@echo "make migrate-state Back up state, then migrate SQLite without publishing"
 	@echo "make publication-status Inspect durable publication state offline"
@@ -101,3 +108,26 @@ backup-state:
 
 migrate-state:
 	uv run python -m ask_every_day.publication_recovery_cli migrate
+
+SCHEDULE_ARGS ?=
+
+schedule-preview:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli preview $(SCHEDULE_ARGS)
+
+schedule-run:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli run $(SCHEDULE_ARGS)
+
+schedule-status:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli status $(SCHEDULE_ARGS)
+
+schedule-enable:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli enable $(SCHEDULE_ARGS)
+
+schedule-disable:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli disable $(SCHEDULE_ARGS)
+
+schedule-check-credentials:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_cli check-credentials $(SCHEDULE_ARGS)
+
+schedule-launchd:
+	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_launchd --python "$(CURDIR)/.venv/bin/python" --working-directory "$(CURDIR)" --config "$(CURDIR)/aed.toml" --schedule-config "$(CURDIR)/schedule.toml" --auth-config "$(CURDIR)/instagram-auth.toml" --data-dir "$(CURDIR)/data" --log-file "$(CURDIR)/output/scheduler.jsonl"

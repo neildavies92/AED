@@ -227,8 +227,9 @@ def publish_approved(
     stage: Stage = stage_media,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     sleep: Callable[[float], None] = time.sleep,
+    dispatch_guard: Callable[[int | None], None] | None = None,
 ) -> PublishResult:
-    """Caller holds the CLI database lock and obtains an interactive exact approval."""
+    """Caller holds the lock and obtains exact manual or validated policy approval."""
     attempt_id = None
     container_id = None
     media_id = None
@@ -262,6 +263,8 @@ def publish_approved(
                 raise PublishError("staged_post_mismatch")
             if preview_next(repository, config, catalog) != plan:
                 raise PublishError("preview_changed")
+            if dispatch_guard is not None:
+                dispatch_guard(None)
             service = PublicationService(repository)
             phase = "begin_attempt"
             attempt_id = service.begin_publish(
@@ -274,6 +277,8 @@ def publish_approved(
             checkpoints = CheckpointService(repository)
             phase = "create_intent"
             checkpoints.create_intent(attempt_id, clock())
+            if dispatch_guard is not None:
+                dispatch_guard(attempt_id)
             phase = "create_container"
             container_id = _provider_id(
                 client.create_image_container(
@@ -299,8 +304,12 @@ def publish_approved(
                 if index == 4:
                     raise PublishError("container_timeout")
                 sleep(60)
+            if dispatch_guard is not None:
+                dispatch_guard(attempt_id)
             phase = "publish_intent"
             checkpoints.publish_intent(attempt_id, clock())
+            if dispatch_guard is not None:
+                dispatch_guard(attempt_id)
             phase = "publish_container"
             media_id = _provider_id(
                 client.publish_container(account_id, container_id).id

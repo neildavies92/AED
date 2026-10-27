@@ -33,6 +33,13 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make schedule-preview` | Inspect the daily policy without credentials/network or opt-in |
+| `make schedule-status` | Inspect/revalidate unattended authorization |
+| `make schedule-enable` | Explicit interactive approval for future daily publications |
+| `make schedule-disable` | Revoke unattended approval |
+| `make schedule-run` | Execute at most one authorized daily publication; default disabled |
+| `make schedule-check-credentials` | Check local credentials without refresh/provider calls |
+| `make schedule-launchd` | Generate an inactive user LaunchAgent |
 | `make publication-status` | Inspect publication/checkpoint state offline without migration |
 | `make reconcile-publication ATTEMPT_ID=1` | Inspect one attempt; remote reads and local resolution require explicit options |
 | `make backup-state` | Back up SQLite and the palette together |
@@ -140,3 +147,9 @@ prepare the next canonical image before approving it.
 coordinated backups, durable POST checkpoints and explicit evidence-based local
 resolution. Uncertain outcomes block automatic replay; this is not a provider
 exactly-once guarantee or an enabled scheduler.
+
+[Daily scheduling](docs/scheduler.md) adds explicit, revocable authorization for a
+short-lived portable command. It is disabled by default. The macOS LaunchAgent is
+generated separately and is never installed or activated by setup. The
+[runtime contract](docs/runtime-contract.md) defines credential injection and the
+shared command for the later Linux container adapter.
