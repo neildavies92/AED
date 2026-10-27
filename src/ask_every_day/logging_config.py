@@ -66,6 +66,7 @@ _INTEGER_FIELDS = frozenset(
 )
 
 _BOOLEAN_FIELDS = frozenset({"connector_registered"})
+_PROVIDER_ID_FIELDS = frozenset({"container_id", "media_id"})
 
 
 class JSONFormatter(logging.Formatter):
@@ -83,12 +84,22 @@ class JSONFormatter(logging.Formatter):
             if isinstance(event, str) and _EVENT.fullmatch(event)
             else "log_record",
         }
-        for field in sorted(_TEXT_FIELDS | _INTEGER_FIELDS | _BOOLEAN_FIELDS):
+        for field in sorted(
+            _TEXT_FIELDS | _INTEGER_FIELDS | _BOOLEAN_FIELDS | _PROVIDER_ID_FIELDS
+        ):
             if field not in record.__dict__:
                 continue
             value = record.__dict__[field]
             if value is None:
                 payload[field] = None
+            elif field in _PROVIDER_ID_FIELDS:
+                if (
+                    isinstance(value, str)
+                    and 0 < len(value) <= 128
+                    and value.isascii()
+                    and value.isdigit()
+                ):
+                    payload[field] = value
             elif field in _BOOLEAN_FIELDS and type(value) is bool:
                 payload[field] = value
             elif field in _INTEGER_FIELDS and type(value) is int:

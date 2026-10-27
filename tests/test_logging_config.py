@@ -277,3 +277,34 @@ def test_import_failure_log_has_safe_type(tmp_path: Path) -> None:
     assert failure["error_type"] == "FileNotFoundError"
     assert "timestamp" in failure
     assert lines[1].startswith("Import failed")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "１２３",
+        "104secret",
+        "https://example.test/capability",
+        "1" * 129,
+        104,
+        True,
+        {"token": "private"},
+    ],
+)
+def test_provider_evidence_ids_accept_only_bounded_ascii_digits(value):
+    output = JSONFormatter().format(
+        record(event="scheduler_command_failed", container_id=value, media_id=value)
+    )
+    result = json.loads(output)
+    assert "container_id" not in result and "media_id" not in result
+    assert "private" not in output and "capability" not in output
+
+
+def test_provider_evidence_ids_are_safe_operational_context():
+    result = json.loads(
+        JSONFormatter().format(
+            record(event="scheduler_command_failed", container_id="104", media_id="105")
+        )
+    )
+    assert result["container_id"] == "104" and result["media_id"] == "105"

@@ -1,0 +1,7 @@
+# Copy to schedule.toml, inspect preview, and explicitly authorize. Default DISABLED.
+# Trigger time is local Europe/London; the application enforces the window.
+timezone = "Europe/London"
+hour = 9
+minute = 0
+window_minutes = 30
+authorization_days = 30
