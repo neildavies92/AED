@@ -169,3 +169,9 @@ fallbacks for local development. Docker installs fonts-lato 2.015-1 from its exi
 Debian snapshot alongside Liberation. Native smoke verifies regular/bold/italic/
 bold-italic family/style resolution. Code/font changes require fresh scheduler
 authorization; previously published canonical assets are never regenerated.
+
+
+Publication preparation and approval use the [canonical Docker renderer](canonical-manual-publishing.md).
+All eight accepted font faces are verified by version and file hash. A fresh
+in-memory raster must match cached PNG/JPEG bytes; matching SVG alone does not
+prove typography. Native development fallbacks cannot authorize a publication.

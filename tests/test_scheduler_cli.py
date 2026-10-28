@@ -23,6 +23,14 @@ from tests.test_scheduler import inputs as inputs
 from tests.test_scheduler import schedule as schedule
 
 
+@pytest.fixture(autouse=True)
+def synthetic_renderer_boundary(monkeypatch):
+    # Scheduler behavior tests inject a synthetic renderer; native tests verify fonts.
+    monkeypatch.setattr(
+        "ask_every_day.scheduler.verify_editorial_fonts", Mock(return_value=[])
+    )
+
+
 @pytest.fixture
 def command(run, inputs, schedule, monkeypatch):
     class Clock(datetime):

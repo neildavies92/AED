@@ -43,6 +43,9 @@ def main(argv: list[str] | None = None) -> None:
         default="preview",
         choices=(
             "preview",
+            "manual-preview",
+            "manual-publish",
+            "prepare-next",
             "publication-status",
             "backup",
             "credential-bootstrap",
@@ -72,7 +75,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--backup-dir", type=Path, default=Path("/var/lib/aed/backups"))
     parser.add_argument(
-        "--log-file", type=Path, help="Persistent bounded scheduler JSON log"
+        "--log-file", type=Path, help="Persistent bounded publication JSON log"
     )
     parser.add_argument("--attempt-id", type=int)
     parser.add_argument("--remote", action="store_true")
@@ -92,8 +95,10 @@ def main(argv: list[str] | None = None) -> None:
         )
     ):
         parser.error("recovery options require reconcile")
-    if args.log_file is not None and not args.command.startswith("schedule-"):
-        parser.error("--log-file requires a schedule-* command")
+    if args.log_file is not None and not (
+        args.command.startswith("schedule-") or args.command == "manual-publish"
+    ):
+        parser.error("--log-file requires a schedule-* or manual-publish command")
     configure_logging()
     failure = False
     _LOG.info(
@@ -104,6 +109,61 @@ def main(argv: list[str] | None = None) -> None:
         },
     )
     try:
+        if args.command in {
+            "manual-preview",
+            "manual-publish",
+            "prepare-next",
+            "schedule-run",
+        }:
+            from ask_every_day.canonical_renderer import verify_editorial_fonts
+
+            verify_editorial_fonts()
+        if args.command in {"manual-preview", "manual-publish"}:
+            from ask_every_day.publish_next_cli import main as manual
+
+            manual_args = [
+                "--config",
+                str(args.config),
+                "--auth-config",
+                str(args.auth_config),
+                "--data-dir",
+                str(args.data_dir),
+            ]
+            if args.command == "manual-publish":
+                manual_args.extend(
+                    [
+                        "--confirm",
+                        "--log-file",
+                        str(args.log_file or Path("/var/lib/aed/manual.jsonl")),
+                    ]
+                )
+            manual(
+                manual_args,
+                credential_factory=lambda path: credential_factory(
+                    path, args.credential_dir
+                ),
+                canonical_assets=True,
+            )
+            return
+        if args.command == "prepare-next":
+            from ask_every_day.publication_assets import prepare_next_asset
+
+            config = load_config(args.config)
+            config.database_path.resolve(strict=True)
+            with (
+                publication_lock(config.database_path),
+                open_repository(config) as repository,
+            ):
+                asset = prepare_next_asset(repository, config, verify_raster=True)
+            print(
+                json.dumps(
+                    {
+                        "asset_prepared": asset is not None,
+                        "asset_sha256": asset.jpeg_sha256 if asset else None,
+                    }
+                )
+            )
+            return
         if args.command == "reconcile":
             from ask_every_day.publication_recovery_cli import main as recover
 

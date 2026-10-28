@@ -111,3 +111,10 @@ use the selected typefaces; historical JPEGs/state are preserved. This code/font
 change invalidates prior scheduler approval and needs a fresh reviewed grant before
 live use. Freeze accepted font files while publishing. No schedule or publication
 is activated by this change.
+
+
+AED-059 makes the reviewed Docker font files mandatory for publication preparation
+and approval. [Canonical manual publishing](canonical-manual-publishing.md)
+rejects substituted files/versions and stale cached rasters; development/review
+fallbacks remain available. Metadata is pinned in `editorial-fonts.json` without
+font binaries. Changing that manifest invalidates existing scheduler authorization.

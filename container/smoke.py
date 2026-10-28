@@ -44,22 +44,46 @@ def main():
             "10001:10001",
             "/var/lib/aed",
         )
-        for step in ("initialize", "verify"):
-            result = docker(
-                *restricted,
-                "-i",
-                "--entrypoint",
-                "python",
-                args.image,
-                "-",
-                step,
-                payload=script,
-            )
-            print(result.decode().strip())
+        result = docker(
+            *restricted,
+            "-i",
+            "--entrypoint",
+            "python",
+            args.image,
+            "-",
+            "initialize",
+            payload=script,
+        )
+        print(result.decode().strip())
         result = docker(
             *restricted, args.image, "preview", "--config", "/var/lib/aed/aed.toml"
         )
         assert json.loads(result)["mode"] == "local_read_only"
+        canonical = json.loads(
+            docker(
+                *restricted,
+                args.image,
+                "manual-preview",
+                "--config",
+                "/var/lib/aed/aed.toml",
+            )
+        )
+        assert canonical["canonical_renderer"] and canonical["asset_valid"]
+        assert canonical["caption"] and len(canonical["fonts"]) == 8
+        assert canonical["asset_sha256"] and not canonical["credential_ready"]
+        # A separate container proves preview left history, palette and files intact.
+        verified = docker(
+            *restricted,
+            "-i",
+            "--entrypoint",
+            "python",
+            args.image,
+            "-",
+            "verify",
+            payload=script,
+        )
+        print(verified.decode().strip())
+        print(json.dumps({"canonical_preview_read_only": True}))
         disabled = docker(
             *restricted,
             args.image,

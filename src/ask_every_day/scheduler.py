@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from ask_every_day.canonical_renderer import verify_editorial_fonts
 from ask_every_day.domain import AppConfig, PublicationStatus
 from ask_every_day.instagram_client import InstagramClient
 from ask_every_day.media_staging import stage_media
@@ -112,7 +113,8 @@ def run_daily(
                     raise PublishError(str(error)) from None
 
             guard()
-            prepare_next_asset(repository, config)
+            verify_editorial_fonts()
+            prepare_next_asset(repository, config, verify_raster=True)
             plan = preview_next(repository, config, inputs.catalog)
             if plan is None or plan.asset_sha256 is None:
                 raise ScheduleError("prepared_asset_unavailable")
