@@ -45,6 +45,7 @@ USER root
 COPY tests ./tests
 COPY deployment/trigger.py ./deployment/trigger.py
 COPY deployment/desktop.py ./deployment/desktop.py
+COPY deployment/desktop-compose.py ./deployment/desktop-compose.py
 COPY Dockerfile .dockerignore ./
 COPY container/compose.yaml ./container/compose.yaml
 COPY scripts/with-cairo.sh ./scripts/with-cairo.sh

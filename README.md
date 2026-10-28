@@ -161,3 +161,6 @@ owner-approved cutover. `make -f deployment/Makefile help` lists offline helpers
 [Local Docker Desktop acceptance](docs/local-docker.md) covers AED-057 private
 production-state copies, mount checks, synthetic HTTPS staging and explicit
 19:00 Europe/London one-post acceptance before AED-058 scheduling.
+
+[Local font review](docs/font-review.md) documents open-source typography specimens,
+optional operator-provided fonts, style/hash inspection and renderer reapproval.
