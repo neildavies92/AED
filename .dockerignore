@@ -29,3 +29,5 @@
 
 !deployment/
 !deployment/trigger.py
+
+!deployment/desktop.py

@@ -20,6 +20,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--linux-dir", type=Path, default=Path("output/aed-053-review"))
     parser.add_argument("--output", type=Path, default=Path("output/aed-056-review"))
+    parser.add_argument(
+        "--post-id",
+        action="append",
+        help="Compare these Post IDs instead of the default specimens",
+    )
     args = parser.parse_args()
     if platform.system() != "Darwin":
         parser.error("Generate Mac references on macOS; Linux images come from smoke")
@@ -29,7 +34,7 @@ def main():
     )
     args.output.mkdir(parents=True, exist_ok=True)
     cards = []
-    for key in ("AED-0395", "AED-0236"):
+    for key in args.post_id or ("AED-0395", "AED-0236"):
         post = next(p for p in posts if p.id == key)
         linux = args.linux_dir / f"{key}-linux.jpg"
         with Image.open(linux) as image:
