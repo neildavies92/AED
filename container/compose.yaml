@@ -1,0 +1,37 @@
+# No restart loop, published origin port, cron service, or implicit publication.
+services:
+  publisher:
+    image: ask-every-day:local
+    # Build/load the reviewed image separately; external deployment paths are not build contexts.
+    pull_policy: never
+    user: "10001:10001"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    working_dir: /opt/aed
+    command: [preview]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m,mode=1777
+    volumes:
+      - type: bind
+        source: ./config
+        target: /etc/aed
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./state
+        target: /var/lib/aed
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./credentials
+        target: /var/lib/aed-credentials
+        bind:
+          create_host_path: false
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "3"

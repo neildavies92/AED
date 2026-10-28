@@ -1,0 +1,5 @@
+# Operator mounts are never repository inputs (prefer deployment outside Git).
+/config/
+/state/
+/credentials/
+/fonts/
