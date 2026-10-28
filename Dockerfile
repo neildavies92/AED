@@ -10,7 +10,7 @@ RUN rm /etc/apt/sources.list.d/debian.sources \
        'deb [check-valid-until=no] https://snapshot.debian.org/archive/debian-security/20261027T000000Z trixie-security main' \
        > /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install --no-install-recommends -y ca-certificates libcairo2 libffi8 libfontconfig1 fontconfig fonts-liberation2 tzdata \
+    && apt-get install --no-install-recommends -y ca-certificates libcairo2 libffi8 libfontconfig1 fontconfig fonts-liberation2 fonts-lato=2.015-1 tzdata \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=uv /uv /usr/local/bin/uv
 COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
@@ -45,6 +45,7 @@ USER root
 COPY tests ./tests
 COPY deployment/trigger.py ./deployment/trigger.py
 COPY deployment/desktop.py ./deployment/desktop.py
+COPY deployment/desktop-compose.py ./deployment/desktop-compose.py
 COPY Dockerfile .dockerignore ./
 COPY container/compose.yaml ./container/compose.yaml
 COPY scripts/with-cairo.sh ./scripts/with-cairo.sh

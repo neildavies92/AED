@@ -31,3 +31,5 @@
 !deployment/trigger.py
 
 !deployment/desktop.py
+
+!deployment/desktop-compose.py

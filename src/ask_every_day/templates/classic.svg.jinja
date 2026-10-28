@@ -2,16 +2,16 @@
   <title id="title">{{ post.prompt }}</title>
   <desc id="description">Ask Every Day. A question to sit with.</desc>
   <rect width="1080" height="1350" fill="{{ config.background_color }}"/>
-  <g fill="{{ config.text_color }}" font-family="Arial, Helvetica, sans-serif">
+  <g fill="{{ config.text_color }}" font-family="Lato, Arial, sans-serif">
     <text id="classic-brand" x="540" y="147" text-anchor="middle" font-size="23" letter-spacing="1.5"><tspan fill="{{ config.accent_color }}">@</tspan><tspan fill="{{ config.text_color }}">ask.every.day</tspan></text>
     <path d="M512 190 H568" stroke="{{ config.accent_color }}" stroke-width="2"/>
   </g>
-  <g font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="{{ config.text_color }}" letter-spacing="-2">
+  <g font-family="Liberation Serif, 'Times New Roman', serif" font-size="76" fill="{{ config.text_color }}" letter-spacing="-2">
 {% for prefix, highlight, suffix, baseline in lines %}
     <text x="112" y="{{ baseline }}"{% if automatic %} xml:space="preserve"{% endif %}>{{ prefix }}<tspan fill="{{ config.accent_color }}">{{ highlight }}</tspan>{{ suffix }}</text>
 {% endfor %}
   </g>
-  <g font-family="Arial, Helvetica, sans-serif" fill="{{ config.text_color }}">
+  <g font-family="Lato, Arial, sans-serif" fill="{{ config.text_color }}">
     <text x="112" y="1138" font-size="20" letter-spacing="1.5">A QUESTION TO SIT WITH.</text>
   </g>
 </svg>

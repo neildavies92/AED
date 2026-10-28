@@ -117,13 +117,28 @@ def main():
             )
             .decode()
             .strip()
-            for name in ("Georgia", "Arial", "Times New Roman")
+            for name in ("Liberation Serif", "Lato", "Times New Roman")
         }
         print(
             json.dumps(
                 {"resolved_font_families": fonts, "cross_os_raster_parity": False}
             )
         )
+        selected = json.loads(
+            docker(
+                *restricted,
+                "--entrypoint",
+                "python",
+                args.image,
+                "-m",
+                "ask_every_day.font_review",
+                "inventory",
+            )
+        )
+        assert len(selected) == 8 and all(
+            row["exact_family"] and row["style_matches"] for row in selected
+        )
+        print(json.dumps({"editorial_font_styles_verified": True}))
         print(
             json.dumps(
                 {

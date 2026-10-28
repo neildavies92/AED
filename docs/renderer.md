@@ -32,7 +32,7 @@ This preserves typography and spacing without inventing responsive layouts.
 ## Classic branding — AED-042
 
 The single attribution is a centered `@ask.every.day` at x=540, baseline y=147,
-with `text-anchor="middle"`. One Arial/Helvetica text element uses 23px type and
+with `text-anchor="middle"`. One Lato/Arial text element uses 23px type and
 1.5px letter spacing; adjacent spans give `@` the blue accent `#2F608C` and
 `ask.every.day` the primary blue `#1C3651`, without a heavier weight.
 The 56px underline runs from (512,190) to (568,190), with the blue accent stroke
@@ -160,3 +160,12 @@ Publication rotation belongs to [asset preparation](background-rotation.md),
 which chooses a colour from actual successful history and passes explicit renderer
 values. Rendering an arbitrary Post does not advance that sequence. Both deliberate
 SVG and PNG design references were refreshed for this intentional palette change.
+
+## Accepted editorial typography
+
+The owner selected Liberation Serif prompts and Lato supporting text on 28 October
+2026. The Classic template now requests those families, retaining serif/sans-serif
+fallbacks for local development. Docker installs fonts-lato 2.015-1 from its existing
+Debian snapshot alongside Liberation. Native smoke verifies regular/bold/italic/
+bold-italic family/style resolution. Code/font changes require fresh scheduler
+authorization; previously published canonical assets are never regenerated.

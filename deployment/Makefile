@@ -13,3 +13,7 @@ visual-review:
 .PHONY: desktop-prepare
 desktop-prepare:
 	uv run python deployment/desktop.py $(ARGS)
+
+.PHONY: desktop-run
+desktop-run:
+	uv run python deployment/desktop-compose.py $(ARGS)

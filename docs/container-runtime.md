@@ -155,6 +155,15 @@ or duplicate a live production credential store.
 
 ## Rendering and staging
 
+Current typography update (28 October 2026): the owner selected **Liberation Serif
+for prompts and Lato for brand/footer text** after the local specimen comparison.
+The image now supplies pinned open-source Lato alongside Liberation; no Microsoft
+font acquisition or optional overlay is needed for that pairing. Historical font
+comparison/acceptance notes below describe the earlier Georgia/Arial fallback
+evaluation. See [font review](font-review.md) for the selected appearance and fresh
+renderer authorization requirement. Existing published JPEGs remain unchanged.
+
+
 The existing Classic SVG, Python wrapping, highlights, dimensions, layout code,
 JPEG validation, palette assignment and approved canonical assets are unchanged.
 The Linux image's open Liberation/system fallbacks differ from proprietary Georgia
