@@ -36,7 +36,7 @@ def prepare(source: Path, data: Path, target: Path, image: str) -> None:
     )
     (target / "config/aed.toml").write_text(text)
     (target / "config/schedule.toml").write_text(
-        'timezone="Europe/London"\nhour=19\nminute=0\nwindow_minutes=30\nauthorization_days=30\n'
+        'timezone="Europe/London"\nhour=20\nminute=0\nwindow_minutes=30\nauthorization_days=30\n'
     )
     compose = (
         (ROOT / "container/compose.yaml")

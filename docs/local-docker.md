@@ -3,7 +3,9 @@
 Local Docker Desktop on macOS is the target. AED-057 remains In Progress until
 owner-approved container publication is observed with a completed checkpoint and
 known media ID. AED-058 scheduling follows acceptance. No remote deployment is
-needed. The local schedule is **19:00–19:30 Europe/London**, authorization 30 days.
+needed. The local schedule is **20:00–20:30 Europe/London**, authorization 30 days.
+This default applies to newly prepared candidates. Existing private configurations
+are not rewritten; an operator schedule change requires fresh policy authorization.
 
 ## Private candidate
 
@@ -104,7 +106,7 @@ Only after review/merge/green CI and explicit owner consent:
    unresolved state, next entry/palette/assets. Repeat mount/credential/visual checks.
 3. Record source and destination summaries; owner confirms this candidate becomes
    authoritative at cutover. Keep the Mac copy inactive from this point onward.
-4. Inspect `schedule-preview --data-dir /var/lib/aed/data`; confirm 19:00–19:30London,
+4. Inspect `schedule-preview --data-dir /var/lib/aed/data`; confirm 20:00–20:30 London,
    approved queue and exact professional account. With `-it`, owner runs existing
    `schedule-enable --data-dir /var/lib/aed/data` and types its exact TTY challenge.
    This grants future publication permission; it does not itself post.
