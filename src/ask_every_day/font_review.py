@@ -26,7 +26,9 @@ STYLES = {
 
 
 def inventory(
-    *, require_mounted: bool = False, families: tuple[str, ...] = ("Georgia", "Arial")
+    *,
+    require_mounted: bool = False,
+    families: tuple[str, ...] = ("Liberation Serif", "Lato"),
 ) -> list[dict]:
     records = []
     for family in families:
@@ -102,8 +104,8 @@ def render(
     background: str,
     *,
     require_mounted: bool = False,
-    body_family: str = "Georgia",
-    header_family: str = "Arial",
+    body_family: str = "Liberation Serif",
+    header_family: str = "Lato",
 ) -> dict:
     if output.exists():
         raise ValueError("new_review_directory_required")
@@ -124,8 +126,8 @@ def render(
     ):
         raise ValueError("font_family_invalid")
     svg = render_svg(post, config)
-    svg = svg.replace("Georgia, 'Times New Roman', serif", body_family)
-    svg = svg.replace("Arial, Helvetica, sans-serif", header_family)
+    svg = svg.replace("Liberation Serif, 'Times New Roman', serif", body_family)
+    svg = svg.replace("Lato, Arial, sans-serif", header_family)
     jpeg = export_jpeg(export_png(svg, config))
     output.mkdir(mode=0o700)
     (output / "AED-0311-linux.jpg").write_bytes(jpeg)
@@ -147,8 +149,8 @@ def main():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--data-dir", type=Path, default=Path("/opt/aed/data"))
     parser.add_argument("--background", default="#EDF4FB")
-    parser.add_argument("--body-family", default="Georgia")
-    parser.add_argument("--header-family", default="Arial")
+    parser.add_argument("--body-family", default="Liberation Serif")
+    parser.add_argument("--header-family", default="Lato")
     parser.add_argument("--reference", type=Path)
     parser.add_argument("--candidate", type=Path)
     args = parser.parse_args()

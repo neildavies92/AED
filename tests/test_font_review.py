@@ -53,7 +53,9 @@ def test_missing_family_rejected_but_fallback_report_available(fonts, monkeypatc
 
     def fallback(*args, **kwargs):
         result = original(*args, **kwargs)
-        return SimpleNamespace(stdout=result.stdout.replace("Georgia", "DejaVu Serif"))
+        return SimpleNamespace(
+            stdout=result.stdout.replace("Liberation Serif", "DejaVu Serif")
+        )
 
     monkeypatch.setattr(font_review.subprocess, "run", fallback)
     assert not font_review.inventory()[0]["exact_family"]
@@ -172,5 +174,5 @@ def test_review_family_override_does_not_change_classic_template(tmp_path, monke
     original = render_svg(
         Post("AED-0001", "A question?", "Test", "Test", "Classic"), RendererConfig()
     )
-    assert "Georgia" in original and "Arial" in original
+    assert "Liberation Serif" in original and "Lato" in original
     assert list(tmp_path.iterdir()) == [output]

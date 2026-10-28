@@ -73,7 +73,7 @@ def test_automatic_svg_structure(
     assert len(groups) == 3
     prompt_group = groups[1]
     assert prompt_group.attrib == {
-        "font-family": "Georgia, 'Times New Roman', serif",
+        "font-family": "Liberation Serif, 'Times New Roman', serif",
         "font-size": "76",
         "fill": "#1C3651",
         "letter-spacing": "-2",
@@ -104,7 +104,7 @@ def test_automatic_svg_structure(
     header = groups[0]
     assert header.attrib == {
         "fill": "#1C3651",
-        "font-family": "Arial, Helvetica, sans-serif",
+        "font-family": "Lato, Arial, sans-serif",
     }
     brand = header.find(SVG + "text")
     assert brand is not None
@@ -131,7 +131,7 @@ def test_automatic_svg_structure(
     assert "".join(root.itertext()).count("@ask.every.day") == 1
     assert root.findtext(SVG + "desc") == "Ask Every Day. A question to sit with."
     assert groups[2].attrib == {
-        "font-family": "Arial, Helvetica, sans-serif",
+        "font-family": "Lato, Arial, sans-serif",
         "fill": "#1C3651",
     }
     footer = groups[2].findall(SVG + "text")

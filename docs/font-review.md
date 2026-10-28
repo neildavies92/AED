@@ -1,9 +1,10 @@
 # Local typography review — AED-057
 
 The owner permits replacing Classic's typography with modern open-source fonts.
-No new default is selected until the owner reviews the specimens. Lato (SIL OFL)
-and Ubuntu (Ubuntu Font Licence) are candidates; existing Liberation/DejaVu
-fallbacks remain available. Their licence/copyright files stay with private font
+The owner selected the editorial pairing: Liberation Serif prompts and Lato
+supporting text. The Classic template and pinned Linux image use this pairing.
+Lato uses SIL OFL; the Ubuntu candidate used the Ubuntu Font Licence. Existing
+serif/sans-serif fallbacks remain available. Their licence/copyright files stay with private font
 copies. Microsoft acquisition is optional and currently deferred.
 
 Use only private font directories outside Git, never production state/credentials.
@@ -45,7 +46,7 @@ No Microsoft package/fonts were downloaded during development.
 
 `python -m ask_every_day.font_review inventory` records fontconfig family, style,
 16.16 integer font version, collection index and SHA256 for regular/bold/italic/
-bold-italic Georgia and Arial. `--body-family Lato --header-family Lato` selects
+bold-italic Liberation Serif and Lato. `--body-family Lato --header-family Lato` selects
 other review families. `--require-mounted` refuses family/style substitution and
 requires resolved files under the read-only private font mount. Names/hashes alone
 cannot prove licensing or provenance; retain the acquisition/version evidence.
@@ -74,18 +75,17 @@ rendered text/images and SVG referencing family names; no font bytes are embedde
 
 ## Consistency and authorization
 
-For deployments retaining the Classic Georgia/Arial families, use
+For deployments using the accepted editorial families, use
 `make -f deployment/Makefile desktop-run ARGS='--directory /private/deployment preview'`
 (and the same wrapper for schedule-preview/status/run/enable/disable). It always
 selects the same optional `fonts.compose.yaml`; partial font/overlay setup blocks.
-With an overlay, it requires all eight mounted Georgia/Arial styles before any
+With an overlay, it requires all eight mounted Liberation Serif/Lato styles before any
 publisher command. No overlay keeps the existing open-source fallbacks. Interactive
 commands still require `--interactive` and the original owner challenge.
 
-Do not use direct Compose commands without the overlay in that deployment. Modern
-review variants are not a live font switch: once an appearance is chosen, configure
-and verify that exact production renderer in a separate explicit change before
-publishing. Scheduler policy now includes resolved family/style/version/index/file
+Do not use direct Compose commands without the overlay in that deployment.
+The standard image already supplies the accepted open fonts, so it needs no optional
+font overlay. Review overrides do not modify production settings. Scheduler policy now includes resolved family/style/version/index/file
 hashes on Linux as well as its existing rendered reference. Font selection/byte
 changes invalidate previous authorization, including an unused italic style that
 would not alter the regular specimen. Review and grant a fresh policy only after
@@ -103,11 +103,11 @@ comfortable margins; body weight/letterforms differ intentionally. Measured pixe
 parity is false for all three. Reports include exact image hashes, channel
 error metrics, ink bounds and resolved font metadata; they contain no font binaries.
 
-The ignored local gallery is `output/modern-font-review/index.html`. Lato is the
-recommended warm, modern direction; owner choice is pending. Review overrides
-are confined to the disposable specimen SVG. The existing production template,
-canonical images and publisher remain unchanged. Selecting a new family for live
-publishing needs an explicit renderer configuration change and fresh approval.
-Freeze the accepted font directory while publishing; do not edit mounted font files
-under an active operation. Preserve the current accepted fallback until a new
-appearance is chosen. No scheduler or live publication was activated.
+The ignored local gallery is `output/modern-font-review/index.html`. The owner
+selected Liberation Serif/Lato. The Classic template now uses that pairing and
+Docker supplies both open font packages; no Microsoft fonts or licence acceptance
+are needed. Sizes, positions, line breaks and highlights are unchanged. New images
+use the selected typefaces; historical JPEGs/state are preserved. This code/font
+change invalidates prior scheduler approval and needs a fresh reviewed grant before
+live use. Freeze accepted font files while publishing. No schedule or publication
+is activated by this change.
