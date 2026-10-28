@@ -153,3 +153,7 @@ short-lived portable command. It is disabled by default. The macOS LaunchAgent i
 generated separately and is never installed or activated by setup. The
 [runtime contract](docs/runtime-contract.md) defines credential injection and the
 shared command for the later Linux container adapter.
+
+[Linux production deployment](docs/linux-deployment.md) covers AED-056 host setup,
+coordinated state migration, private credential handoff, disabled UTC cron and
+owner-approved cutover. `make -f deployment/Makefile help` lists offline helpers.

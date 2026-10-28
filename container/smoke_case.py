@@ -8,12 +8,22 @@ import sqlite3
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import Mock
 
 from ask_every_day.config import load_config
 from ask_every_day.content_import import load_snapshot
+from ask_every_day.deployment import export_bundle, restore_bundle, verify_bundle
 from ask_every_day.domain import AppConfig, QueueEntry
 from ask_every_day.file_credential_store import FileCredentialStore
-from ask_every_day.instagram_auth import SCOPES, InstagramCredential
+from ask_every_day.instagram_auth import (
+    REDIRECT_URI,
+    SCOPES,
+    AuthConfig,
+    CredentialManager,
+    InstagramAuthClient,
+    InstagramCredential,
+)
+from ask_every_day.instagram_client import InstagramIdentity
 from ask_every_day.jpeg_export import export_jpeg, validate_jpeg
 from ask_every_day.png_export import export_png
 from ask_every_day.publication_assets import (
@@ -99,6 +109,23 @@ def initialize():
             NOW + timedelta(days=60),
         )
     )
+    # Real manager refresh against a fake provider; next container reads the result.
+    provider = Mock(spec=InstagramAuthClient)
+    provider.config = AuthConfig("1001", REDIRECT_URI)
+    from ask_every_day.instagram_auth import _LongLivedToken
+
+    provider.refresh_token.return_value = _LongLivedToken(
+        "SYNTHETIC_REFRESHED_ONLY", 5184000
+    )
+    manager = CredentialManager(
+        provider,
+        store,
+        clock=lambda: NOW + timedelta(days=55),
+        identify=lambda _: InstagramIdentity("1003", "ask.every.day", "BUSINESS"),
+    )
+    assert manager.get_valid_credential().access_token == "SYNTHETIC_REFRESHED_ONLY"
+    export_bundle(CONFIG, source, ROOT / "deployment-bundle")
+    verify_bundle(ROOT / "deployment-bundle")
     with publication_lock(CONFIG.database_path):
         backup = backup_state(CONFIG, ROOT / "backups")
         shutil.copytree(CONFIG.assets_path, backup / "assets")
@@ -155,9 +182,12 @@ def verify():
         assert raw == (ROOT / "repeat.jpg").read_bytes()
     credential = FileCredentialStore("1001", ROOT / "credentials").load()
     assert (
-        credential is not None
-        and credential.access_token == "SYNTHETIC_CONTAINER_TEST_ONLY"
+        credential is not None and credential.access_token == "SYNTHETIC_REFRESHED_ONLY"
     )
+    restore_bundle(ROOT / "deployment-bundle", ROOT / "deployment-restored")
+    assert not (ROOT / "deployment-restored/aed.sqlite3.schedule.json").exists()
+    verified = verify_bundle(ROOT / "deployment-restored")
+    assert verified["state"]["history"][0]["checkpoint"] == "completed"
     restored = ROOT / "restored"
     restored.mkdir()
     backup = Path(report["backup"])
@@ -192,6 +222,8 @@ def verify():
                 "repeat_render_equal": True,
                 "private_credentials_persisted": True,
                 "coordinated_restore_valid": True,
+                "deployment_bundle_restored": True,
+                "refreshed_credential_persisted": True,
             }
         )
     )

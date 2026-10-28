@@ -4,10 +4,12 @@ import argparse
 import json
 import logging
 import sys
+from collections.abc import Callable, Sequence
 from contextlib import nullcontext
 from pathlib import Path
 
 from ask_every_day.config import load_config
+from ask_every_day.instagram_auth import CredentialManager
 from ask_every_day.instagram_client import ContainerStatus, InstagramClient
 from ask_every_day.logging_config import configure_logging
 from ask_every_day.publication_recovery import (
@@ -25,7 +27,11 @@ from ask_every_day.repository import open_repository
 _LOG = logging.getLogger(__name__)
 
 
-def main() -> None:
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    credential_factory: Callable[[Path], CredentialManager] | None = None,
+) -> None:
     parser = argparse.ArgumentParser(
         description="Inspect or explicitly reconcile one publication"
     )
@@ -41,7 +47,7 @@ def main() -> None:
     parser.add_argument("--confirm", action="store_true")
     parser.add_argument("--show-ids", action="store_true")
     parser.add_argument("--backup-dir", type=Path, default=Path("output/state-backups"))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     configure_logging()
     failure = None
     try:
@@ -117,7 +123,7 @@ def main() -> None:
                 response = (
                     load_response_evidence(args.evidence) if args.evidence else None
                 )
-                manager = credential_manager(args.auth_config)
+                manager = (credential_factory or credential_manager)(args.auth_config)
                 remote = remote_inspection(
                     current,
                     manager,

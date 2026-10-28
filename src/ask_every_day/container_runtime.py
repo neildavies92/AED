@@ -48,6 +48,9 @@ def main(argv: list[str] | None = None) -> None:
             "credential-bootstrap",
             "credential-status",
             "credential-delete",
+            "credential-verify",
+            "monitor",
+            "reconcile",
             "schedule-preview",
             "schedule-run",
             "schedule-status",
@@ -71,7 +74,24 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--log-file", type=Path, help="Persistent bounded scheduler JSON log"
     )
+    parser.add_argument("--attempt-id", type=int)
+    parser.add_argument("--remote", action="store_true")
+    parser.add_argument("--resolve", choices=("published", "failed"))
+    parser.add_argument("--evidence", type=Path)
+    parser.add_argument("--confirm", action="store_true")
+    parser.add_argument("--show-ids", action="store_true")
     args = parser.parse_args(argv)
+    if args.command != "reconcile" and any(
+        (
+            args.attempt_id,
+            args.remote,
+            args.resolve,
+            args.evidence,
+            args.confirm,
+            args.show_ids,
+        )
+    ):
+        parser.error("recovery options require reconcile")
     if args.log_file is not None and not args.command.startswith("schedule-"):
         parser.error("--log-file requires a schedule-* command")
     configure_logging()
@@ -84,6 +104,43 @@ def main(argv: list[str] | None = None) -> None:
         },
     )
     try:
+        if args.command == "reconcile":
+            from ask_every_day.publication_recovery_cli import main as recover
+
+            forwarded = [
+                "reconcile",
+                "--config",
+                str(args.config),
+                "--auth-config",
+                str(args.auth_config),
+            ]
+            for key in ("attempt_id", "resolve", "evidence"):
+                value = getattr(args, key)
+                if value is not None:
+                    forwarded.extend(["--" + key.replace("_", "-"), str(value)])
+            for key in ("remote", "confirm", "show_ids"):
+                if getattr(args, key):
+                    forwarded.append("--" + key.replace("_", "-"))
+            recover(
+                forwarded,
+                credential_factory=lambda path: credential_factory(
+                    path, args.credential_dir
+                ),
+            )
+            return
+        if args.command == "monitor":
+            from ask_every_day.deployment import main as deployment
+
+            deployment(
+                [
+                    "monitor",
+                    "--config",
+                    str(args.config),
+                    "--schedule-config",
+                    str(args.schedule_config),
+                ]
+            )
+            return
         if args.command.startswith("schedule-"):
             # No substitute publisher or policy: capability is present only after A merges.
             module = importlib.import_module("ask_every_day.scheduler_cli")
@@ -108,6 +165,20 @@ def main(argv: list[str] | None = None) -> None:
             )
             return
         if args.command.startswith("credential-"):
+            if args.command == "credential-verify":
+                manager = credential_factory(args.auth_config, args.credential_dir)
+                # Explicit command: identity GET and eligible token refresh; no media POST.
+                credential = manager.get_valid_credential()
+                print(
+                    json.dumps(
+                        {
+                            "identity_verified": True,
+                            "account": credential.username,
+                            "expires_at": credential.expires_at.isoformat(),
+                        }
+                    )
+                )
+                return
             config = load_auth_config(args.auth_config)
             store = FileCredentialStore(config.app_id, args.credential_dir)
             if args.command == "credential-bootstrap":

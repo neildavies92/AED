@@ -1,0 +1,6 @@
+# Inert until explicit schedule-enable AND host cron activation.
+timezone = "Europe/London"
+hour = 21
+minute = 0
+window_minutes = 30
+authorization_days = 30

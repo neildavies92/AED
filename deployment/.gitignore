@@ -1,0 +1,8 @@
+config/
+state/
+credentials/
+backups/
+logs/
+transfer/
+*.tar
+*.tar.gz

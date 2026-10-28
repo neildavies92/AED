@@ -1,0 +1,6 @@
+# Copy to /etc/cron.d/aed ONLY after owner cutover approval; remove leading # on jobs.
+# setup-host uses UTC; cover both London GMT and BST without relying on CRON_TZ.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# * 20,21 * * * root /usr/bin/python3 /usr/local/lib/aed/trigger.py run
+# 35 20,21 * * * root /usr/bin/python3 /usr/local/lib/aed/trigger.py monitor

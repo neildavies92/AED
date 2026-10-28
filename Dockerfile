@@ -33,6 +33,8 @@ RUN uv venv /tmp/aed-builder \
     && chown aed:aed /var/lib/aed /var/lib/aed-credentials \
     && chmod 700 /var/lib/aed-credentials
 COPY data/prompts.csv data/taxonomy.csv data/hashtags.csv data/captions.csv data/caption_profiles.csv ./data/
+ARG AED_REVISION=unversioned
+LABEL org.opencontainers.image.revision=$AED_REVISION
 USER 10001:10001
 ENTRYPOINT ["python", "-m", "ask_every_day.container_runtime"]
 CMD ["preview"]
@@ -41,6 +43,7 @@ CMD ["preview"]
 FROM runtime AS test
 USER root
 COPY tests ./tests
+COPY deployment/trigger.py ./deployment/trigger.py
 COPY Dockerfile .dockerignore ./
 COPY container/compose.yaml ./container/compose.yaml
 COPY scripts/with-cairo.sh ./scripts/with-cairo.sh

@@ -26,3 +26,6 @@
 !container/
 !container/compose.yaml
 !container/build-requirements.txt
+
+!deployment/
+!deployment/trigger.py
