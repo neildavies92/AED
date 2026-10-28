@@ -9,3 +9,7 @@ inspect export verify restore monitor:
 
 visual-review:
 	sh scripts/with-cairo.sh uv run python deployment/visual_review.py $(ARGS)
+
+.PHONY: desktop-prepare
+desktop-prepare:
+	uv run python deployment/desktop.py $(ARGS)
