@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import stat
+import sys
 import tempfile
 import tomllib
 from collections.abc import Sequence
@@ -115,14 +116,20 @@ def state_path(config: AppConfig) -> Path:
 
 
 def runtime_key() -> str:
+    from ask_every_day.font_review import inventory
+
+    fonts = inventory() if sys.platform == "linux" else None
     package = Path(__file__).parent
     return digest(
         {
-            str(path.relative_to(package)): hashlib.sha256(
-                path.read_bytes()
-            ).hexdigest()
-            for path in sorted(package.rglob("*"))
-            if path.is_file() and path.suffix in {".py", ".jinja", ".ttf", ".otf"}
+            **{"resolved_fonts": digest(fonts)},
+            **{
+                str(path.relative_to(package)): hashlib.sha256(
+                    path.read_bytes()
+                ).hexdigest()
+                for path in sorted(package.rglob("*"))
+                if path.is_file() and path.suffix in {".py", ".jinja", ".ttf", ".otf"}
+            },
         }
     )
 

@@ -83,7 +83,9 @@ def test_specimen_calls_production_renderer(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_specimen_preserves_approved_svg() -> None:
-    reference = Path(__file__).parents[1] / "docs/design/classic-reference.svg"
+    reference = (
+        Path(__file__).parents[1] / "docs/design/classic-editorial-reference.svg"
+    )
     assert render_svg(SAMPLE_POST, RendererConfig(), lines=SAMPLE_LINES) == (
         reference.read_text(encoding="utf-8")
     )
