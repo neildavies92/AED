@@ -6,6 +6,9 @@ CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-c
 .PHONY: schedule-preview schedule-run schedule-status schedule-enable schedule-disable schedule-check-credentials schedule-launchd backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make docker-prepare-next DIRECTORY=/private/deployment Prepare canonical Docker JPEG"
+	@echo "make docker-manual-preview DIRECTORY=/private/deployment Inspect exact JPEG/caption without credentials"
+	@echo "make docker-manual-publish DIRECTORY=/private/deployment Interactive one-post approval after cutover"
 	@echo "make schedule-preview Inspect daily policy without publishing or authorizing"
 	@echo "make schedule-run  Run at most one authorized publication; disabled by default"
 	@echo "make schedule-status Inspect/revalidate unattended authorization"
@@ -131,3 +134,10 @@ schedule-check-credentials:
 
 schedule-launchd:
 	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_launchd --python "$(CURDIR)/.venv/bin/python" --working-directory "$(CURDIR)" --config "$(CURDIR)/aed.toml" --schedule-config "$(CURDIR)/schedule.toml" --auth-config "$(CURDIR)/instagram-auth.toml" --data-dir "$(CURDIR)/data" --log-file "$(CURDIR)/output/scheduler.jsonl"
+
+# No default directory: the operator must select the reviewed private deployment.
+.PHONY: docker-prepare-next docker-manual-preview docker-manual-publish
+
+docker-prepare-next docker-manual-preview docker-manual-publish:
+	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
+	uv run python deployment/desktop-compose.py --directory "$(DIRECTORY)" $(if $(filter docker-manual-publish,$@),--interactive,) $(patsubst docker-%,%,$@) --data-dir /var/lib/aed/data

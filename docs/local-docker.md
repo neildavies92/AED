@@ -7,6 +7,10 @@ needed. The local schedule is **20:00–20:30 Europe/London**, authorization 30 
 This default applies to newly prepared candidates. Existing private configurations
 are not rewritten; an operator schedule change requires fresh policy authorization.
 
+Interactive manual publication now uses the [canonical Docker renderer and exact
+per-post approval](canonical-manual-publishing.md). It requires the same explicit
+fresh-state cutover; it does not enable or bypass scheduler authorization.
+
 ## Private candidate
 
 Use Docker Desktop with its normal file-sharing support. From reviewed code:
@@ -133,8 +137,9 @@ evidence protected. Verify/restore to a new inactive Mac directory and remap con
 paths only; preserve palette/renderer/content/history/assets. Confirm the latest
 container post and completed checkpoint appear, queue/next colour match and no
 unresolved attempt exists. Validate the Mac credential; use owner-approved OAuth
-again if it is stale, never edit token metadata. Resume only one Mac manual publisher
-with its existing exact approval. Do not restore stale state to make a post retryable.
+again if it is stale, never edit token metadata. The Mac may resume state management, but native publication is blocked by AED-059.
+Use a fresh verified Docker cutover for any subsequent manual publication with
+canonical typography and its exact per-post approval. Do not restore stale state to make a post retryable.
 
 ## Development evidence
 

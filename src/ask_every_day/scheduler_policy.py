@@ -128,7 +128,8 @@ def runtime_key() -> str:
                     path.read_bytes()
                 ).hexdigest()
                 for path in sorted(package.rglob("*"))
-                if path.is_file() and path.suffix in {".py", ".jinja", ".ttf", ".otf"}
+                if path.is_file()
+                and path.suffix in {".py", ".jinja", ".ttf", ".otf", ".json"}
             },
         }
     )

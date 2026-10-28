@@ -21,6 +21,9 @@ def offline(monkeypatch):
         Mock(side_effect=AssertionError("network forbidden")),
     )
     monkeypatch.setattr(cli, "configure_logging", Mock())
+    monkeypatch.setattr(
+        "ask_every_day.canonical_renderer.verify_editorial_fonts", Mock(return_value=[])
+    )
 
 
 def test_default_preview_does_not_load_credentials_or_mutate_state(

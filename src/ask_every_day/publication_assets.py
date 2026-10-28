@@ -309,7 +309,11 @@ def _png_hash(path: Path) -> str:
 
 
 def prepare_next_asset(
-    repository: Repository, config: AppConfig, *, previous_background: str | None = None
+    repository: Repository,
+    config: AppConfig,
+    *,
+    previous_background: str | None = None,
+    verify_raster: bool = False,
 ) -> AssetRecord | None:
     """Caller holds the publish-next advisory lock. Never replace attempted assets."""
     post_id = None
@@ -336,7 +340,17 @@ def prepare_next_asset(
             svg = render_svg(post, settings)
             svg_hash = hashlib.sha256(svg.encode()).hexdigest()
             old = ledger.assets.get(post.id)
-            if old and old.assignment == assignment and old.svg_sha256 == svg_hash:
+            png = export_png(svg, settings) if verify_raster else None
+            jpeg = export_jpeg(png) if png is not None else None
+            if (
+                old
+                and old.assignment == assignment
+                and old.svg_sha256 == svg_hash
+                and (png is None or hashlib.sha256(png).hexdigest() == old.png_sha256)
+                and (
+                    jpeg is None or hashlib.sha256(jpeg).hexdigest() == old.jpeg_sha256
+                )
+            ):
                 try:
                     # A good canonical JPEG is reused byte-for-byte across restarts.
                     jpeg_hash = hashlib.sha256(
@@ -350,8 +364,8 @@ def prepare_next_asset(
                         return old
                 except (OSError, ValueError):
                     pass
-            png = export_png(svg, settings)
-            jpeg = export_jpeg(png)
+            png = png if png is not None else export_png(svg, settings)
+            jpeg = jpeg if jpeg is not None else export_jpeg(png)
             result = AssetRecord(
                 assignment,
                 svg_hash,

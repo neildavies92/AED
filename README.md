@@ -45,7 +45,10 @@ Run `make` or `make help` to list the available commands.
 | `make backup-state` | Back up SQLite and the palette together |
 | `make migrate-state` | Back up state, then migrate the schema without publishing |
 | `make render-next` | Prepare the next queued Post with its success-sequenced background |
-| `make publish-next` | Preview next queued post; `CONFIRM=1` requires exact interactive approval |
+| `make publish-next` | Native development preview; production approval uses Docker |
+| `make docker-prepare-next DIRECTORY=...` | Explicitly prepare the next unattempted canonical Docker JPEG |
+| `make docker-manual-preview DIRECTORY=...` | Read-only exact JPEG, caption, palette and hash; no credentials |
+| `make docker-manual-publish DIRECTORY=...` | Docker TTY approval for exactly one post after verified cutover |
 | `make instagram-login` | Connect Instagram through browser login and trusted local HTTPS |
 | `make instagram-auth-bootstrap` | Store the App Secret through a hidden prompt in macOS Keychain |
 | `make instagram-auth-status` | Inspect safe local Instagram credential metadata |
@@ -165,3 +168,6 @@ production-state copies, mount checks, synthetic HTTPS staging and explicit
 [Local font review](docs/font-review.md) documents the accepted Liberation Serif/Lato
 editorial pairing and open-source typography specimens,
 optional operator-provided fonts, style/hash inspection and renderer reapproval.
+
+Production manual publication uses the [canonical Docker workflow](docs/canonical-manual-publishing.md),
+including verified editorial font files and explicit fresh-state authority cutover.

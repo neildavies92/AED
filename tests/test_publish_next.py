@@ -504,6 +504,7 @@ def command(run, monkeypatch):
     monkeypatch.setattr(cli.CopyCatalog, "load", Mock(return_value=run.catalog))
     monkeypatch.setattr(cli, "credential_manager", Mock(return_value=run.credentials))
     monkeypatch.setattr(cli, "configure_logging", Mock())
+    monkeypatch.setattr(cli, "verify_editorial_fonts", Mock(return_value=[]))
 
     def execute(*, confirm=False, interactive=False, answer=None):
         monkeypatch.setattr(
@@ -576,7 +577,7 @@ def test_complete_mocked_cli_publication_reopens_database(
     cli, execute = command
     original = cli.publish_approved
 
-    def injected(repo, config, catalog, plan, answer, credentials):
+    def injected(repo, config, catalog, plan, answer, credentials, **guards):
         return original(
             repo,
             config,
@@ -588,6 +589,7 @@ def test_complete_mocked_cli_publication_reopens_database(
             stage=run.stage,
             clock=lambda: NOW,
             sleep=Mock(),
+            **guards,
         )
 
     monkeypatch.setattr(cli, "publish_approved", injected)

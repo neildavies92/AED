@@ -1,0 +1,58 @@
+[
+  {
+    "requested_family": "Liberation Serif",
+    "requested_style": "regular",
+    "fontconfig_version": "137625",
+    "face_index": "0",
+    "sha256": "9caef765d2e891c10dd73658894f01e660fe0c1c83e0bda7d6edf561d8f623d4"
+  },
+  {
+    "requested_family": "Liberation Serif",
+    "requested_style": "bold",
+    "fontconfig_version": "137625",
+    "face_index": "0",
+    "sha256": "443a4dbd694b6e4689925947b456e0532e10b19c90fa32eb39ea6c2cd9db9ebd"
+  },
+  {
+    "requested_family": "Liberation Serif",
+    "requested_style": "italic",
+    "fontconfig_version": "137625",
+    "face_index": "0",
+    "sha256": "de18fe26337e03241952dca46398d5b66f3c5738d080bfd284f66e67b926f597"
+  },
+  {
+    "requested_family": "Liberation Serif",
+    "requested_style": "bold_italic",
+    "fontconfig_version": "137625",
+    "face_index": "0",
+    "sha256": "4b2635d2ec4d992373dcae577c742a98ecfd841ffc1b8a103b5f10db163dbc7a"
+  },
+  {
+    "requested_family": "Lato",
+    "requested_style": "regular",
+    "fontconfig_version": "132055",
+    "face_index": "0",
+    "sha256": "6f6940be0835c3ddec9199e5fc42be4cbc61ebcfd58c623fdf719366253f1780"
+  },
+  {
+    "requested_family": "Lato",
+    "requested_style": "bold",
+    "fontconfig_version": "132055",
+    "face_index": "0",
+    "sha256": "bf1b8130069b44b9148eeece35e5423bedac49777ba746615b826b8276574a7b"
+  },
+  {
+    "requested_family": "Lato",
+    "requested_style": "italic",
+    "fontconfig_version": "132055",
+    "face_index": "0",
+    "sha256": "8c863f833b12bc8486671d26e3a58b13b0f9eaff1d6b10398e7c107a9b7ee05a"
+  },
+  {
+    "requested_family": "Lato",
+    "requested_style": "bold_italic",
+    "fontconfig_version": "132055",
+    "face_index": "0",
+    "sha256": "e2f9244fdcd20840f2480f91370cea885bf99230c49d153199fa64853ad74b69"
+  }
+]
