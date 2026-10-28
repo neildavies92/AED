@@ -234,3 +234,52 @@ def test_log_flag_cannot_silently_promise_persistence_for_other_commands():
     with pytest.raises(SystemExit) as caught:
         cli.main(["preview", "--log-file", "/var/lib/aed/scheduler.jsonl"])
     assert caught.value.code == 2
+
+
+def test_explicit_credential_verify_uses_file_manager_without_publication(
+    monkeypatch, capsys
+):
+    from tests.test_credential_store import credential
+
+    manager = Mock()
+    manager.get_valid_credential.return_value = credential()
+    factory = Mock(return_value=manager)
+    monkeypatch.setattr(cli, "credential_factory", factory)
+    cli.main(["credential-verify"])
+    assert json.loads(capsys.readouterr().out)["identity_verified"]
+    manager.get_valid_credential.assert_called_once_with()
+
+
+def test_reconcile_delegates_existing_engine_with_file_backend(monkeypatch):
+    from ask_every_day import publication_recovery_cli
+
+    entry = Mock()
+    monkeypatch.setattr(publication_recovery_cli, "main", entry)
+    factory = Mock(return_value="file-manager")
+    monkeypatch.setattr(cli, "credential_factory", factory)
+    cli.main(
+        [
+            "reconcile",
+            "--attempt-id",
+            "2",
+            "--remote",
+            "--resolve",
+            "published",
+            "--evidence",
+            "/var/lib/aed/evidence.json",
+            "--confirm",
+        ]
+    )
+    args, kwargs = entry.call_args
+    assert "--confirm" in args[0] and "--remote" in args[0]
+    assert kwargs["credential_factory"](Path("auth.toml")) == "file-manager"
+    factory.assert_called_once_with(Path("auth.toml"), Path("/var/lib/aed-credentials"))
+
+
+def test_monitor_uses_offline_existing_deployment_report(monkeypatch):
+    from ask_every_day import deployment
+
+    entry = Mock()
+    monkeypatch.setattr(deployment, "main", entry)
+    cli.main(["monitor"])
+    assert entry.call_args.args[0][0] == "monitor"

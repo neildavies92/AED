@@ -3,10 +3,10 @@ name: Container
 on:
   pull_request:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, 'container/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
+    paths: [Dockerfile, .dockerignore, 'container/**', 'deployment/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, 'container/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
+    paths: [Dockerfile, .dockerignore, 'container/**', 'deployment/**', 'src/**', 'tests/**', pyproject.toml, uv.lock, '.github/workflows/container.yml']
 
 permissions:
   contents: read

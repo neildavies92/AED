@@ -1,9 +1,9 @@
 # Portable Linux runtime — AED-053
 
-This PR is an independent packaging/credential milestone. It does not activate a
-scheduler or implement a second publishing engine. AED-027 must merge first, then
-this branch must rebase/integrate and repeat full/nonpublishing acceptance before
-AED-053 can be complete. The Mac stays the supported fallback until owner-approved
+AED-027 and AED-053 are merged and share the portable scheduler. Packaging does
+not activate publication. See [AED-056 deployment](linux-deployment.md) for the
+current host, migration, credential, UTC cron and cutover procedure. Historical
+development results below are not production acceptance. The Mac stays the supported fallback until owner-approved
 container cutover. AED-054 cleanup remains Backlog.
 
 ## Build and verify
@@ -204,9 +204,8 @@ host cron can trigger the one-shot Compose command, for example **disabled until
 explicit approval**:
 
 ```cron
-# Only on a host cron implementation supporting CRON_TZ; otherwise use UTC frequent
-# triggers and rely on AED's Europe/London window, never the host cron zone alone.
-CRON_TZ=Europe/London
+# Generic example only; AED-056 supplies a bounded UTC host trigger.
+# Do not rely on CRON_TZ on Ubuntu cron.
 # * * * * * cd /private/deployment && /usr/bin/docker compose -f compose.yaml run --rm --no-deps publisher schedule-run --log-file /var/lib/aed/scheduler.jsonl
 ```
 

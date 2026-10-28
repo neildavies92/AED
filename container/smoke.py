@@ -60,6 +60,32 @@ def main():
             *restricted, args.image, "preview", "--config", "/var/lib/aed/aed.toml"
         )
         assert json.loads(result)["mode"] == "local_read_only"
+        disabled = docker(
+            *restricted,
+            args.image,
+            "schedule-run",
+            "--config",
+            "/var/lib/aed/aed.toml",
+            "--log-file",
+            "/var/lib/aed/scheduler.jsonl",
+        )
+        assert json.loads(disabled)["outcome"] == "disabled"
+        retained = docker(
+            *restricted,
+            "--entrypoint",
+            "cat",
+            args.image,
+            "/var/lib/aed/scheduler.jsonl",
+        )
+        assert b"scheduler_command_completed" in retained
+        print(
+            json.dumps(
+                {
+                    "unauthorized_scheduler_disabled": True,
+                    "structured_log_survived_container_removal": True,
+                }
+            )
+        )
         args.output.mkdir(parents=True, exist_ok=True)
         for post in ("AED-0395", "AED-0236"):
             payload = docker(

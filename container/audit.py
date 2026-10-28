@@ -26,7 +26,7 @@ def main():
             "README.md",
         ):
             shutil.copyfile(ROOT / name, context / name)
-        for name in ("src", "data", "tests", "scripts", "container"):
+        for name in ("src", "data", "tests", "scripts", "container", "deployment"):
             shutil.copytree(
                 ROOT / name,
                 context / name,
@@ -41,6 +41,8 @@ def main():
             "data/aed.sqlite3",
             "data/aed.sqlite3.palette.json",
             "secrets/token",
+            "deployment/credentials/token",
+            "deployment/state/aed.sqlite3",
             "assets/generated/private.jpg",
         ):
             path = context / name
