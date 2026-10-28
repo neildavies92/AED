@@ -3,6 +3,7 @@
 import importlib.util
 import os
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -11,7 +12,7 @@ import pytest
 from ask_every_day import desktop_validation as validation
 from ask_every_day.config import load_config
 from ask_every_day.deployment import describe
-from ask_every_day.scheduler_policy import digest, load_schedule
+from ask_every_day.scheduler_policy import LONDON, digest, load_schedule
 from tests.test_deployment import DATA
 from tests.test_deployment import state as state
 
@@ -69,7 +70,7 @@ def test_prepare_refuses_git_and_mutable_image(tmp_path):
         host.prepare(Path("unused"), DATA, tmp_path.parent / "candidate", "latest")
 
 
-def test_prepare_preserves_state_and_uses_1900_disabled_policy(
+def test_prepare_preserves_state_and_uses_2000_disabled_policy(
     state, tmp_path, monkeypatch
 ):
     from ask_every_day.deployment import config_text
@@ -85,6 +86,17 @@ def test_prepare_preserves_state_and_uses_1900_disabled_policy(
     ) == digest(describe(state, DATA))
     assert not (root / "state/aed.sqlite3.schedule.json").exists()
     assert list((root / "credentials").iterdir()) == []
-    assert load_schedule(root / "config/schedule.toml").hour == 19
+    schedule = load_schedule(root / "config/schedule.toml")
+    assert (schedule.hour, schedule.minute, schedule.timezone) == (
+        20,
+        0,
+        "Europe/London",
+    )
+    assert (schedule.window_minutes, schedule.authorization_days) == (30, 30)
+    for month in (1, 7):
+        assert not schedule.in_window(datetime(2026, month, 1, 19, 59, tzinfo=LONDON))
+        assert schedule.in_window(datetime(2026, month, 1, 20, 0, tzinfo=LONDON))
+        assert schedule.in_window(datetime(2026, month, 1, 20, 29, tzinfo=LONDON))
+        assert not schedule.in_window(datetime(2026, month, 1, 20, 30, tzinfo=LONDON))
     assert "ports:" not in (root / "compose.yaml").read_text()
     assert root.stat().st_mode & 0o777 == 0o700
