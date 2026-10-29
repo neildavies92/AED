@@ -13,6 +13,8 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from ask_every_day.production_runtime import require_docker_publisher
+
 BASE_URL = "https://graph.instagram.com/v26.0"
 _MAX_RESPONSE_BYTES = 1_048_576
 _LOG = logging.getLogger(__name__)
@@ -118,6 +120,8 @@ def urllib_transport(
     timeout: float,
 ) -> tuple[int, bytes]:
     """One request, bounded reads, no redirects or retries; socket timeout applies."""
+    if method.upper() == "POST":
+        require_docker_publisher()
     request = Request(url, data=body, headers=headers, method=method)
     opener = build_opener(_NoRedirects())
     try:
@@ -310,6 +314,8 @@ class InstagramClient:
         fields: dict[str, str],
         parse: Callable[[dict], T],
     ) -> T:
+        if method.upper() == "POST":
+            require_docker_publisher()
         encoded = b""
         encoding_failed = False
         try:

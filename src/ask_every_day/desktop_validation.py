@@ -17,16 +17,7 @@ from ask_every_day.repository import open_repository
 
 
 def storage_check(state: Path, credentials: Path) -> dict:
-    if os.geteuid() != 10001 or os.getegid() != 10001:
-        raise ValueError("runtime_identity")
-    for directory in (state, credentials):
-        info = directory.lstat()
-        if (
-            not stat.S_ISDIR(info.st_mode)
-            or info.st_uid != 10001
-            or stat.S_IMODE(info.st_mode) != 0o700
-        ):
-            raise ValueError("private_mount_required")
+    mount_check(state, credentials)
     # Only a dedicated synthetic namespace is touched; real credentials are never read.
     backend = FileSecretBackend(credentials)
     backend.write(
@@ -48,6 +39,22 @@ def storage_check(state: Path, credentials: Path) -> dict:
         if (Path(temporary) / "second").read_bytes() != b"SYNTHETIC_STATE_PROBE":
             raise ValueError("state_roundtrip")
     return {"uid": 10001, "private_mounts_valid": True, "atomic_write_valid": True}
+
+
+def mount_check(state: Path, credentials: Path) -> dict:
+    """Read-only ownership/access check; never read a credential or write a probe."""
+    if os.geteuid() != 10001 or os.getegid() != 10001:
+        raise ValueError("runtime_identity")
+    for directory in (state, credentials):
+        info = directory.lstat()
+        if (
+            not stat.S_ISDIR(info.st_mode)
+            or info.st_uid != 10001
+            or stat.S_IMODE(info.st_mode) != 0o700
+            or not os.access(directory, os.R_OK | os.W_OK | os.X_OK)
+        ):
+            raise ValueError("private_mount_required")
+    return {"uid": 10001, "private_mounts_valid": True, "read_only_check": True}
 
 
 def synthetic_staging() -> dict:
@@ -81,7 +88,7 @@ def synthetic_staging() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("storage", "staging"))
+    parser.add_argument("command", choices=("storage", "mounts", "staging"))
     parser.add_argument("--state", type=Path, default=Path("/var/lib/aed"))
     parser.add_argument(
         "--credentials", type=Path, default=Path("/var/lib/aed-credentials")
@@ -92,6 +99,8 @@ def main() -> None:
         output = (
             storage_check(args.state, args.credentials)
             if args.command == "storage"
+            else mount_check(args.state, args.credentials)
+            if args.command == "mounts"
             else synthetic_staging()
         )
         print(json.dumps(output))

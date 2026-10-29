@@ -4,7 +4,7 @@ Docker Desktop is the canonical publication renderer: Liberation Serif prompts,
 Lato supporting text, and the existing Classic layout at 1080×1350. The same
 rendering and publication engine serves manual and scheduled operations. Native
 Mac rendering remains useful for development; native `publish-next --confirm`
-fails with `canonical_docker_renderer_required` before loading Keychain.
+fails with `docker_publisher_required` before loading Keychain.
 
 ## Authority and preparation
 
@@ -81,7 +81,7 @@ the exact JPEG path/hash, Post ID, colour and complete caption again. Type the
 full displayed `PUBLISH ...` challenge. A flag, `yes`, stale challenge, piped stdin
 or noninteractive invocation cannot authorize it. Every post needs fresh approval.
 
-Manual approval can be given outside 20:00–20:30 Europe/London. It neither reads nor
+Manual approval can be given outside 19:00–19:30 Europe/London. It neither reads nor
 grants scheduler authorization. The scheduler policy, 30-minute window and 30-day
 authorization remain unchanged. No timer or schedule is created or enabled.
 
@@ -101,13 +101,12 @@ media ID, exactly one queue removal and palette progression after success.
 
 ## Fallback and verification
 
-After cutover the **current container database** is authoritative, including after
-an uncertain result. To return state management to the Mac, stop/revoke Docker
-operations and export/restore the latest coordinated container state into a new
-inactive Mac location. Validate history, checkpoints, assets, queue and palette;
-never restore the pre-cutover copy. Native Mac publication remains blocked because
-it cannot guarantee these font files. Future publication must again use a freshly
-verified sole Docker authority with its canonical renderer and exact approval.
+After cutover the **current container database** remains authoritative, including
+after uncertain outcomes. If Docker becomes unavailable, pause posting until the
+reviewed Docker publisher is repaired or the latest coordinated state is safely
+migrated to another Docker host. Native Mac publishing is permanently retired.
+Keep historical Mac data/Keychain/backups as evidence; AED-054 owns later cleanup.
+See the [automation runbook](docker-automation.md) for disabling and recovery.
 
 Offline regressions cover substituted files/versions/styles, stale raster repair,
 historical/unresolved preservation, read-only preview, credential injection, TTY

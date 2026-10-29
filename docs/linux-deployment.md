@@ -126,9 +126,8 @@ The Mac DB remains authoritative until cutover. Do not reset history or requeue
 AED-0395/AED-0289. Stop all writers (including manual rendering, content import and
 queue regeneration); the publication lock alone cannot coordinate unrelated tools.
 After owner approval, revoke Mac unattended authorization and unload its LaunchAgent;
-confirm no publishing process/tunnel is active. Preserve the manual fallback and its
-Keychain. If preparation misses today's window, stop here and use the Mac fallback;
-a later Mac post invalidates any prior transfer snapshot.
+confirm no publishing process/tunnel is active. Preserve historical Mac state and Keychain evidence. If preparation misses the
+window, pause posting. Native Mac publication is retired; never activate it as fallback.
 
 On the Mac, from the reviewed code with the **actual production config**:
 
@@ -351,7 +350,7 @@ current bundle/credential backup, verify new reviewed image/CI, keep the old ima
 change the pinned imageID/Compose, run offline preview/status/monitor/render checks,
 then explicitly reauthorize and restore only one cron. No unattended image auto-update.
 For rollback: stop the new trigger and finish/reconcile any operation, then migrate
-the **latest current** state to the compatible prior runtime or Mac. Do not resurrect
+the **latest current** state to a compatible reviewed Docker runtime. Do not resurrect
 a stale database. Revalidate paths/fonts/config/credentials and grant a new policy
 only on the selected host. Preserve the other host disabled until acceptance.
 
@@ -360,7 +359,7 @@ only on the selected host. Preserve the other host disabled until acceptance.
 1. Latest reviewed code merged; both main commit CI green; correct immutable image.
 2. Owner accepts VPS/network/storage, credentials, Linux typography and staging.
 3. Owner authorizes disabling/unloading Mac LaunchAgent and revoking Mac schedule.
-4. Confirm no Mac writer/publisher/tunnel is active; retain manual fallback.
+4. Confirm no Mac writer/publisher/tunnel is active; retain historical Mac evidence.
 5. Create a **fresh** coordinated production backup after the latest real post.
 6. Transfer/verify complete state, 0395/0289 history/checkpoints, current next entry, palette and assets.
 7. Run Linux nonpublishing preview/status/credential/render/restore checks.
@@ -370,7 +369,7 @@ only on the selected host. Preserve the other host disabled until acceptance.
 11. Observe first genuine unattended 21:00 post; completed checkpoint, known media ID,
     correct asset, queue advance, palette and durable daily guard/logs.
 12. Preserve current-state rollback until owner accepts; only then close 056/053 and
-    consider 054 cleanup. If not ready by 21:00, keep Linux disabled and use Mac manual.
+    consider 054 cleanup. If not ready by 21:00, keep Linux disabled and pause posting.
 
 ## Development validation — 28 October 2026
 

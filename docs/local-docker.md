@@ -2,8 +2,8 @@
 
 Local Docker Desktop on macOS is the target. AED-057 remains In Progress until
 owner-approved container publication is observed with a completed checkpoint and
-known media ID. AED-058 scheduling follows acceptance. No remote deployment is
-needed. The local schedule is **20:00–20:30 Europe/London**, authorization 30 days.
+known media ID. The first supervised AED-058 scheduled post may satisfy AED-057/058/059 together. No remote deployment is
+needed. The local schedule is **19:00–19:30 Europe/London**, authorization 30 days.
 This default applies to newly prepared candidates. Existing private configurations
 are not rewritten; an operator schedule change requires fresh policy authorization.
 
@@ -97,49 +97,50 @@ smoke after a network correction; never blindly retry a media publication.
 ## Visual and one-post acceptance
 
 Use the Mac/Linux comparison generated with `deployment/visual_review.py` after
-container smoke. `--post-id AED-0311` can compare the actual next candidate image
-with the Mac renderer using the same background. Both dimensions 1080×1350; fallback
-fonts differ. Owner must accept Linux appearance or lawfully mount matching fonts,
-then repeat review. All future commands must use the accepted font overlay.
+container smoke, selecting the current unattempted candidate. Both dimensions are
+1080×1350. The owner-approved design now uses verified Liberation Serif + Lato;
+review the exact canonical JPEG and hash. All commands must use the same accepted
+font configuration. Historical published images remain unchanged.
 
 Only after review/merge/green CI and explicit owner consent:
 
 1. Disable/revoke the old Mac schedule and unload its LaunchAgent. Confirm no Mac
-   writer/publishing/tunnel process remains. Preserve the manual fallback.
+   writer/publishing/tunnel process remains. Preserve inactive Mac state as historical evidence.
 2. Re-export **current** Mac state to a new private candidate; compare history,
    unresolved state, next entry/palette/assets. Repeat mount/credential/visual checks.
 3. Record source and destination summaries; owner confirms this candidate becomes
    authoritative at cutover. Keep the Mac copy inactive from this point onward.
-4. Inspect `schedule-preview --data-dir /var/lib/aed/data`; confirm 20:00–20:30 London,
-   approved queue and exact professional account. With `-it`, owner runs existing
-   `schedule-enable --data-dir /var/lib/aed/data` and types its exact TTY challenge.
-   This grants future publication permission; it does not itself post.
-5. During that configured window, owner explicitly runs **one** `schedule-run`
-   with persistent `/var/lib/aed/scheduler.jsonl`. No timer/loop. Outside the window
-   it skips safely; never change the clock/window to force acceptance.
+4. Follow the [AED-058 activation runbook](docker-automation.md) to inspect the
+   19:00–19:30 London policy, install the disabled host trigger, authorize the
+   existing scheduler interactively and explicitly activate the host trigger.
+5. Supervise the first **automatic 19:00** invocation. Do not issue an additional
+   manual test post or kickstart. If any gate is incomplete, skip the day.
 6. Inspect `publication-status`, logs and the actual Instagram post. Confirm completed
    checkpoint, media known, correct canonical JPEG, exactly one queue removal,
    palette progression and daily guard. Preserve response/ID evidence before rotation.
-7. Revoke using `schedule-disable`; verify disabled. Keep current container state
-   authoritative even if cleanup/final recording fails after a provider response.
+7. If acceptance fails, disable future host admissions and revoke the application
+   schedule once idle. Keep current container state authoritative even if
+   cleanup/final recording fails after a provider response.
    Uncertain outcomes require AED-024 reconciliation, never rerun/reset/requeue.
 
 AED-057 is Done only after owner verifies that real container-originated post.
-Record exact attempt, media evidence and fingerprints privately. Do not activate
-AED-058 scheduling during this ticket.
+Record exact attempt, media evidence and fingerprints privately. This supervised
+automatic publication can jointly satisfy AED-057/058/059 when the evidence supports
+each requirement; owner verification remains mandatory.
 
-## Current-state manual fallback
+## Recovery after cutover
 
-Stop/revoke Docker authorization; verify no container operation is active. Export
-the **latest authoritative container state**, not source-bundle or the old Mac DB,
-using the existing deployment module and common lock. Keep logs/credentials/recovery
-evidence protected. Verify/restore to a new inactive Mac directory and remap config
-paths only; preserve palette/renderer/content/history/assets. Confirm the latest
-container post and completed checkpoint appear, queue/next colour match and no
-unresolved attempt exists. Validate the Mac credential; use owner-approved OAuth
-again if it is stale, never edit token metadata. The Mac may resume state management, but native publication is blocked by AED-059.
-Use a fresh verified Docker cutover for any subsequent manual publication with
-canonical typography and its exact per-post approval. Do not restore stale state to make a post retryable.
+Docker remains the exclusive production runtime. Pause/disable host automation,
+allow an active operation to finish, and reconcile uncertain outcomes. Preserve
+the **latest authoritative Docker state** with coordinated export/restore; never
+resume a pre-cutover Mac database. Repair the reviewed container or migrate that
+latest state to another reviewed Docker host with new explicit authorization.
+Native Mac publishing must remain disabled. AED-054 tracks later cleanup while
+preserving historical state, Keychain items, backups and recovery evidence.
+
+See the [19:00 automation runbook](docker-automation.md) for the owner-operated
+cutover, legacy LaunchAgent decommissioning and first supervised scheduled post.
+No separate manual publication is a prerequisite.
 
 ## Development evidence
 

@@ -7,21 +7,28 @@ B owns Docker/Compose, container entrypoint, Linux file credential backend,
 container tests/docs and its container Makefile. No shared implementation branch or
 unreviewed cherry-pick is used. Merge A first; rebase/integrate B after A merges.
 
-The portable process is:
+The contract below describes the shared application boundary. AED-058 makes Docker
+the exclusive production runtime; native media publication is rejected before
+staging or POSTs. The macOS host now triggers Docker Compose using the
+[Docker automation runbook](docker-automation.md). Native previews, inspection,
+backups/export and explicit credential handoff remain available.
+
+The container adapter invokes the portable scheduler with its Linux credential
+factory. Operators select the reviewed private deployment:
 
 ```sh
-python -m ask_every_day.scheduler_cli run \
-  --config /state/aed.toml --schedule-config /state/schedule.toml \
-  --auth-config /private/instagram-auth.toml --data-dir /app/data
+uv run python deployment/desktop-compose.py --directory /absolute/private/deployment \
+  schedule-status --data-dir /var/lib/aed/data
 ```
 
 `ask_every_day.scheduler_cli.main(argv=None, *, credential_factory=...) -> None`
-accepts a `Callable[[Path], CredentialManager]`. Its default uses existing macOS
-Keychain. The container adapter injects a manager backed by its selected Linux
+accepts a `Callable[[Path], CredentialManager]`. Its native administration default
+uses existing macOS Keychain; native `run` fails before constructing that backend.
+The container adapter injects a manager backed by its selected Linux
 `CredentialStore`; it does not reimplement publication, policy or token refresh.
 The application `run_daily` also accepts injected clock/client/staging/credential
 factories for deterministic nonpublishing tests. Existing Cloudflare staging stays
-behind `Stage`; manual publish-next exact interactive approval is unchanged.
+behind `Stage`; Docker manual publication retains its exact interactive approval.
 
 `aed.toml` remains application config. Separate `schedule.toml` specifies the
 Europe/London local window and authorization lifetime. Paths may be absolute;

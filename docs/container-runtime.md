@@ -3,8 +3,8 @@
 AED-027 and AED-053 are merged and share the portable scheduler. Packaging does
 not activate publication. See [AED-056 deployment](linux-deployment.md) for the
 current host, migration, credential, UTC cron and cutover procedure. Historical
-development results below are not production acceptance. The Mac stays the supported fallback until owner-approved
-container cutover. AED-054 cleanup remains Backlog.
+development results below are not production acceptance. Mac state remains authoritative until owner-approved container cutover.
+All production publication uses Docker; native Mac publication is retired. AED-054 cleanup remains Backlog.
 
 ## Build and verify
 
@@ -150,7 +150,7 @@ Status checks local metadata/expiry only. Delete removes the app's local credent
 and optional App Secret but does not revoke Meta's grant; independently revoke it
 through the provider's account/app controls when appropriate. Filesystem deletion
 is not a claim of secure erasure on snapshots/SSD/backups. Keep the Mac credential
-and disabled fallback until the target deployment is proven; never silently retire
+and historical state until the target deployment is proven; never silently retire
 or duplicate a live production credential store.
 
 ## Rendering and staging
@@ -251,9 +251,9 @@ Canonical assets and A's adjacent authorization/daily files must additionally be
 retained/backed up with writers stopped; do not omit them from production restore.
 The disposable smoke validates SQL/palette/assets restore as a matching unit.
 Never restore old state to forget later remote operations. Rollback stops/disables
-the new publisher first and transfers the latest state back before reauthorizing
-one Mac fallback; unresolved attempts require AED-024 reconciliation. AED-054 must
-wait for accepted cutover and never remove a working fallback prematurely.
+the new publisher first and preserves the latest state for repair or migration
+to another Docker runtime; unresolved attempts require AED-024 reconciliation.
+Never reactivate native Mac publication. AED-054 tracks later evidence-preserving cleanup.
 
 ## Evidence and sources
 

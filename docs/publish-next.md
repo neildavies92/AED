@@ -14,7 +14,7 @@ Docker verifies the accepted Liberation Serif/Lato files and exact fresh raster
 bytes; prepare is explicit and refuses attempted/published assets. Preview shows
 the complete caption, Post ID, palette, canonical JPEG and hash without credentials
 or network access. The native `make publish-next` preview remains a development
-summary; `CONFIRM=1` on macOS fails closed before Keychain access.
+summary; all production publication is Docker-only and `CONFIRM=1` on macOS fails closed before Keychain access.
 
 The manual container command preserves the existing exact TTY `PUBLISH ...`
 challenge, account binding, full caption fingerprint, advisory lock, staging byte

@@ -114,24 +114,46 @@ def test_same_overlay_and_strict_preflight_for_every_command(
     (tmp_path / "compose.yaml").write_text("synthetic")
     (tmp_path / "fonts.compose.yaml").write_text("synthetic")
     (tmp_path / "fonts").mkdir()
-    execute = Mock()
+    execute = Mock(return_value=Mock(stdout="unix:///synthetic/docker.sock"))
     monkeypatch.setattr(wrapper.subprocess, "run", execute)
     wrapper.run(tmp_path, [command])
-    assert execute.call_count == 2
+    assert execute.call_count == 3
     assert all(
         str(tmp_path / "fonts.compose.yaml") in c.args[0]
-        for c in execute.call_args_list
+        for c in execute.call_args_list[1:]
     )
-    assert "--require-mounted" in execute.call_args_list[0].args[0]
+    assert "--require-mounted" in execute.call_args_list[1].args[0]
 
 
 def test_no_overlay_keeps_open_fallbacks(tmp_path, monkeypatch):
     (tmp_path / "compose.yaml").write_text("synthetic")
-    execute = Mock()
+    execute = Mock(return_value=Mock(stdout="unix:///synthetic/docker.sock"))
     monkeypatch.setattr(wrapper.subprocess, "run", execute)
     wrapper.run(tmp_path, ["preview"])
-    assert execute.call_count == 1
+    assert execute.call_count == 2
     assert "fonts.compose.yaml" not in " ".join(execute.call_args.args[0])
+
+
+def test_operator_compose_is_local_and_ignores_shell_overrides(tmp_path, monkeypatch):
+    (tmp_path / "compose.yaml").write_text("synthetic")
+    monkeypatch.setenv("DOCKER_HOST", "ssh://remote.invalid")
+    monkeypatch.setenv("DOCKER_CONTEXT", "remote")
+    monkeypatch.setenv("COMPOSE_FILE", "/unreviewed.yaml")
+    execute = Mock(return_value=Mock(stdout="unix:///synthetic/docker.sock"))
+    monkeypatch.setattr(wrapper.subprocess, "run", execute)
+    wrapper.run(tmp_path, ["preview"])
+    for call in execute.call_args_list:
+        assert call.args[0][:3] == ["docker", "--context", "desktop-linux"]
+        assert (
+            not {"DOCKER_HOST", "DOCKER_CONTEXT", "COMPOSE_FILE"}
+            & call.kwargs["env"].keys()
+        )
+    assert "--env-file" in execute.call_args.args[0]
+    execute.reset_mock()
+    execute.return_value.stdout = "ssh://remote.invalid"
+    with pytest.raises(ValueError, match="local_docker_desktop"):
+        wrapper.run(tmp_path, ["preview"])
+    assert execute.call_count == 1
 
 
 @pytest.mark.parametrize("name", ["fonts", "fonts.compose.yaml"])

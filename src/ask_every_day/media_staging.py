@@ -31,6 +31,10 @@ from ask_every_day.config import load_config
 from ask_every_day.domain import AppConfig
 from ask_every_day.jpeg_export import MAX_JPEG_BYTES, validate_jpeg
 from ask_every_day.logging_config import configure_logging
+from ask_every_day.production_runtime import (
+    DockerPublisherRequired,
+    require_docker_publisher,
+)
 from ask_every_day.repository import Repository, SQLiteRepository
 
 logger = logging.getLogger(
@@ -595,7 +599,7 @@ def stage_media(
             raise StagingError("Tunnel stopped during public verification")
     except Exception as error:
         failure = True
-        if isinstance(error, StagingError):
+        if isinstance(error, (StagingError, DockerPublisherRequired)):
             diagnostic = str(error)
     except BaseException:
         _close(stack)
@@ -639,6 +643,7 @@ def main() -> None:
         "Cannot stage media; inspect local config/database and staging prerequisites"
     )
     try:
+        require_docker_publisher()
         config = load_config(args.config)
         uri = config.database_path.absolute().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True)) as connection:
@@ -652,7 +657,7 @@ def main() -> None:
         return
     except Exception as error:
         failed = True
-        if isinstance(error, StagingError):
+        if isinstance(error, (StagingError, DockerPublisherRequired)):
             message = str(error)
     if failed:
         parser.exit(1, message + "\n")

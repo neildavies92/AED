@@ -24,28 +24,32 @@ The pure renderer/specimen defaults to Ice Blue and has no rotation cursor.
 ## Prepare before approval
 
 ```sh
-make render-next
-make publish-next
-make publish-next CONFIRM=1
+make docker-prepare-next DIRECTORY='/absolute/private/deployment'
+make docker-manual-preview DIRECTORY='/absolute/private/deployment'
+# Only after explicit cutover, visual review and per-post approval:
+make docker-manual-publish DIRECTORY='/absolute/private/deployment'
 ```
 
-`render-next` prepares only the next queued Post's canonical `AED-NNNN.png` and
+The Docker preparation command prepares only the next queued Post's canonical `AED-NNNN.png` and
 `AED-NNNN.jpg`, using the actual next successful publication colour. It makes no
 network, credential, staging or Instagram call. Both preparation and confirmed
 publication hold the existing per-database advisory lock, so preparation cannot
 replace an image while the operator is approving or publishing it.
 
-`publish-next` remains a local preview. It now includes background colour, themed
+The Docker manual preview includes background colour, themed
 publication sequence and asset readiness. It does not generate files. A valid
 old JPEG is insufficient: the persisted assignment, rendered SVG fingerprint and
-canonical JPEG hash must all match. Run `render-next` if the image is missing,
+canonical JPEG hash must all match. Run `docker-prepare-next` if the image is missing,
 corrupt, untracked or stale after queue/config/template changes, inspect that
 image, then approve its new hash. The composed caption and remote publication
 sequence are unchanged.
 
-A matching prepared PNG/JPEG pair is reused byte-for-byte without invoking the
-rasterizer, including across process restarts. Rendering inputs or damaged files
-require explicit re-preparation before approval. `make render-assets` remains an
+A matching prepared PNG/JPEG pair is preserved byte-for-byte across process
+restarts. Docker additionally verifies the approved editorial fonts and compares
+an in-memory raster against the existing bytes before reuse. Rendering inputs or
+damaged files require explicit re-preparation before approval. Native
+`make render-next` and `make publish-next` remain development-only preparation and
+preview commands; native confirmed publication is blocked. `make render-assets` remains an
 ID-order draft/review renderer using the first configured background. It skips
 all prepared Posts and all Posts with any publication attempt, including Failed,
 Publishing and Published. It cannot overwrite the approved or historical asset.
@@ -99,15 +103,19 @@ A fresh database with no Published records initializes automatically. If Publish
 records predate this feature, provide the verified last background **once**:
 
 ```sh
-sh scripts/with-cairo.sh uv run python -m ask_every_day.render_next \
-  --previous-background '#F4F0E8'
+docker compose -f /absolute/private/deployment/compose.yaml run --rm --no-deps \
+  --entrypoint python publisher -m ask_every_day.render_next \
+  --config /etc/aed/aed.toml --previous-background '#F4F0E8'
 ```
 
 `#F4F0E8` is the verified old Classic background used in the initial controlled
 acceptance; use the actual verified value for another database. This records
 historical publication IDs as a baseline without editing their records or images.
 It does not mark deleted Instagram media unpublished. The first new colour avoids
-that boundary; all new tracked successes then obey the three-colour bags.
+that boundary; all new tracked successes then obey the three-colour bags. This is
+one-time migration tooling for a verified missing ledger, not a normal operator
+step. Use the reviewed font overlay if present, then run the canonical Docker
+prepare/preview commands above before any publication approval.
 
 A lost ledger after successful publication also fails closed. Restore its matching
 backup and reconcile history; do not use the bootstrap option to reset an existing

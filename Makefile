@@ -6,29 +6,31 @@ CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-c
 .PHONY: schedule-preview schedule-run schedule-status schedule-enable schedule-disable schedule-check-credentials schedule-launchd backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make docker-scheduler-status DIRECTORY=... Read-only host/Docker diagnostics"
+	@echo "make -f deployment/Makefile desktop-scheduler ARGS=... Prepare/install/activate only by explicit operator action"
 	@echo "make docker-prepare-next DIRECTORY=/private/deployment Prepare canonical Docker JPEG"
 	@echo "make docker-manual-preview DIRECTORY=/private/deployment Inspect exact JPEG/caption without credentials"
 	@echo "make docker-manual-publish DIRECTORY=/private/deployment Interactive one-post approval after cutover"
 	@echo "make schedule-preview Inspect daily policy without publishing or authorizing"
-	@echo "make schedule-run  Run at most one authorized publication; disabled by default"
+	@echo "make schedule-run  Docker-only scheduler entrypoint; native publication is blocked"
 	@echo "make schedule-status Inspect/revalidate unattended authorization"
 	@echo "make schedule-enable Explicit interactive opt-in for future daily posts"
 	@echo "make schedule-disable Revoke unattended authorization"
 	@echo "make schedule-check-credentials Check local credentials without network/refresh"
-	@echo "make schedule-launchd Generate an inactive LaunchAgent; never install it"
+	@echo "make schedule-launchd Legacy native generator; retired from production"
 	@echo "make backup-state  Back up SQLite and palette together without migration"
 	@echo "make migrate-state Back up state, then migrate SQLite without publishing"
 	@echo "make publication-status Inspect durable publication state offline"
 	@echo "make reconcile-publication ATTEMPT_ID=1 Inspect one attempt; REMOTE=1 enables GETs"
 	@echo "make render-next   Prepare the next queued Post with its publication colour"
-	@echo "make publish-next  Preview next post; CONFIRM=1 requires interactive approval"
+	@echo "make publish-next  Native offline preview; CONFIRM=1 requires Docker"
 	@echo "make instagram-login Connect Instagram using browser login and local HTTPS"
 	@echo "make instagram-auth-bootstrap Store the Instagram App Secret in macOS Keychain"
 	@echo "make instagram-auth-status Inspect safe local credential metadata"
 	@echo "make instagram-logout Remove local Instagram credential and App Secret"
 	@echo "make caption-review Audit captions across 100 queues; write local review CSV"
 	@echo "make launch-review  Generate the curated local launch QA gallery"
-	@echo "make stage-media POST_ID=AED-0001 Temporarily expose one JPEG over HTTPS"
+	@echo "make stage-media POST_ID=AED-0001 Docker-only production staging"
 	@echo "make validate-assets Check strict PNG/JPEG inventory without writes"
 	@echo "make render-assets Render SQLite Posts to PNG/JPEG using aed.toml"
 	@echo "make import-content Import approved CSV content using aed.toml"
@@ -141,3 +143,8 @@ schedule-launchd:
 docker-prepare-next docker-manual-preview docker-manual-publish:
 	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
 	uv run python deployment/desktop-compose.py --directory "$(DIRECTORY)" $(if $(filter docker-manual-publish,$@),--interactive,) $(patsubst docker-%,%,$@) --data-dir /var/lib/aed/data
+
+.PHONY: docker-scheduler-status
+docker-scheduler-status:
+	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
+	uv run python deployment/desktop_scheduler.py diagnose --directory "$(DIRECTORY)" $(HOST_ARGS)

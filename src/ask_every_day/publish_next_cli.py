@@ -21,6 +21,10 @@ from ask_every_day.credential_store import KeychainCredentialStore
 from ask_every_day.instagram_auth import CredentialManager, InstagramAuthClient
 from ask_every_day.instagram_auth_cli import load_auth_config
 from ask_every_day.logging_config import configure_logging
+from ask_every_day.production_runtime import (
+    DockerPublisherRequired,
+    require_docker_publisher,
+)
 from ask_every_day.publication_service import PublicationService, PublicationState
 from ask_every_day.publish_next import (
     CopyCatalog,
@@ -79,6 +83,8 @@ def main(
     try:
         if args.confirm and not (sys.stdin.isatty() and sys.stdout.isatty()):
             raise PublishError("interactive_confirmation_required")
+        if args.confirm:
+            require_docker_publisher()
         fonts = verify_editorial_fonts() if canonical_assets or args.confirm else None
         factory = credential_factory or credential_manager
         config = load_config(args.config)
@@ -211,7 +217,7 @@ def main(
                 else "post_publication_verification_failed"
                 if result
                 else str(error)
-                if isinstance(error, CanonicalRendererError)
+                if isinstance(error, (CanonicalRendererError, DockerPublisherRequired))
                 else "local_preflight_failed",
                 attempt_id=result.attempt_id if result else None,
                 container_id=result.container_id if result else None,

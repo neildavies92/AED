@@ -59,7 +59,9 @@ def offline(monkeypatch):
 
 
 @pytest.fixture
-def run(tmp_path):
+def run(tmp_path, monkeypatch):
+    # Synthetic provider acceptance explicitly models the Docker production boundary.
+    monkeypatch.setattr("ask_every_day.production_runtime.docker_runtime", lambda: True)
     config = AppConfig(tmp_path / "db.sqlite", tmp_path / "assets", "@ask.every.day")
     config.assets_path.mkdir()
     image = BytesIO()

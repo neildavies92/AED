@@ -513,6 +513,7 @@ def test_invalid_timeout_before_source(source, timeout):
 
 
 def test_cli_prints_url_then_interrupts_and_cleans_up(source, monkeypatch, capsys):
+    monkeypatch.setattr("ask_every_day.production_runtime.docker_runtime", lambda: True)
     _, config, _ = source
     with open_repository(config) as repository:
         repository.create_post(Post("AED-0001", "Question?", "A", "B", "Classic"))
@@ -562,6 +563,7 @@ def test_missing_tunnel_cleans_real_origin(source, monkeypatch):
 
 
 def test_cli_missing_database_never_creates_it(source, monkeypatch, capsys):
+    monkeypatch.setattr("ask_every_day.production_runtime.docker_runtime", lambda: True)
     _, config, _ = source
     monkeypatch.setattr(module, "load_config", lambda path: config)
     monkeypatch.setattr(module, "configure_logging", lambda: None)
