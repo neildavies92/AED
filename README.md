@@ -37,9 +37,9 @@ Run `make` or `make help` to list the available commands.
 | `make schedule-status` | Inspect/revalidate unattended authorization |
 | `make schedule-enable` | Explicit interactive approval for future daily publications |
 | `make schedule-disable` | Revoke unattended approval |
-| `make schedule-run` | Execute at most one authorized daily publication; default disabled |
+| `make schedule-run` | Docker-only entrypoint; native invocation fails closed |
 | `make schedule-check-credentials` | Check local credentials without refresh/provider calls |
-| `make schedule-launchd` | Generate an inactive user LaunchAgent |
+| `make docker-scheduler-status DIRECTORY=...` | Nonpublishing host/Docker diagnostics; `HOST_ARGS=--check-credentials` checks local credential readiness |
 | `make publication-status` | Inspect publication/checkpoint state offline without migration |
 | `make reconcile-publication ATTEMPT_ID=1` | Inspect one attempt; remote reads and local resolution require explicit options |
 | `make backup-state` | Back up SQLite and the palette together |
@@ -55,7 +55,7 @@ Run `make` or `make help` to list the available commands.
 | `make instagram-logout` | Remove the local Instagram credential and App Secret |
 | `make caption-review` | Audit 100 preview queues and export a 400-Post caption review CSV |
 | `make launch-review` | Generate a 20-Post local visual/copy review gallery |
-| `make stage-media POST_ID=AED-0001` | Temporarily stage one validated JPEG over public HTTPS |
+| `make stage-media POST_ID=AED-0001` | Docker-only staging entrypoint |
 | `make import-content` | Import the approved snapshot into configured local SQLite |
 | `make prototype` | Render the Classic SVG design specimen to `output/` |
 | `make validate-assets` | Validate strict PNG/JPEG inventory without writes |
@@ -152,10 +152,10 @@ resolution. Uncertain outcomes block automatic replay; this is not a provider
 exactly-once guarantee or an enabled scheduler.
 
 [Daily scheduling](docs/scheduler.md) adds explicit, revocable authorization for a
-short-lived portable command. It is disabled by default. The macOS LaunchAgent is
-generated separately and is never installed or activated by setup. The
+short-lived Docker command. It is disabled by default. The Docker-only macOS
+LaunchAgent is generated separately and is never installed or activated by setup. The
 [runtime contract](docs/runtime-contract.md) defines credential injection and the
-shared command for the later Linux container adapter.
+shared command used by the Linux container adapter.
 
 [Linux production deployment](docs/linux-deployment.md) covers AED-056 host setup,
 coordinated state migration, private credential handoff, disabled UTC cron and
@@ -163,7 +163,8 @@ owner-approved cutover. `make -f deployment/Makefile help` lists offline helpers
 
 [Local Docker Desktop acceptance](docs/local-docker.md) covers AED-057 private
 production-state copies, mount checks, synthetic HTTPS staging and explicit
-20:00 Europe/London one-post acceptance before AED-058 scheduling.
+19:00 Europe/London acceptance. The first supervised automated post can satisfy
+AED-057/058/059 together; no additional manual publication is required.
 
 [Local font review](docs/font-review.md) documents the accepted Liberation Serif/Lato
 editorial pairing and open-source typography specimens,
@@ -171,3 +172,11 @@ optional operator-provided fonts, style/hash inspection and renderer reapproval.
 
 Production manual publication uses the [canonical Docker workflow](docs/canonical-manual-publishing.md),
 including verified editorial font files and explicit fresh-state authority cutover.
+
+[Docker-only daily automation](docs/docker-automation.md) provides the macOS
+user LaunchAgent and exact owner cutover/activation runbook for **19:00–19:30
+Europe/London**. Docker is the exclusive production publisher, including emergency
+manual posts. Native manual/scheduled/media POST entrypoints fail closed before
+staging. If Docker is unavailable, pause posting; never reactivate a native Mac
+publisher. Native read-only administration, backups/export and credential handoff
+remain available. Software installation grants no publication permission.

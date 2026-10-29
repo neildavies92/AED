@@ -33,6 +33,7 @@ from ask_every_day.instagram_client import (
     _id,
 )
 from ask_every_day.media_staging import StagedMedia, stage_media
+from ask_every_day.production_runtime import require_docker_publisher
 from ask_every_day.publication_assets import (
     AssetError,
     asset_preview,
@@ -230,6 +231,7 @@ def publish_approved(
     dispatch_guard: Callable[[int | None], None] | None = None,
 ) -> PublishResult:
     """Caller holds the lock and obtains exact manual or validated policy approval."""
+    require_docker_publisher()
     attempt_id = None
     container_id = None
     media_id = None

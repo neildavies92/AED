@@ -108,3 +108,8 @@ stays Backlog. Remaining prerequisites are:
 
 OAuth, secret storage, hosting/tunnels/S3, publish-next, scheduling and Insights
 remain outside this client.
+
+
+Production media POSTs require Docker at both the client and HTTP transport
+boundaries. Native callers receive `docker_publisher_required` before a request;
+GET-only inspection and owner-approved credential administration remain available.

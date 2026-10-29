@@ -15,6 +15,10 @@ from pathlib import Path
 from ask_every_day.config import load_config
 from ask_every_day.instagram_auth import CredentialManager
 from ask_every_day.logging_config import JSONFormatter, configure_logging
+from ask_every_day.production_runtime import (
+    DockerPublisherRequired,
+    require_docker_publisher,
+)
 from ask_every_day.publish_next import PublishError
 from ask_every_day.publish_next_cli import credential_manager, publication_lock
 from ask_every_day.repository import open_repository
@@ -114,6 +118,8 @@ def main(
     known_ids: dict[str, object] = {}
     output: dict[str, object] = {}
     try:
+        if args.command == "run":
+            require_docker_publisher()
         if args.log_file is not None:
             _bounded_log(args.log_file)
         if args.command == "enable" and not (
@@ -286,7 +292,7 @@ def main(
             }
         failure = (
             str(error)
-            if isinstance(error, ScheduleError)
+            if isinstance(error, (ScheduleError, DockerPublisherRequired))
             else error.reason
             if isinstance(error, PublishError)
             else "scheduler_operation_failed"

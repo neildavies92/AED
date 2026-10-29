@@ -69,3 +69,11 @@ def canonical_asset_valid(
         )
     except (OSError, ValueError):
         return False
+
+
+if __name__ == "__main__":
+    try:
+        verify_editorial_fonts()
+        print(json.dumps({"approved_editorial_fonts": True}))
+    except Exception:
+        sys.exit("approved_editorial_fonts_unavailable")

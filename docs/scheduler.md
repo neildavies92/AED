@@ -2,28 +2,31 @@
 
 The scheduler is a portable one-shot application workflow. It is **disabled by
 default**. Neither installation, setup, generating a LaunchAgent nor starting the
-container authorizes a publication. No scheduler has been installed or activated
-for development. Manual `make publish-next CONFIRM=1` keeps its existing exact
-interactive approval. See the [shared runtime contract](runtime-contract.md).
+container authorizes a publication. Production manual and scheduled publication
+run only inside Docker. Native `make publish-next CONFIRM=1` and `make schedule-run`
+fail closed. Docker manual publication retains its exact per-post interactive
+approval. See the [shared runtime contract](runtime-contract.md).
 
 ## Inspect and explicitly authorize
 
-After merge/main CI, from the intended sole production checkout:
+After merge/main CI, follow the [Docker-only automation runbook](docker-automation.md)
+to prepare and verify the sole private deployment. From the reviewed checkout,
+select that deployment explicitly for nonpublishing inspection:
 
 ```sh
-cp schedule.example.toml schedule.toml
-make schedule-preview
-make schedule-check-credentials
-make schedule-status
+AED_DEPLOY='/absolute/private/deployment'
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-preview --data-dir /var/lib/aed/data
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-check-credentials
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-status --data-dir /var/lib/aed/data
 ```
 
-Choose the desired time in `schedule.toml`; the example is 09:00 Europe/London,
-with a 30-minute window and 30-day authorization. Hours/minutes must be valid,
-windows are 1–120 minutes and cannot cross midnight; authorization lasts 1–366 days.
-Timezone is fixed to Europe/London. These are examples, not a live activation.
-Keep a window wide enough for Quick Tunnel DNS/startup (often about 80 seconds)
-and container readiness polling (up to four minutes). A too-short window fails
-closed rather than publishing late. No missed-day bulk backfill is implemented.
+The local Docker Desktop policy is **19:00–19:30 Europe/London**, with 30-day
+authorization. The generic development `schedule.example.toml` and deferred Linux
+deployment examples do not configure this private deployment. The portable engine
+validates hours/minutes, 1–120-minute windows that cannot cross midnight, and
+1–366-day authorization. Docker Desktop's host adapter additionally requires its
+exact 19:00 policy. Late staging/polling fails closed rather than publishing outside
+the window; no missed-day bulk backfill is implemented.
 
 `preview` reads local SQL/approved CSV/copy/config and renders a fixed in-memory
 specimen to fingerprint the effective font/Cairo output. It does not write a
@@ -31,11 +34,11 @@ canonical asset, create authorization, load credentials or contact a provider.
 `check-credentials` reads local credential metadata through the selected backend;
 it never refreshes the token, contacts Meta, stages media or changes SQL/policy.
 
-Only after reviewing the snapshot, remaining queue, schedule and sole-host plan,
-the owner can opt in from an interactive terminal:
+Only after completing the runbook's fresh-state cutover, credential/image review
+and sole-authority acceptance, the owner can opt in from an interactive terminal:
 
 ```sh
-make schedule-enable
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" --interactive schedule-enable --data-dir /var/lib/aed/data
 ```
 
 It shows the account, policy fingerprint, queue count, time/window, expiry and exact
@@ -50,20 +53,21 @@ before opting in. Renew only by reviewing and repeating this explicit command.
 Authorization binds the exact DB Posts to the approved CSV snapshot, all copy and
 hashtag inputs, original queue order/positions, baseline publication history,
 account, paths, palette/config, cadence, runtime source/templates/bundled fonts and
-an actual reference PNG from the effective native renderer/system fonts. Normal
+an actual reference PNG from the effective container renderer/fonts. Normal
 ordered queue-prefix consumption and successful palette progression are allowed.
-Changes to content, copy, queue generation/reordering, config, renderer, native/font
+Changes to content, copy, queue generation/reordering, config, renderer, font
 output, code or prior history require reapproval. Failed/uncertain new attempts
 also block policy continuation; reconcile safely and explicitly review any renewal.
-Moving to Linux changes paths/runtime/rendering and requires new approval there.
+Moving to another Docker deployment changes paths/runtime and requires new approval.
 
 ```sh
-make schedule-run
-make schedule-status
-make schedule-disable
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-status --data-dir /var/lib/aed/data
+uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-disable --data-dir /var/lib/aed/data
 ```
 
-`run` is headless after authorization. `status` is read-only and revalidates active
+The separately approved host trigger invokes `schedule-run` headlessly after
+authorization; do not issue a manual run merely to test activation. `status` is
+read-only and revalidates active
 policy. `disable` explicitly revokes future unattended authorization without a TTY;
 it neither edits publication history nor interrupts an already held publishing
 lock. If another operation holds that lock, revocation fails visibly; stop/wait for
@@ -88,8 +92,10 @@ A prior manual Published record on the same London date counts. Both publication
 completion date and other attempts' start dates are checked conservatively. Once
 an attempt exists on a local day, another new attempt that day is blocked even if
 that attempt closed Failed. Unresolved Publishing blocks all future days. SQL
-history is the durable daily authority; there is no process-memory cursor or second
-daily decision ledger. Repeated triggers, restarts and DST fall-back folds cannot
+history is the durable publication authority; there is no process-memory cursor.
+The host's separate invocation receipt only prevents repeated trigger admission,
+including preflight failures; it never substitutes for SQLite history. Repeated
+triggers, restarts and DST fall-back folds cannot
 bypass the guard. Future-dated history/clock reversal fails closed.
 
 Spring's skipped local times have no execution window; no late catch-up occurs.
@@ -111,49 +117,18 @@ hosts/databases. A remote POST that crosses midnight after its last clock check
 cannot be controlled atomically with Meta; persistent unresolved state and the
 next-day history guard remain the safe boundary.
 
-## macOS LaunchAgent adapter
+## macOS host trigger
 
-The owner may generate and inspect an inactive plist after merge/acceptance:
+The native Mac publishing LaunchAgent is retired. Do not generate, install or
+reactivate `com.ask-every-day.publisher`. Native `schedule-run` and direct media
+POST entrypoints return `docker_publisher_required` before credentials or staging.
+Offline preview/status, disabling authorization and state administration remain
+available. The shared engine operates exclusively inside Docker.
 
-```sh
-make schedule-launchd
-plutil -lint output/com.ask-every-day.publisher.plist
-```
-
-The plist uses absolute `/bin/sh`, the existing absolute `scripts/with-cairo.sh`,
-an absolute venv Python, explicit working/config/data/log paths and controlled PATH.
-It needs the existing Homebrew Cairo/libffi and cloudflared installations. It uses
-StartInterval at most 300 seconds, shortened to half the configured window for
-windows under ten minutes; host timezone does not decide eligibility. The application
-always enforces Europe/London time. There is no RunAtLoad, KeepAlive or publishing
-loop. Regenerate/review the plist after changing the window or checkout paths.
-
-Application JSON logs rotate at 1 MiB with three retained files, all 0600, under
-`output/scheduler.jsonl`. No unbounded launchd stdout/stderr files are configured.
-Exit status1 and `scheduler_command_failed` require operator attention; there is no
-new notification service in this ticket. Monitor the bounded log/launchd exit status
-and ensure the Mac is awake/network-ready during its window. Inspect stale staging
-processes after an abrupt host/process death; normal exit/interruption cleans up.
-
-Installation and activation require explicit owner approval. After that approval,
-the owner can use the standard user-domain commands (not executed by development):
-
-```sh
-mkdir -p "$HOME/Library/LaunchAgents"
-cp output/com.ask-every-day.publisher.plist "$HOME/Library/LaunchAgents/"
-launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.ask-every-day.publisher.plist"
-```
-
-To stop future triggers, revoke authorization and unload the job:
-
-```sh
-make schedule-disable
-launchctl bootout "gui/$(id -u)/com.ask-every-day.publisher"
-```
-
-Do not use kickstart as a test of a live enabled policy. Safe checks are preview,
-status and check-credentials. Never install an enabled second scheduler on a clone
-of the database. Mac remains the fallback until container acceptance/cutover.
+Use the [Docker-only automation runbook](docker-automation.md) for the dedicated
+`com.ask-every-day.docker-publisher` LaunchAgent, pinned image, explicit cutover,
+owner installation/activation and 19:00–19:30 Europe/London policy. This host trigger
+invokes this existing engine once; it does not supply publication authorization.
 
 ## Backups, acceptance and container integration
 
@@ -181,7 +156,7 @@ merges; cron only triggers it (e.g. every minute, application owns the window).
 No cron runs inside the image and no alternate publishing engine is allowed.
 Container cutover requires both accepted PRs, credential/bootstrap/storage/rendering
 acceptance, coordinated backups, one active environment and explicit live approval.
-AED-054 cleanup remains Backlog until that cutover succeeds; preserve Mac fallback
+AED-054 cleanup remains Backlog until that cutover succeeds; preserve Mac historical evidence
 and credentials until then. AED-052 staging DNS/uptime work remains separate.
 
 Final validation: `make setup` and `make check` passed with **1,320 tests**, Ruff

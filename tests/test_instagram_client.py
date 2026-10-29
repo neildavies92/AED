@@ -21,6 +21,11 @@ from ask_every_day.instagram_client import (
 from ask_every_day.logging_config import JSONFormatter
 
 
+@pytest.fixture(autouse=True)
+def synthetic_docker_boundary(monkeypatch):
+    monkeypatch.setattr("ask_every_day.production_runtime.docker_runtime", lambda: True)
+
+
 class Fake:
     def __init__(self, data=None, status=200, error=None, raw=None):
         self.data = data

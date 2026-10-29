@@ -1,6 +1,7 @@
 """One explicit local Compose command using the same optional font overlay."""
 
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
@@ -12,7 +13,16 @@ def compose_prefix(directory: Path) -> tuple[list[str], bool]:
     fonts = directory / "fonts"
     if fonts.exists() != overlay.exists():
         raise ValueError("font_overlay_and_directory_required_together")
-    command = ["docker", "compose", "-f", str(directory / "compose.yaml")]
+    command = [
+        "docker",
+        "--context",
+        "desktop-linux",
+        "compose",
+        "--env-file",
+        "/dev/null",
+        "-f",
+        str(directory / "compose.yaml"),
+    ]
     if overlay.exists():
         command += ["-f", str(overlay)]
     return command, overlay.exists()
@@ -28,6 +38,30 @@ def run(
     prefix, licensed = compose_prefix(directory.resolve())
     if not arguments:
         raise ValueError("explicit_command_required")
+    env = {
+        "HOME": str(Path.home()),
+        "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
+        "DOCKER_CONFIG": str(Path.home() / ".docker"),
+    }
+    endpoint = subprocess.run(
+        [
+            "docker",
+            "--context",
+            "desktop-linux",
+            "context",
+            "inspect",
+            "desktop-linux",
+            "--format",
+            "{{.Endpoints.docker.Host}}",
+        ],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    ).stdout.strip()
+    if not endpoint.startswith("unix:///"):
+        raise ValueError("local_docker_desktop_context_required")
     if licensed:
         subprocess.run(
             [
@@ -46,6 +80,7 @@ def run(
             ],
             check=True,
             capture_output=True,
+            env=env,
         )
     base = [*prefix, "run", "--rm", "--no-deps", "-it" if interactive else "-T"]
     if arguments[0] in {"font-render", "font-inventory"}:
@@ -76,7 +111,7 @@ def run(
             command.append("--require-mounted")
     else:
         command = [*base, "publisher", *arguments]
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, env=env)
 
 
 def main():

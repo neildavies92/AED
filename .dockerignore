@@ -35,3 +35,5 @@
 !deployment/desktop-compose.py
 
 !src/ask_every_day/editorial-fonts.json
+
+!deployment/desktop_scheduler.py

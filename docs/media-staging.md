@@ -1,3 +1,7 @@
+> Production staging is Docker-only. Native `make stage-media` fails with
+> `docker_publisher_required`; use the canonical Docker manual/scheduled workflow.
+> Offline staging tests use synthetic providers and never publish.
+
 # Public HTTPS media staging
 
 AED-041 makes one existing validated JPEG temporarily fetchable without credentials.

@@ -10,6 +10,7 @@ from ask_every_day.canonical_renderer import verify_editorial_fonts
 from ask_every_day.domain import AppConfig, PublicationStatus
 from ask_every_day.instagram_client import InstagramClient
 from ask_every_day.media_staging import stage_media
+from ask_every_day.production_runtime import require_docker_publisher
 from ask_every_day.publication_assets import prepare_next_asset
 from ask_every_day.publish_next import (
     Credentials,
@@ -56,6 +57,7 @@ def run_daily(
     | None = None,
 ) -> ExecutionSummary:
     """Acquire one shared lock and perform zero or one checkpointed publication."""
+    require_docker_publisher()
     with publication_lock(config.database_path):
         now = clock()
         day = now.astimezone(LONDON).date()
