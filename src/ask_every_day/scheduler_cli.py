@@ -117,6 +117,8 @@ def main(
     failure = None
     known_ids: dict[str, object] = {}
     output: dict[str, object] = {}
+    publication_state = "unknown"
+    diagnostics: dict[str, object] = {}
     try:
         if args.command == "run":
             require_docker_publisher()
@@ -278,11 +280,15 @@ def main(
                 "operation": str(output.get("outcome", output.get("mode"))),
             },
         )
+        if args.command == "run":
+            output["schema_version"] = 1
         print(json.dumps(output, indent=2))
     except (KeyboardInterrupt, EOFError):
         failure = "scheduler_cancelled"
     except Exception as error:
         if isinstance(error, PublishError):
+            publication_state = error.publication_state
+            diagnostics = error.diagnostics
             known_ids = {
                 "publication_id": error.attempt_id
                 if type(error.attempt_id) is int and error.attempt_id > 0
@@ -307,7 +313,28 @@ def main(
                 **known_ids,
             },
         )
-        print(json.dumps({"outcome": "blocked", "reason": failure, **known_ids}))
+        print(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "outcome": "blocked",
+                    "reason": failure,
+                    "local_day": datetime.now(UTC)
+                    .astimezone(LONDON)
+                    .date()
+                    .isoformat(),
+                    "publication_state": publication_state,
+                    "failure_category": diagnostics.get(
+                        "failure_category",
+                        "preflight"
+                        if publication_state == "no_attempt"
+                        else "unexpected",
+                    ),
+                    **known_ids,
+                    "diagnostics": diagnostics,
+                }
+            )
+        )
         parser.exit(1, failure + "; no automatic POST retry; see docs/scheduler.md.\n")
 
 

@@ -286,3 +286,23 @@ def test_monitor_uses_offline_existing_deployment_report(monkeypatch):
     monkeypatch.setattr(deployment, "main", entry)
     cli.main(["monitor"])
     assert entry.call_args.args[0][0] == "monitor"
+
+
+def test_explicit_identity_diagnostic_never_refreshes_or_opens_state(
+    monkeypatch, capsys
+):
+    from datetime import UTC, datetime
+    from types import SimpleNamespace
+
+    manager = Mock()
+    manager.verify_identity_read_only.return_value = SimpleNamespace(
+        username="ask.every.day", expires_at=datetime(2026, 12, 1, tzinfo=UTC)
+    )
+    monkeypatch.setattr(cli, "credential_factory", Mock(return_value=manager))
+    monkeypatch.setattr(
+        cli, "load_config", Mock(side_effect=AssertionError("state forbidden"))
+    )
+    cli.main(["credential-identify"])
+    assert json.loads(capsys.readouterr().out)["identity_verified"]
+    manager.verify_identity_read_only.assert_called_once_with()
+    manager.get_valid_credential.assert_not_called()
