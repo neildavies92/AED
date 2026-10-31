@@ -14,7 +14,11 @@ from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlencode
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
-from ask_every_day.instagram_client import InstagramClient, InstagramIdentity
+from ask_every_day.instagram_client import (
+    InstagramClient,
+    InstagramError,
+    InstagramIdentity,
+)
 
 SCOPES = frozenset({"instagram_business_basic", "instagram_business_content_publish"})
 EXPECTED_USERNAME = "ask.every.day"
@@ -29,6 +33,7 @@ class AuthError(Exception):
     def __init__(
         self, operation: str, *, http_status: int | None = None, uncertain: bool = False
     ):
+        self.diagnostics: dict[str, object] = {}
         self.operation = operation
         self.http_status = http_status
         self.outcome_uncertain = uncertain
@@ -426,6 +431,7 @@ class CredentialManager:
 
     def _identity(self, token: str, user_id: str | None = None) -> InstagramIdentity:
         identity = None
+        failure = AuthError("account_binding")
         try:
             candidate = self._identify(token)
             if (
@@ -437,10 +443,16 @@ class CredentialManager:
                 raise ValueError
             _id(candidate.user_id)
             identity = candidate
+        except InstagramError as error:
+            failure.diagnostics = {
+                **error.diagnostics,
+                "http_status": error.http_status,
+                "api_operation": error.operation,
+            }
         except Exception:
             pass
         if identity is None:
-            raise AuthError("account_binding")
+            raise failure
         return identity
 
     def connect(self, code: str, app_secret: str) -> InstagramCredential:
@@ -486,6 +498,12 @@ class CredentialManager:
             raise AuthError("app_binding")
         if not credential.issued_at <= now < credential.expires_at:
             raise AuthError("expired_credential")
+        return credential
+
+    def verify_identity_read_only(self) -> InstagramCredential:
+        """Explicit remote GET using local metadata; never refresh or persist tokens."""
+        credential = self.local_credential()
+        self._identity(credential.access_token, credential.user_id)
         return credential
 
     def get_valid_credential(self) -> InstagramCredential:

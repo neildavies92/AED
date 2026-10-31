@@ -293,3 +293,8 @@ Remaining acceptance: AED-027 merge and shared-entrypoint integration/rebase, gr
 integrated CI, typography/font acceptance, authorized credential migration, target
 staging/nonpublishing acceptance and explicit single-environment owner cutover.
 AED-053 stays In Progress; this independent PR is not an activated publisher.
+
+`credential-identify` performs an explicit identity GET using local valid metadata
+without refresh, credential writes or database access. It is an owner-only diagnostic,
+not a readiness check run automatically. See the [31 October incident runbook](unattended-incident-2026-10-31.md)
+for read-only mount instructions; `credential-verify` retains eligible refresh behaviour.

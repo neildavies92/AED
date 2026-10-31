@@ -315,10 +315,14 @@ def launch_status(label=LABEL) -> dict:
         environment("/usr/bin/docker"),
         "launchctl_disabled_status_unavailable",
     )
-    match = re.search(rf'"{re.escape(label)}"\s*=>\s*(true|false)', overrides.stdout)
+    match = re.search(
+        rf'^\s*"{re.escape(label)}"\s*=>\s*(true|false|enabled|disabled)\s*;?\s*$',
+        overrides.stdout,
+        re.MULTILINE,
+    )
     return {
         "loaded": result.returncode == 0,
-        "disabled": match.group(1) == "true" if match else True,
+        "disabled": match.group(1) in {"true", "disabled"} if match else True,
         "running": result.returncode == 0
         and bool(re.search(r"\bpid = [1-9][0-9]*", result.stdout)),
     }
@@ -802,7 +806,8 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
                 attempt_id = value.get("attempt_id")
                 post_id = value.get("post_id")
                 if outcome == "published" and (
-                    type(attempt_id) is not int
+                    code != 0
+                    or type(attempt_id) is not int
                     or attempt_id <= 0
                     or not isinstance(post_id, str)
                     or not re.fullmatch(r"AED-[0-9]{4}", post_id)
@@ -812,6 +817,80 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
                 raise Blocked(
                     "container_result_unverified_inspect_checkpoint"
                 ) from None
+            if outcome == "blocked":
+                state = value.get("publication_state")
+                category = value.get("failure_category")
+                if (
+                    type(value.get("schema_version")) is not int
+                    or value.get("schema_version") != 1
+                    or code == 0
+                    or state not in ("no_attempt", "reconciliation_required", "unknown")
+                    or category
+                    not in (
+                        "authentication",
+                        "configuration",
+                        "transient",
+                        "api_rejected",
+                        "preflight",
+                        "unexpected",
+                    )
+                    or (
+                        state == "no_attempt"
+                        and any(
+                            value.get(k) is not None
+                            for k in ("publication_id", "container_id", "media_id")
+                        )
+                    )
+                ):
+                    raise Blocked("container_result_unverified_inspect_checkpoint")
+                reason = (
+                    "preflight_failed"
+                    if state == "no_attempt"
+                    else "publication_requires_reconciliation"
+                    if state == "reconciliation_required"
+                    else "container_application_failed_inspect_checkpoint"
+                )
+                details: dict[str, object] = {
+                    "publication_state": state,
+                    "failure_category": category,
+                }
+                publication_id = value.get("publication_id")
+                if type(publication_id) is int and publication_id > 0:
+                    details["publication_id"] = publication_id
+                for key in ("container_id", "media_id"):
+                    provider_id = value.get(key)
+                    if isinstance(provider_id, str) and re.fullmatch(
+                        r"[0-9]{1,128}", provider_id
+                    ):
+                        details[key] = provider_id
+                diagnostic = value.get("diagnostics")
+                if isinstance(diagnostic, dict):
+                    for key in ("http_status", "meta_error_code", "meta_error_subcode"):
+                        number = diagnostic.get(key)
+                        if type(number) is int and 0 <= number <= 2**31 - 1:
+                            details[key] = number
+                event(
+                    "host_publication_failed",
+                    reason=reason,
+                    local_day=day,
+                    exit_code=code,
+                    **details,
+                )
+                save(
+                    receipt,
+                    {
+                        "local_day": day,
+                        "outcome": "blocked",
+                        "reason": reason,
+                        **details,
+                    },
+                )
+                return {
+                    "outcome": "blocked",
+                    "reason": reason,
+                    "local_day": day,
+                    **details,
+                }, 1
             event(
                 "host_publication_result",
                 outcome=outcome,

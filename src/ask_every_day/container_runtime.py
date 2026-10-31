@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> None:
             "credential-status",
             "credential-delete",
             "credential-verify",
+            "credential-identify",
             "monitor",
             "reconcile",
             "schedule-preview",
@@ -225,10 +226,14 @@ def main(argv: list[str] | None = None) -> None:
             )
             return
         if args.command.startswith("credential-"):
-            if args.command == "credential-verify":
+            if args.command in {"credential-verify", "credential-identify"}:
                 manager = credential_factory(args.auth_config, args.credential_dir)
                 # Explicit command: identity GET and eligible token refresh; no media POST.
-                credential = manager.get_valid_credential()
+                credential = (
+                    manager.verify_identity_read_only()
+                    if args.command == "credential-identify"
+                    else manager.get_valid_credential()
+                )
                 print(
                     json.dumps(
                         {

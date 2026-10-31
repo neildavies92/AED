@@ -22,11 +22,12 @@ from ask_every_day.copy_policy import (
     select_hashtag_set,
 )
 from ask_every_day.domain import AppConfig, Post, QueueEntry
-from ask_every_day.instagram_auth import InstagramCredential
+from ask_every_day.instagram_auth import AuthError, InstagramCredential
 from ask_every_day.instagram_client import (
     Container,
     ContainerStatus,
     InstagramClient,
+    InstagramError,
     InstagramIdentity,
     PublishedMedia,
     PublishingQuota,
@@ -62,6 +63,14 @@ class PublishError(Exception):
         container_id: str | None = None,
         media_id: str | None = None,
     ) -> None:
+        self.diagnostics: dict[str, object] = {}
+        self.publication_state = (
+            "reconciliation_required"
+            if attempt_id is not None
+            else "no_attempt"
+            if reason == "preflight_failed"
+            else "unknown"
+        )
         self.reason = reason
         self.attempt_id = attempt_id
         self.container_id = container_id
@@ -339,6 +348,16 @@ def publish_approved(
         failure = PublishError(
             reason, attempt_id=attempt_id, container_id=container_id, media_id=media_id
         )
+        if attempt_id is None and phase in {"preflight", "staging"}:
+            failure.publication_state = "no_attempt"
+        if isinstance(error, (InstagramError, AuthError)):
+            failure.diagnostics = {
+                "http_status": error.http_status,
+                "api_operation": error.operation,
+                **error.diagnostics,
+            }
+            if isinstance(error, AuthError):
+                failure.diagnostics.setdefault("failure_category", "authentication")
     if failure is not None:
         _LOG.error(
             "publish_next_failed",

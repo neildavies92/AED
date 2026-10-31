@@ -185,7 +185,9 @@ class SQLiteRepository:
             _LOGGER.warning(
                 "Repository operation failed",
                 extra={
-                    "event": "repository_write_failed",
+                    "event": "repository_read_failed"
+                    if self._read_only
+                    else "repository_write_failed",
                     "operation": operation,
                     "error_type": type(exc).__name__,
                     **context,
@@ -195,7 +197,9 @@ class SQLiteRepository:
         _LOGGER.info(
             "Repository operation committed",
             extra={
-                "event": "repository_write_committed",
+                "event": "repository_read_completed"
+                if self._read_only
+                else "repository_write_committed",
                 "operation": operation,
                 **context,
             },
