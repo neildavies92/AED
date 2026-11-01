@@ -147,6 +147,11 @@ def test_preview_neither_authorizes_nor_loads_credentials(command, run, capsys):
     data = json.loads(capsys.readouterr().out)
     assert data["mode"] == "local_read_only" and not data["enabled"]
     assert data["timezone"] == "Europe/London"
+    entry = run.repo.next_queue_entry()
+    assert entry is not None
+    assert data["next_post_id"] == entry.post_id
+    assert data["next_queue_position"] == entry.position
+    assert data["queue_count"] == len(run.repo.list_queue())
     assert "Question" not in str(data) and PRIVATE not in str(data)
     assert run.config.database_path.read_bytes() == before
     assert not state_path(run.config).exists()
@@ -273,3 +278,19 @@ def test_bounded_log_rejects_fifo_without_blocking(tmp_path):
     os.mkfifo(path, 0o600)
     with pytest.raises(OSError):
         cli._bounded_log(path)
+
+
+def test_empty_queue_is_observable_but_cannot_be_authorized(command, run, capsys):
+    run.repo.replace_queue(())
+    before = run.config.database_path.read_bytes()
+    command("preview")
+    report = json.loads(capsys.readouterr().out)
+    assert report["queue_count"] == 0 and report["next_post_id"] is None
+    assert report["next_queue_position"] is None and report["policy_key"] is None
+    assert report["expires_at"] is None
+    with pytest.raises(SystemExit):
+        command("enable", tty=True)
+    assert "queue_empty" in capsys.readouterr().err
+    assert run.config.database_path.read_bytes() == before
+    assert not state_path(run.config).exists()
+    command.factory.assert_not_called()

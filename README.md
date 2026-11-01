@@ -180,3 +180,5 @@ manual posts. Native manual/scheduled/media POST entrypoints fail closed before
 staging. If Docker is unavailable, pause posting; never reactivate a native Mac
 publisher. Native read-only administration, backups/export and credential handoff
 remain available. Software installation grants no publication permission.
+
+For existing Docker deployments, use the [local operations and immutable upgrade runbook](docs/local-operations.md) for offline health, token lifecycle, current-state migration and rollback.

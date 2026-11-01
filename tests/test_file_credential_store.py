@@ -182,3 +182,40 @@ def test_manager_refresh_persists_through_file_backend_restart(store):
     manager.get_valid_credential()
     provider.refresh_token.assert_called_once()
     assert "SYNTHETIC" not in repr(refreshed) + repr(store)
+
+
+@pytest.mark.parametrize("stage", ["provider", "identity", "replace"])
+def test_refresh_failure_preserves_persisted_token_after_restart(
+    store, monkeypatch, stage
+):
+    from ask_every_day.instagram_client import APIError, api_diagnostics
+
+    original = credential()
+    store.save(original)
+    before = {p.name: p.read_bytes() for p in root(store).iterdir()}
+    now = original.expires_at - timedelta(days=3)
+    provider = Mock(spec=InstagramAuthClient)
+    provider.config = AuthConfig(
+        original.app_id, "https://localhost:8765/oauth/instagram/callback"
+    )
+    provider.refresh_token.return_value = Mock(
+        access_token="SYNTHETIC_NEW", expires_in=60 * 86400
+    )
+    identify = Mock(
+        return_value=InstagramIdentity(original.user_id, "ask.every.day", "BUSINESS")
+    )
+    if stage == "provider":
+        provider.refresh_token.side_effect = AuthError("refresh_token", http_status=401)
+    elif stage == "identity":
+        error = APIError("identify_account", 403, False)
+        error.diagnostics = api_diagnostics({"error": {"code": 200}}, 403, "GET")
+        identify.side_effect = error
+    else:
+        monkeypatch.setattr("os.replace", Mock(side_effect=OSError("PRIVATE")))
+    manager = CredentialManager(provider, store, identify=identify, clock=lambda: now)
+    with pytest.raises(AuthError):
+        manager.get_valid_credential()
+    reopened = FileCredentialStore(original.app_id, root(store))
+    assert reopened.load() == original
+    assert before == {p.name: p.read_bytes() for p in root(store).iterdir()}
+    provider.refresh_token.assert_called_once()

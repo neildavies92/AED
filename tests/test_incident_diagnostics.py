@@ -165,3 +165,39 @@ def test_missing_attempt_id_after_begin_failure_is_not_proof_of_no_attempt():
         PublishError("publish_container_failed", attempt_id=2).publication_state
         == "reconciliation_required"
     )
+
+
+@pytest.mark.parametrize(
+    "status,code,category", [(401, 190, "authentication"), (403, 200, "configuration")]
+)
+def test_refresh_rejection_is_a_nonconsuming_publication_preflight(
+    run, status, code, category
+):
+    from ask_every_day.instagram_auth import AuthConfig, AuthError, InstagramAuthClient
+
+    before = run.preview()
+    database = run.config.database_path.read_bytes()
+    transport = Mock(
+        return_value=(
+            status,
+            json.dumps({"error": {"code": code, "message": "PRIVATE"}}).encode(),
+        )
+    )
+    client = InstagramAuthClient(
+        AuthConfig("101", "https://localhost:8765/oauth/instagram/callback"),
+        transport=transport,
+    )
+    with pytest.raises(AuthError) as caught:
+        client.refresh_token("SYNTHETIC_TOKEN")
+    run.credentials.get_valid_credential.side_effect = caught.value
+    with pytest.raises(PublishError) as rejected:
+        run.publish()
+    assert rejected.value.publication_state == "no_attempt"
+    assert rejected.value.diagnostics["failure_category"] == category
+    assert rejected.value.diagnostics["api_operation"] == "refresh_token"
+    assert rejected.value.diagnostics["meta_error_code"] == code
+    assert run.preview() == before and run.repo.list_publications() == []
+    assert run.config.database_path.read_bytes() == database
+    assert run.events == []
+    run.client.create_image_container.assert_not_called()
+    run.client.publish_container.assert_not_called()

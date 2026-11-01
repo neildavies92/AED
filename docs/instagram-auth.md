@@ -264,7 +264,9 @@ identity and returns the current token. Inside that safety margin it refreshes
 only when the 24-hour eligibility condition holds, rechecks identity, then
 persists the new lifetime. Failed refresh/identity/storage never falls back to
 the old token for that call. A subsequent call uses the refreshed expiry, so it
-does not refresh on every call. There is no background scheduler.
+does not refresh on every call. The Docker daily publisher invokes this same manager;
+there is no separate credential timer. See the [local operations runbook](local-operations.md#credential-lifecycle)
+for paused deployments, expiry warnings and failure recovery.
 
 `CredentialManager.client()` supplies the validated bearer token to the existing
 `InstagramClient`; it does not create media or publish. OAuth HTTP responses are

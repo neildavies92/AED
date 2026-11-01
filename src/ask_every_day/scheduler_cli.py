@@ -237,8 +237,13 @@ def main(
                 else:
                     with open_repository(config, read_only=True) as repository:
                         if args.command == "preview":
-                            proposal = authorization_preview(
-                                repository, config, inputs, schedule, now
+                            queue = repository.list_queue()
+                            proposal = (
+                                authorization_preview(
+                                    repository, config, inputs, schedule, now
+                                )
+                                if queue
+                                else None
                             )
                             output = {
                                 "mode": "local_read_only",
@@ -246,12 +251,18 @@ def main(
                                     (current := read_authorization(config))
                                     and current.enabled
                                 ),
-                                "policy_key": proposal.policy_key,
-                                "queue_count": len(proposal.queue),
+                                "policy_key": proposal.policy_key if proposal else None,
+                                "queue_count": len(queue),
+                                "next_post_id": queue[0].post_id if queue else None,
+                                "next_queue_position": queue[0].position
+                                if queue
+                                else None,
                                 "timezone": schedule.timezone,
                                 "daily_time": f"{schedule.hour:02}:{schedule.minute:02}",
                                 "window_minutes": schedule.window_minutes,
-                                "expires_at": proposal.expires_at.isoformat(),
+                                "expires_at": proposal.expires_at.isoformat()
+                                if proposal
+                                else None,
                                 "in_window": schedule.in_window(now),
                                 "daily_block": daily_block(
                                     repository.list_publications(), now
