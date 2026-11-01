@@ -9,11 +9,13 @@ scheduled runs, production staging CLI and media POSTs fail with
 inspection, coordinated export/backup, recovery and explicit credential handoff
 remain supported.
 
-The target is the first **supervised automatic** post at 19:00 Thursday 29 October
-2026. The previously proposed 08:00 manual post is cancelled. This one successful
-scheduled post can satisfy AED-057/058/059 when actual Instagram/checkpoint evidence
-supports each ticket; no extra manual acceptance post is required. If any gate is
-incomplete, leave automation disabled and skip the day.
+The first genuine unattended publication remains an operator-observed acceptance
+step. The 31 October trigger ran but failed before publication; the owner subsequently
+reported a successful identity check after resolving Meta's restriction. Follow the
+[current Docker-to-Docker upgrade and recovery runbook](local-operations.md) for an
+existing authoritative deployment. The initial Mac-to-Docker bootstrap below is
+historical setup guidance, not an upgrade source. If a gate is incomplete, keep
+automation disabled and skip the day.
 
 ## Trigger contract
 

@@ -19,7 +19,7 @@ import sys
 import tempfile
 import tomllib
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -441,6 +441,7 @@ def readiness(root: Path, settings: dict, *, credentials=False) -> dict:
     auth_path = root / "config/instagram-auth.toml"
     if not auth_path.is_file():
         raise Blocked("auth_configuration_missing")
+    credential = {}
     if credentials:
         credential = container_query(
             root,
@@ -460,6 +461,22 @@ def readiness(root: Path, settings: dict, *, credentials=False) -> dict:
         "mounts": "valid",
         "credential_check": "local_valid" if credentials else "not_requested",
         "identity_verification": "owner_must_verify_separately",
+        "credential_expires_at": credential.get("expires_at"),
+        "authorization_expires_at": auth.get("expires_at"),
+        "queue_count": preview.get("queue_count"),
+        "next_post_id": preview.get("next_post_id"),
+        "next_queue_position": preview.get("next_queue_position"),
+        "last_successful_publication": next(
+            (
+                row
+                for row in reversed(history["attempts"])
+                if row.get("definitely_completed")
+            ),
+            None,
+        ),
+        "failed_attempt_count": sum(
+            row.get("status") == "Failed" for row in history["attempts"]
+        ),
         "enabled": auth.get("enabled") is True,
         "authorization_valid": auth.get("authorization_valid") is True,
         "daily_block": preview.get("daily_block"),
@@ -471,7 +488,68 @@ def approved(root: Path, fingerprint: str) -> bool:
     return path.exists() and read(path).get("binding") == fingerprint
 
 
-def diagnose(root: Path, settings: dict, *, credentials=False):
+def execution_health(root: Path, report: dict, now: datetime) -> dict:
+    """Describe calendar opportunities, not a promise of remote acceptance."""
+    local = now.astimezone(LONDON)
+    candidate = local.replace(hour=19, minute=0, second=0, microsecond=0)
+    if local >= candidate + timedelta(minutes=1) or report.get("daily_block"):
+        candidate += timedelta(days=1)
+    activation = root / "host/activation.json"
+    receipt = root / "host/last-invocation.json"
+    last_invocation = None
+    try:
+        if report["host_armed"]:
+            first = date.fromisoformat(read(activation)["first_day"])
+            candidate = max(candidate, datetime.combine(first, candidate.timetz()))
+        if receipt.exists():
+            saved = read(receipt)
+            day = date.fromisoformat(saved["local_day"])
+            outcome = saved["outcome"]
+            if outcome not in OUTCOMES | {"admitted"}:
+                raise ValueError
+            # Never echo arbitrary receipt text, provider messages or IDs.
+            last_invocation = {"local_day": day.isoformat(), "outcome": outcome}
+            candidate = max(
+                candidate,
+                datetime.combine(day + timedelta(days=1), candidate.timetz()),
+            )
+    except (ValueError, KeyError, TypeError):
+        raise Blocked("host_receipt_or_activation_invalid") from None
+    warnings = []
+    eligible = report["status"] == "ready_for_next_1900"
+    for field in ("authorization_expires_at", "credential_expires_at"):
+        value = report.get(field)
+        if value is None:
+            eligible = False
+            continue
+        try:
+            expiry = datetime.fromisoformat(value)
+            if expiry.utcoffset() is None:
+                raise ValueError
+        except (ValueError, TypeError):
+            raise Blocked("health_expiry_invalid") from None
+        if expiry <= local + timedelta(days=7):
+            warnings.append(field.removesuffix("_at") + "_within_7_days")
+        if expiry <= max(candidate, local):
+            eligible = False
+            warnings.append(field.removesuffix("_at") + "_before_next_run")
+    if type(report.get("queue_count")) is not int or report["queue_count"] <= 0:
+        eligible = False
+        warnings.append(
+            "queue_empty" if report.get("queue_count") == 0 else "queue_unknown"
+        )
+    if last_invocation and last_invocation["outcome"] in {"blocked", "admitted"}:
+        warnings.append("last_host_invocation_requires_inspection")
+    return {
+        "next_scheduled_at": candidate.isoformat(),
+        "next_eligible_at": candidate.isoformat() if eligible else None,
+        "last_host_invocation": last_invocation,
+        "warnings": warnings,
+        "remote_verification": "not_requested_offline_only",
+    }
+
+
+def diagnose(root: Path, settings: dict, *, credentials=False, now=None):
     report = {
         "mode": "nonpublishing",
         "image": settings["deployment"]["image"],
@@ -512,6 +590,12 @@ def diagnose(root: Path, settings: dict, *, credentials=False):
             if not credentials
             else "ready_for_next_1900"
         )
+        report.update(execution_health(root, report, now or datetime.now(UTC)))
+        if (
+            report["status"] == "ready_for_next_1900"
+            and report["next_eligible_at"] is None
+        ):
+            report["status"] = "next_run_requirements_unsatisfied"
         return report, 0
     except Blocked as error:
         report.update(diagnostic="blocked", reason=str(error))

@@ -18,6 +18,7 @@ from ask_every_day.instagram_client import (
     InstagramClient,
     InstagramError,
     InstagramIdentity,
+    api_diagnostics,
 )
 
 SCOPES = frozenset({"instagram_business_basic", "instagram_business_content_publish"})
@@ -263,18 +264,24 @@ class InstagramAuthClient:
         failure = False
         status = None
         result = {}
+        diagnostics: dict[str, object] = {}
         try:
             status, payload = self._transport(method, url, body, content_type)
             if type(status) is not int or not 100 <= status <= 599:
                 status = None
                 raise ValueError
-            if not 200 <= status < 300:
+            data = None
+            if isinstance(payload, bytes) and len(payload) <= _MAX_RESPONSE:
+                try:
+                    data = json.loads(payload, object_pairs_hook=_unique_object)
+                except (ValueError, RecursionError):
+                    pass
+            if not 200 <= status < 300 or (isinstance(data, dict) and "error" in data):
+                diagnostics = api_diagnostics(data, status, method)
                 raise ValueError
-            if not isinstance(payload, bytes) or len(payload) > _MAX_RESPONSE:
+            if not isinstance(data, dict):
                 raise ValueError
-            result = json.loads(payload, object_pairs_hook=_unique_object)
-            if not isinstance(result, dict) or "error" in result:
-                raise ValueError
+            result = data
         except Exception:
             failure = True
         if failure:
@@ -285,9 +292,12 @@ class InstagramAuthClient:
                     "operation": operation,
                     "http_status": status,
                     "error_type": "AuthError",
+                    **diagnostics,
                 },
             )
-            raise AuthError(operation, http_status=status, uncertain=method == "POST")
+            error = AuthError(operation, http_status=status, uncertain=method == "POST")
+            error.diagnostics = {"api_operation": operation, **diagnostics}
+            raise error
         return result
 
     def exchange_code(self, code: str, app_secret: str) -> _AuthorizationGrant:

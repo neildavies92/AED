@@ -124,14 +124,37 @@ def deployment(tmp_path, monkeypatch):
             value = {
                 "attempts": [{"operator_action_required": True}]
                 if state.unresolved
-                else []
+                else [
+                    {
+                        "post_id": "AED-0066",
+                        "status": "Published",
+                        "definitely_completed": True,
+                    },
+                    {
+                        "post_id": "AED-0081",
+                        "status": "Failed",
+                        "definitely_completed": False,
+                    },
+                ]
             }
         elif "schedule-preview" in command:
-            value = {"daily_block": state.daily}
+            value = {
+                "daily_block": state.daily,
+                "queue_count": 12,
+                "next_post_id": "AED-0081",
+                "next_queue_position": 5,
+            }
         elif "schedule-status" in command:
-            value = {"enabled": state.enabled, "authorization_valid": state.valid}
+            value = {
+                "enabled": state.enabled,
+                "authorization_valid": state.valid,
+                "expires_at": "2026-11-28T00:00:00+00:00",
+            }
         elif "schedule-check-credentials" in command:
-            value = {"credential_ready": True}
+            value = {
+                "credential_ready": True,
+                "expires_at": "2026-12-27T00:00:00+00:00",
+            }
         else:
             return SimpleNamespace(returncode=0, stdout="synthetic")
         return SimpleNamespace(returncode=0, stdout=json.dumps(value))
@@ -576,3 +599,114 @@ def test_structured_failure_keeps_certainty_and_never_retries(
         == "already_invoked_today"
     )
     assert d.publish.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "stamp,expected",
+    [
+        ("2027-03-27T19:01:00+00:00", "2027-03-28T19:00:00+01:00"),
+        ("2027-10-30T18:01:00+00:00", "2027-10-31T19:00:00+00:00"),
+        ("2026-10-29T18:59:59+00:00", "2026-10-29T19:00:00+00:00"),
+        ("2026-10-29T19:30:00+00:00", "2026-10-30T19:00:00+00:00"),
+    ],
+)
+def test_health_calendar_uses_london_and_never_backfills(deployment, stamp, expected):
+    report = healthy_report()
+    value = host.execution_health(
+        deployment.root, report, datetime.fromisoformat(stamp)
+    )
+    assert value["next_scheduled_at"] == expected
+    assert value["next_eligible_at"] == expected
+    assert value["remote_verification"] == "not_requested_offline_only"
+    deployment.publish.assert_not_called()
+
+
+def healthy_report(**changes):
+    return {
+        "status": "ready_for_next_1900",
+        "host_armed": False,
+        "queue_count": 12,
+        "credential_expires_at": "2027-12-01T00:00:00+00:00",
+        "authorization_expires_at": "2027-12-01T00:00:00+00:00",
+        **changes,
+    }
+
+
+@pytest.mark.parametrize("outcome", ["admitted", "blocked", "published"])
+def test_preserved_upgrade_receipt_suppresses_same_day_and_survives_restart(
+    deployment, tmp_path, outcome
+):
+    import shutil
+
+    d = deployment
+    old = tmp_path / "old-receipt.json"
+    host.save(old, {"local_day": "2026-10-29", "outcome": outcome, "secret": "PRIVATE"})
+    shutil.copyfile(old, d.root / "host/last-invocation.json")
+    (d.root / "host/last-invocation.json").chmod(0o600)
+    arm(d)
+    loaded = host.load(d.root)
+    value = host.execution_health(d.root, healthy_report(), NOW)
+    assert value["next_eligible_at"] == "2026-10-30T19:00:00+00:00"
+    assert "PRIVATE" not in json.dumps(value)
+    assert host.run_once(d.root, loaded, clock=lambda: NOW) == (
+        {"outcome": "already_invoked_today"},
+        0,
+    )
+    assert old.read_bytes() == (d.root / "host/last-invocation.json").read_bytes()
+    d.publish.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "change,warning",
+    [
+        ({"queue_count": 0}, "queue_empty"),
+        (
+            {"credential_expires_at": "2026-10-29T19:00:00+00:00"},
+            "credential_expires_before_next_run",
+        ),
+        (
+            {"authorization_expires_at": "2026-10-29T19:00:00+00:00"},
+            "authorization_expires_before_next_run",
+        ),
+        ({"status": "host_trigger_inactive"}, None),
+        ({"credential_expires_at": None}, None),
+    ],
+)
+def test_health_never_promises_execution_without_all_gates(deployment, change, warning):
+    value = host.execution_health(deployment.root, healthy_report(**change), NOW)
+    assert value["next_eligible_at"] is None
+    if warning:
+        assert warning in value["warnings"]
+
+
+def test_health_respects_first_activation_day_and_manual_publication(deployment):
+    d = deployment
+    host.save(d.root / "host/activation.json", {"first_day": "2026-11-02"})
+    report = healthy_report(host_armed=True, daily_block="already_published_today")
+    value = host.execution_health(d.root, report, NOW)
+    assert value["next_eligible_at"] == "2026-11-02T19:00:00+00:00"
+
+
+@pytest.mark.parametrize(
+    "receipt",
+    [{}, {"local_day": "PRIVATE"}, {"local_day": "2026-10-29", "outcome": "PRIVATE"}],
+)
+def test_health_corrupt_receipt_fails_closed_without_echo(deployment, receipt):
+    host.save(deployment.root / "host/last-invocation.json", receipt)
+    with pytest.raises(host.Blocked, match="host_receipt_or_activation_invalid"):
+        host.execution_health(deployment.root, healthy_report(), NOW)
+
+
+def test_diagnose_includes_local_inventory_expiry_and_last_success(deployment):
+    d = deployment
+    report, code = host.diagnose(d.root, d.settings, credentials=True, now=NOW)
+    assert code == 0
+    assert report["queue_count"] == 12 and report["next_post_id"] == "AED-0081"
+    assert report["next_queue_position"] == 5
+    assert report["credential_expires_at"] == "2026-12-27T00:00:00+00:00"
+    assert report["last_successful_publication"]["post_id"] == "AED-0066"
+    assert report["failed_attempt_count"] == 1
+    assert report["next_eligible_at"] is None  # This fixture has no owner authority.
+    assert all(
+        "offline.compose.json" in " ".join(c) for c in d.calls if "publisher" in c
+    )

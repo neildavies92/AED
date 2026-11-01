@@ -678,3 +678,45 @@ def test_native_http_error_is_closed(monkeypatch):
     )
     status, body = auth.auth_transport("GET", error.url, None, None)
     assert status == 400 and body == b"PRIVATE" and stream.closed
+
+
+@pytest.mark.parametrize(
+    "status,code,category",
+    [
+        (400, 190, "authentication"),
+        (403, 200, "configuration"),
+        (429, 4, "transient"),
+        (500, 2, "transient"),
+    ],
+)
+def test_refresh_classifies_provider_failure_without_losing_valid_store(
+    status, code, category, caplog
+):
+    transport = Transport(
+        response(
+            {
+                "error": {
+                    "code": code,
+                    "error_subcode": 463,
+                    "type": "OAuthException",
+                    "message": "PRIVATE",
+                    "error_data": "PRIVATE",
+                }
+            },
+            status,
+        )
+    )
+    old = credential(
+        issued_at=NOW - timedelta(days=55), expires_at=NOW + timedelta(days=5)
+    )
+    store = Store(old)
+    with pytest.raises(auth.AuthError) as caught:
+        manager(transport, store).get_valid_credential()
+    assert caught.value.diagnostics["failure_category"] == category
+    assert caught.value.diagnostics["meta_error_code"] == code
+    assert caught.value.diagnostics["api_operation"] == "refresh_token"
+    assert store.value == old and not store.saved and len(transport.calls) == 1
+    assert caught.value.__context__ is None
+    assert "PRIVATE" not in str(caught.value.diagnostics) + "".join(
+        JSONFormatter().format(r) for r in caplog.records
+    )
