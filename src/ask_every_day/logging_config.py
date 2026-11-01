@@ -10,6 +10,9 @@ _HANDLER_NAME = "ask_every_day_json_stderr"
 _EVENT = re.compile(r"[a-z][a-z0-9_]{0,79}\Z")
 _TEXT_FIELDS = frozenset(
     {
+        "meta_error_type",
+        "safe_message",
+        "retryability",
         "checkpoint_phase",
         "resolution",
         "palette_colour",
@@ -30,6 +33,8 @@ _TEXT_FIELDS = frozenset(
 )
 _INTEGER_FIELDS = frozenset(
     {
+        "meta_error_code",
+        "meta_error_subcode",
         "palette_sequence",
         "queue_position",
         "checkpoint_revision",

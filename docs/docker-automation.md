@@ -276,3 +276,6 @@ restore and grant fresh authorization to exactly one Docker publisher. Never
 reactivate native Mac posting or restore the old Mac snapshot. Deferred Linux/VPS
 schedules are unchanged; no remote infrastructure is provisioned. AED-054 remains
 responsible for post-acceptance decommissioning without premature secret/data deletion.
+
+For the 31 October preflight incident, safe Meta diagnostics and the owner-only
+GET identity check, see [incident analysis](unattended-incident-2026-10-31.md).

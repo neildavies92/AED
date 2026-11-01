@@ -78,6 +78,7 @@ class InstagramError(Exception):
     def __init__(
         self, operation: str, http_status: int | None, outcome_uncertain: bool
     ) -> None:
+        self.diagnostics: dict[str, object] = {}
         self.operation = operation
         self.http_status = http_status
         self.outcome_uncertain = outcome_uncertain
@@ -94,6 +95,50 @@ class APIError(InstagramError):
 
 class ResponseError(InstagramError):
     """Malformed JSON or unexpected provider schema/state."""
+
+
+def api_diagnostics(data: object, status: int, method: str) -> dict[str, object]:
+    """Retain typed metadata only; replace provider prose with fixed safe messages."""
+    error = data.get("error") if isinstance(data, dict) else None
+    error = error if isinstance(error, dict) else {}
+    code = error.get("code")
+    subcode = error.get("error_subcode")
+    code = code if type(code) is int and 0 <= code <= 2**31 - 1 else None
+    subcode = subcode if type(subcode) is int and 0 <= subcode <= 2**31 - 1 else None
+    kind = error.get("type")
+    kind = (
+        kind
+        if kind
+        in ("OAuthException", "IGApiException", "GraphMethodException", "APIException")
+        else "UnknownProviderError"
+    )
+    category = (
+        "authentication"
+        if code == 190 or status == 401
+        else "configuration"
+        if code in (10, 100, 200) or status == 403
+        else "transient"
+        if status == 429 or status >= 500 or error.get("is_transient") is True
+        else "api_rejected"
+    )
+    messages = {
+        "authentication": "Meta rejected authentication; verify token and account access.",
+        "configuration": "Meta rejected request configuration or permissions.",
+        "transient": "Meta reported a temporary service or rate-limit failure.",
+        "api_rejected": "Meta rejected the request; inspect error code and subcode.",
+    }
+    return {
+        "meta_error_code": code,
+        "meta_error_subcode": subcode,
+        "meta_error_type": kind,
+        "failure_category": category,
+        "safe_message": messages[category],
+        "retryability": "reconcile_before_retry"
+        if method == "POST"
+        else "transient_read"
+        if category == "transient"
+        else "operator_action_required",
+    }
 
 
 class Transport(Protocol):
@@ -343,26 +388,33 @@ class InstagramClient:
         except Exception:
             # Third-party/injected transport exceptions may contain secrets.
             failure = TransportError(operation, None, method == "POST")
+            failure.diagnostics = {
+                "failure_category": "transient",
+                "safe_message": "No trustworthy response received; remote POST outcome may be uncertain.",
+                "retryability": "reconcile_before_retry"
+                if method == "POST"
+                else "transient_read",
+            }
         if failure is None:
             try:
                 if type(status) is not int or not 100 <= status <= 599:
                     status = None
                     raise ValueError("Invalid HTTP status")
-                if not 200 <= status < 300:
+                data = None
+                if isinstance(payload, bytes) and len(payload) <= _MAX_RESPONSE_BYTES:
+                    try:
+                        data = json.loads(payload)
+                    except (ValueError, RecursionError):
+                        pass
+                if not 200 <= status < 300 or (
+                    isinstance(data, dict) and "error" in data
+                ):
                     failure = APIError(operation, status, method == "POST")
+                    failure.diagnostics = api_diagnostics(data, status, method)
                 else:
-                    if (
-                        not isinstance(payload, bytes)
-                        or len(payload) > _MAX_RESPONSE_BYTES
-                    ):
-                        raise ValueError("Invalid response size/type")
-                    data = json.loads(payload)
                     if not isinstance(data, dict):
-                        raise ValueError("Expected object")
-                    if "error" in data:
-                        failure = APIError(operation, status, method == "POST")
-                    else:
-                        result = parse(data)
+                        raise ValueError("Expected bounded JSON object")
+                    result = parse(data)
             except (ValueError, KeyError, TypeError, RecursionError):
                 failure = ResponseError(operation, status, method == "POST")
         context = {"operation": operation, "http_status": status}
@@ -373,6 +425,7 @@ class InstagramClient:
                     "event": "instagram_request_failed",
                     **context,
                     "error_type": type(failure).__name__,
+                    **failure.diagnostics,
                 },
             )
             # Raise outside handlers: neither __context__ nor __cause__ retains payloads.

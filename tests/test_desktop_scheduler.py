@@ -506,3 +506,73 @@ def test_publication_process_has_no_timeout_or_force_kill(monkeypatch):
     assert start.call_args.kwargs["start_new_session"]
     process.kill.assert_not_called()
     process.terminate.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "value,disabled",
+    [
+        ("enabled", False),
+        ("disabled", True),
+        ("true", True),
+        ("false", False),
+        ("missing", True),
+        ("unexpected", True),
+        ("enabledgarbage", True),
+    ],
+)
+def test_launchctl_actual_override_spellings(monkeypatch, value, disabled):
+    def query(command, *args, **kwargs):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=(
+                f'"{host.LABEL if value != "missing" else "different.label"}" => {value}'
+                if "print-disabled" in command
+                else "state = waiting"
+            ),
+        )
+
+    monkeypatch.setattr(host, "query", query)
+    result = host.launch_status()
+    assert result == {"loaded": True, "disabled": disabled, "running": False}
+
+
+@pytest.mark.parametrize(
+    "state,category,reason",
+    [
+        ("no_attempt", "authentication", "preflight_failed"),
+        ("reconciliation_required", "transient", "publication_requires_reconciliation"),
+        ("unknown", "unexpected", "container_application_failed_inspect_checkpoint"),
+    ],
+)
+def test_structured_failure_keeps_certainty_and_never_retries(
+    deployment, state, category, reason
+):
+    d = deployment
+    arm(d)
+    d.publish.return_value = (
+        1,
+        json.dumps(
+            {
+                "schema_version": 1,
+                "outcome": "blocked",
+                "local_day": "2026-10-29",
+                "publication_state": state,
+                "failure_category": category,
+                "reason": "PRIVATE_TOKEN",
+                "diagnostics": {
+                    "http_status": 400,
+                    "meta_error_code": 190,
+                    "message": "PRIVATE_TOKEN",
+                },
+            }
+        ),
+    )
+    result, code = host.run_once(d.root, d.settings, clock=lambda: NOW)
+    assert code == 1 and result["reason"] == reason
+    assert result["failure_category"] == category and result["meta_error_code"] == 190
+    assert "PRIVATE_TOKEN" not in (d.root / "host/host.jsonl").read_text()
+    assert (
+        host.run_once(d.root, d.settings, clock=lambda: NOW)[0]["outcome"]
+        == "already_invoked_today"
+    )
+    assert d.publish.call_count == 1
