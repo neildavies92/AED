@@ -9,8 +9,8 @@ RUN rm /etc/apt/sources.list.d/debian.sources \
        'deb [check-valid-until=no] https://snapshot.debian.org/archive/debian/20261027T000000Z trixie main' \
        'deb [check-valid-until=no] https://snapshot.debian.org/archive/debian-security/20261027T000000Z trixie-security main' \
        > /etc/apt/sources.list \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y ca-certificates libcairo2 libffi8 libfontconfig1 fontconfig fonts-liberation2 fonts-lato=2.015-1 tzdata \
+    && apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 update \
+    && apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --no-install-recommends -y ca-certificates libcairo2 libffi8 libfontconfig1 fontconfig fonts-liberation2 fonts-lato=2.015-1 tzdata \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=uv /uv /usr/local/bin/uv
 COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
@@ -50,8 +50,8 @@ COPY deployment/desktop_scheduler.py ./deployment/desktop_scheduler.py
 COPY Dockerfile .dockerignore ./
 COPY container/compose.yaml ./container/compose.yaml
 COPY scripts/with-cairo.sh ./scripts/with-cairo.sh
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y procps \
+RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 update \
+    && apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --no-install-recommends -y procps \
     && rm -rf /var/lib/apt/lists/* \
     && uv sync --locked --no-editable --no-cache --no-install-project \
     && uv pip install --python .venv/bin/python --no-deps /opt/aed/wheel/*.whl \

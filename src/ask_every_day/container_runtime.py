@@ -6,6 +6,7 @@ import importlib
 import json
 import logging
 import sys
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -18,6 +19,13 @@ from ask_every_day.instagram_auth import (
 )
 from ask_every_day.instagram_auth_cli import load_auth_config
 from ask_every_day.logging_config import configure_logging
+from ask_every_day.notifications import (
+    Notice,
+    NotificationStore,
+    PublicationNotifier,
+    emit,
+    send_notice,
+)
 from ask_every_day.publication_recovery import backup_state, snapshot
 from ask_every_day.publish_next import CopyCatalog, preview_next
 from ask_every_day.publish_next_cli import publication_lock
@@ -43,6 +51,9 @@ def main(argv: list[str] | None = None) -> None:
         default="preview",
         choices=(
             "preview",
+            "notification-configure",
+            "notification-disable",
+            "notification-test",
             "manual-preview",
             "manual-publish",
             "prepare-next",
@@ -102,6 +113,16 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--log-file requires a schedule-* or manual-publish command")
     configure_logging()
     failure = False
+    delegated = False
+    notifier = (
+        PublicationNotifier(
+            args.config,
+            args.credential_dir,
+            "scheduled" if args.command == "schedule-run" else "manual",
+        )
+        if args.command in {"schedule-run", "manual-publish"}
+        else None
+    )
     _LOG.info(
         "container_command_started",
         extra={
@@ -119,6 +140,30 @@ def main(argv: list[str] | None = None) -> None:
             from ask_every_day.canonical_renderer import verify_editorial_fonts
 
             verify_editorial_fonts()
+        if args.command.startswith("notification-"):
+            store = NotificationStore(args.credential_dir)
+            if args.command == "notification-configure":
+                if not (sys.stdin.isatty() and sys.stdout.isatty()):
+                    raise ValueError("interactive_notification_configuration_required")
+                store.configure(
+                    getpass.getpass("Existing Discord webhook URL (hidden): ")
+                )
+                output = {"notifications_configured": True}
+            elif args.command == "notification-disable":
+                store.configure(None)
+                output = {"notifications_configured": False}
+            else:
+                output = send_notice(
+                    store,
+                    Notice("notification_test", datetime.now(UTC), uuid.uuid4().hex),
+                )
+            print(json.dumps(output))
+            if (
+                args.command == "notification-test"
+                and output.get("delivery_result") != "delivered"
+            ):
+                raise SystemExit(1)
+            return
         if args.command in {"manual-preview", "manual-publish"}:
             from ask_every_day.publish_next_cli import main as manual
 
@@ -138,12 +183,14 @@ def main(argv: list[str] | None = None) -> None:
                         str(args.log_file or Path("/var/lib/aed/manual.jsonl")),
                     ]
                 )
+            delegated = True
             manual(
                 manual_args,
                 credential_factory=lambda path: credential_factory(
                     path, args.credential_dir
                 ),
                 canonical_assets=True,
+                outcome_callback=notifier,
             )
             return
         if args.command == "prepare-next":
@@ -218,11 +265,13 @@ def main(argv: list[str] | None = None) -> None:
             ]
             if args.log_file is not None:
                 forwarded.extend(["--log-file", str(args.log_file)])
+            delegated = True
             module.main(
                 forwarded,
                 credential_factory=lambda path: credential_factory(
                     path, args.credential_dir
                 ),
+                outcome_callback=notifier,
             )
             return
         if args.command.startswith("credential-"):
@@ -335,6 +384,13 @@ def main(argv: list[str] | None = None) -> None:
     except Exception:
         failure = True
     if failure:
+        emit(
+            notifier,
+            {
+                "outcome": "blocked",
+                "publication_state": "unknown" if delegated else "no_attempt",
+            },
+        )
         _LOG.error(
             "container_operation_blocked",
             extra={

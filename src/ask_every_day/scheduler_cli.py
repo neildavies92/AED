@@ -15,6 +15,7 @@ from pathlib import Path
 from ask_every_day.config import load_config
 from ask_every_day.instagram_auth import CredentialManager
 from ask_every_day.logging_config import JSONFormatter, configure_logging
+from ask_every_day.notifications import Callback, emit
 from ask_every_day.production_runtime import (
     DockerPublisherRequired,
     require_docker_publisher,
@@ -99,6 +100,7 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     credential_factory: Callable[[Path], CredentialManager] = credential_manager,
+    outcome_callback: Callback | None = None,
 ) -> None:
     parser = argparse.ArgumentParser(
         description="Inspect or execute one authorized daily publication"
@@ -301,6 +303,7 @@ def main(
             publication_state = error.publication_state
             diagnostics = error.diagnostics
             known_ids = {
+                "post_id": error.post_id,
                 "publication_id": error.attempt_id
                 if type(error.attempt_id) is int and error.attempt_id > 0
                 else None,
@@ -314,6 +317,20 @@ def main(
             if isinstance(error, PublishError)
             else "scheduler_operation_failed"
         )
+    if args.command == "run":
+        if failure:
+            emit(
+                outcome_callback,
+                {
+                    "outcome": "blocked",
+                    "publication_state": publication_state,
+                    "attempt_id": known_ids.get("publication_id"),
+                    "post_id": known_ids.get("post_id"),
+                    "diagnostics": diagnostics,
+                },
+            )
+        elif output.get("outcome") == "published":
+            emit(outcome_callback, output)
     if failure:
         _LOG.error(
             "scheduler_command_failed",

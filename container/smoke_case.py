@@ -25,6 +25,7 @@ from ask_every_day.instagram_auth import (
 )
 from ask_every_day.instagram_client import InstagramIdentity
 from ask_every_day.jpeg_export import export_jpeg, validate_jpeg
+from ask_every_day.notifications import Notice, NotificationStore, send_notice
 from ask_every_day.png_export import export_png
 from ask_every_day.publication_assets import (
     ledger_path,
@@ -124,6 +125,19 @@ def initialize():
         identify=lambda _: InstagramIdentity("1003", "ask.every.day", "BUSINESS"),
     )
     assert manager.get_valid_credential().access_token == "SYNTHETIC_REFRESHED_ONLY"
+    notifications = NotificationStore(private)
+    notifications.configure(
+        "https://discord.com/api/webhooks/123/" + "SYNTHETIC_DISCORD_" * 3
+    )
+    notice = Notice("notification_test", NOW, "a" * 32, dedup_key="smoke-notification")
+    assert (
+        send_notice(
+            notifications,
+            notice,
+            sender=lambda *_: {"delivery_result": "delivered", "http_status": 204},
+        )["delivery_result"]
+        == "delivered"
+    )
     export_bundle(CONFIG, source, ROOT / "deployment-bundle")
     verify_bundle(ROOT / "deployment-bundle")
     with publication_lock(CONFIG.database_path):
@@ -184,6 +198,14 @@ def verify():
     assert (
         credential is not None and credential.access_token == "SYNTHETIC_REFRESHED_ONLY"
     )
+    notifications = NotificationStore(ROOT / "credentials")
+    sender = Mock(side_effect=AssertionError("duplicate send forbidden"))
+    notice = Notice("notification_test", NOW, "b" * 32, dedup_key="smoke-notification")
+    assert (
+        send_notice(notifications, notice, sender=sender)["delivery_result"]
+        == "duplicate_suppressed"
+    )
+    sender.assert_not_called()
     restore_bundle(ROOT / "deployment-bundle", ROOT / "deployment-restored")
     assert not (ROOT / "deployment-restored/aed.sqlite3.schedule.json").exists()
     verified = verify_bundle(ROOT / "deployment-restored")
@@ -224,6 +246,8 @@ def verify():
                 "coordinated_restore_valid": True,
                 "deployment_bundle_restored": True,
                 "refreshed_credential_persisted": True,
+                "notification_receipt_persisted": True,
+                "duplicate_notification_suppressed": True,
             }
         )
     )
