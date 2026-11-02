@@ -6,6 +6,9 @@ CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-c
 .PHONY: schedule-preview schedule-run schedule-status schedule-enable schedule-disable schedule-check-credentials schedule-launchd backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make docker-notification-configure DIRECTORY=... Store existing webhook through hidden interactive input"
+	@echo "make docker-notification-test DIRECTORY=... Explicit Discord test; no Instagram/state access"
+	@echo "make docker-notification-disable DIRECTORY=... Disable Discord delivery"
 	@echo "make docker-scheduler-status DIRECTORY=... Read-only host/Docker diagnostics"
 	@echo "make -f deployment/Makefile desktop-scheduler ARGS=... Prepare/install/activate only by explicit operator action"
 	@echo "make docker-prepare-next DIRECTORY=/private/deployment Prepare canonical Docker JPEG"
@@ -138,11 +141,11 @@ schedule-launchd:
 	$(CAIRO_RUN) uv run python -m ask_every_day.scheduler_launchd --python "$(CURDIR)/.venv/bin/python" --working-directory "$(CURDIR)" --config "$(CURDIR)/aed.toml" --schedule-config "$(CURDIR)/schedule.toml" --auth-config "$(CURDIR)/instagram-auth.toml" --data-dir "$(CURDIR)/data" --log-file "$(CURDIR)/output/scheduler.jsonl"
 
 # No default directory: the operator must select the reviewed private deployment.
-.PHONY: docker-prepare-next docker-manual-preview docker-manual-publish
+.PHONY: docker-prepare-next docker-manual-preview docker-manual-publish docker-notification-configure docker-notification-test docker-notification-disable
 
-docker-prepare-next docker-manual-preview docker-manual-publish:
+docker-prepare-next docker-manual-preview docker-manual-publish docker-notification-configure docker-notification-test docker-notification-disable:
 	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
-	uv run python deployment/desktop-compose.py --directory "$(DIRECTORY)" $(if $(filter docker-manual-publish,$@),--interactive,) $(patsubst docker-%,%,$@) --data-dir /var/lib/aed/data
+	uv run python deployment/desktop-compose.py --directory "$(DIRECTORY)" $(if $(filter docker-manual-publish docker-notification-configure,$@),--interactive,) $(patsubst docker-%,%,$@) --data-dir /var/lib/aed/data
 
 .PHONY: docker-scheduler-status
 docker-scheduler-status:

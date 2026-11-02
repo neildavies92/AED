@@ -15,6 +15,9 @@ active deployment remains pinned to its previous image until explicit cutover.
 This PR's additional diagnostics require an image built from this reviewed commit.
 Do not relabel an old image as new source or assume a build upgrades deployment.
 
+Optional [Discord outcome notifications](discord-notifications.md) reuse the private
+credential mount and remain independent of publishing authority.
+
 ## Nonpublishing health
 
 Use the **installed** script and Python for an existing deployment; newer checkout
@@ -159,7 +162,11 @@ on protected local storage. Never edit pinned hashes or installed code in place.
    configuration and any reviewed optional font overlay, preserving its private
    read-only font mount. Do not copy old authority, activation, settings or active
    application authorization. This example preserves the current credential file;
-   there must be exactly one matching `.credential` file for the configured app.
+   retain the configured app credential plus any dedicated Discord configuration and
+   delivery receipt files. These share the private mount but separate service namespaces.
+   Preserve all `.credential` files; never copy only an old Instagram token and discard
+   notification deduplication evidence. The transient `discord-notifications.lock` file
+   is recreated on first use and contains no delivery state.
 
    ```sh
    cp -p "$AED_OLD/config/instagram-auth.toml" "$AED_NEW/config/instagram-auth.toml"

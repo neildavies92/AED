@@ -64,6 +64,7 @@ class PublishError(Exception):
         media_id: str | None = None,
     ) -> None:
         self.diagnostics: dict[str, object] = {}
+        self.post_id: str | None = None
         self.publication_state = (
             "reconciliation_required"
             if attempt_id is not None
@@ -348,6 +349,7 @@ def publish_approved(
         failure = PublishError(
             reason, attempt_id=attempt_id, container_id=container_id, media_id=media_id
         )
+        failure.post_id = plan.post.id
         if attempt_id is None and phase in {"preflight", "staging"}:
             failure.publication_state = "no_attempt"
         if isinstance(error, (InstagramError, AuthError)):

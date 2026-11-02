@@ -6,6 +6,7 @@ import os
 import stat
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -294,3 +295,65 @@ def test_empty_queue_is_observable_but_cannot_be_authorized(command, run, capsys
     assert run.config.database_path.read_bytes() == before
     assert not state_path(run.config).exists()
     command.factory.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_scheduled_notification_failure_preserves_authority(
+    command, run, inputs, schedule, monkeypatch, tmp_path, capsys, failure
+):
+    from ask_every_day import notifications
+    from ask_every_day.instagram_auth import AuthError
+    from ask_every_day.publication_assets import ledger_path
+    from ask_every_day.publish_next_cli import publication_lock
+
+    directory = tmp_path / "private-notifications"
+    directory.mkdir(mode=0o700)
+    store = notifications.NotificationStore(directory)
+    store.configure("https://discord.com/api/webhooks/123/" + "SYNTHETIC_PRIVATE_" * 3)
+    command("enable", tty=True, answer=lambda _: answer_for(run, inputs, schedule))
+    capsys.readouterr()
+    before = run.config.database_path.read_bytes(), ledger_path(run.config).read_bytes()
+    if failure:
+        error = AuthError("account_binding", http_status=401)
+        error.diagnostics = {
+            "failure_category": "authentication",
+            "http_status": 401,
+            "meta_error_code": 190,
+        }
+        run.credentials.get_valid_credential.side_effect = error
+    sent = []
+
+    def send(url, payload):
+        with publication_lock(run.config.database_path):
+            sent.append(payload["embeds"][0]["title"])
+        assert not run.repo._connection.in_transaction
+        return {"delivery_result": "uncertain", "http_status": None}
+
+    monkeypatch.setattr("ask_every_day.config.load_config", lambda _: run.config)
+    notifier = notifications.PublicationNotifier(
+        Path("synthetic"), directory, "scheduled", sender=send
+    )
+    monkeypatch.setattr(
+        cli, "emit", lambda _, outcome: notifications.emit(notifier, outcome)
+    )
+    if failure:
+        with pytest.raises(SystemExit):
+            command("run")
+        assert sent == ["publication_failed"]
+        assert before == (
+            run.config.database_path.read_bytes(),
+            ledger_path(run.config).read_bytes(),
+        )
+        assert run.repo.list_publications() == []
+        run.client.publish_container.assert_not_called()
+    else:
+        command("run")
+        assert json.loads(capsys.readouterr().out)["outcome"] == "published"
+        assert sent == ["publication_succeeded"]
+        command("run")
+        assert (
+            json.loads(capsys.readouterr().out)["outcome"] == "already_published_today"
+        )
+        assert sent == ["publication_succeeded"]
+        assert run.client.publish_container.call_count == 1
+        assert run.repo.get_checkpoint(1).phase.value == "completed"

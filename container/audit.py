@@ -42,6 +42,7 @@ def main():
             "data/aed.sqlite3.palette.json",
             "secrets/token",
             "deployment/credentials/token",
+            "deployment/credentials/discord-webhook.credential",
             "deployment/state/aed.sqlite3",
             "assets/generated/private.jpg",
         ):

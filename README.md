@@ -182,3 +182,5 @@ publisher. Native read-only administration, backups/export and credential handof
 remain available. Software installation grants no publication permission.
 
 For existing Docker deployments, use the [local operations and immutable upgrade runbook](docs/local-operations.md) for offline health, token lifecycle, current-state migration and rollback.
+
+Optional [Discord operational notifications](docs/discord-notifications.md) report durable success, failure and reconciliation without changing publication safety.

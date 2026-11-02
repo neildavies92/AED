@@ -21,6 +21,7 @@ from ask_every_day.credential_store import KeychainCredentialStore
 from ask_every_day.instagram_auth import CredentialManager, InstagramAuthClient
 from ask_every_day.instagram_auth_cli import load_auth_config
 from ask_every_day.logging_config import configure_logging
+from ask_every_day.notifications import Callback, emit
 from ask_every_day.production_runtime import (
     DockerPublisherRequired,
     require_docker_publisher,
@@ -65,6 +66,7 @@ def main(
     *,
     credential_factory: Callable[[Path], CredentialManager] | None = None,
     canonical_assets: bool = False,
+    outcome_callback: Callback | None = None,
 ) -> None:
     parser = argparse.ArgumentParser(
         description="Preview or approve one Instagram post"
@@ -80,6 +82,8 @@ def main(
     configure_logging()
     failure = None
     result = None
+    plan = None
+    entered_publisher = False
     try:
         if args.confirm and not (sys.stdin.isatty() and sys.stdout.isatty()):
             raise PublishError("interactive_confirmation_required")
@@ -179,6 +183,7 @@ def main(
 
                 if answer == plan.challenge:
                     guard()
+                entered_publisher = True
                 result = publish_approved(
                     repository,
                     config,
@@ -224,6 +229,29 @@ def main(
                 media_id=result.media_id if result else None,
             )
         )
+    if args.confirm:
+        if failure is not None:
+            emit(
+                outcome_callback,
+                {
+                    "outcome": "blocked",
+                    "attempt_id": failure.attempt_id,
+                    "post_id": plan.post.id if plan else failure.post_id,
+                    "publication_state": failure.publication_state
+                    if entered_publisher
+                    else "no_attempt",
+                    "diagnostics": failure.diagnostics,
+                },
+            )
+        elif result is not None:
+            emit(
+                outcome_callback,
+                {
+                    "outcome": "published",
+                    "post_id": result.post_id,
+                    "attempt_id": result.attempt_id,
+                },
+            )
     if failure is not None:
         _LOG.error(
             "publish_next_command_failed",
