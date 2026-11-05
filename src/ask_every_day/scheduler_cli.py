@@ -199,6 +199,7 @@ def main(
                                     "timezone": schedule.timezone,
                                     "daily_time": f"{schedule.hour:02}:{schedule.minute:02}",
                                     "window_minutes": schedule.window_minutes,
+                                    "effective_from": schedule.effective_from,
                                     "queue_count": len(proposal.queue),
                                     "policy_key": proposal.policy_key,
                                     "expires_at": proposal.expires_at.isoformat(),
@@ -262,6 +263,7 @@ def main(
                                 "timezone": schedule.timezone,
                                 "daily_time": f"{schedule.hour:02}:{schedule.minute:02}",
                                 "window_minutes": schedule.window_minutes,
+                                "effective_from": schedule.effective_from,
                                 "expires_at": proposal.expires_at.isoformat()
                                 if proposal
                                 else None,
@@ -280,6 +282,10 @@ def main(
                                 "mode": "local_read_only",
                                 "enabled": current.enabled,
                                 "authorization_valid": True,
+                                "daily_time": f"{schedule.hour:02}:{schedule.minute:02}",
+                                "timezone": schedule.timezone,
+                                "window_minutes": schedule.window_minutes,
+                                "effective_from": schedule.effective_from,
                                 "expires_at": current.expires_at.isoformat(),
                                 "in_window": schedule.in_window(now),
                                 "daily_block": daily_block(

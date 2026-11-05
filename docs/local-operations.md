@@ -1,8 +1,10 @@
 # Local operations and immutable upgrades — AED-060
 
-The existing Docker one-shot engine and 19:00–19:30 Europe/London policy remain
-unchanged. The Mac must be awake, logged in, online and running Docker Desktop.
-The host accepts delivery only in the 19:00 minute; late wake events skip that day.
+The Docker one-shot engine uses the private daily schedule, default
+20:00–20:30 Europe/London. Existing deployments retain their configured time. The Mac
+must be awake, logged in, online and running Docker Desktop.
+The host accepts delivery only in the configured start minute (default 20:00);
+late wake events skip that day.
 There is no retry, catch-up, second credential timer or automatic consent renewal.
 A valid 30-day application authorization and separate host activation are required.
 
@@ -44,7 +46,7 @@ queue permit that opportunity. `next_run_requirements_unsatisfied` distinguishes
 an otherwise ready host whose next run lacks valid consent, credentials or queue.
 Neither timestamp promises remote acceptance. The timestamp
 includes the London UTC offset, including across BST/GMT transitions. An opportunity
-in the current 19:00 minute is represented by that minute's start, not a catch-up
+in the configured start minute is represented by that minute's start, not a catch-up
 request. `warnings` includes expiry within seven days, expiry before the next run,
 empty queue and a failed/incomplete last host admission. An `admitted` receipt can
 mean a host preflight failure or interruption: inspect logs and SQLite, never replay.
@@ -59,7 +61,8 @@ For end-of-day detection, reuse the existing read-only database monitor:
 uv run python deployment/desktop-compose.py --directory "$AED_OLD" monitor
 ```
 
-After 19:30 it exits nonzero unless exactly one completed publication with a known
+After the configured window ends (default 20:30) it exits nonzero unless exactly one
+completed publication with a known
 media ID exists today, and it flags unresolved outcomes at any time. Inspect
 `host/host.jsonl` and `state/scheduler.jsonl` together: host receipts are admission
 records, not publication proof. This command installs no timer or notification.
@@ -104,11 +107,17 @@ long pause exhausts token validity, the owner may run `credential-verify`; an ex
 or revoked token needs reconnection, not repeated automated attempts. Thirty-day
 publication consent still requires explicit renewal even when the token is valid.
 
+For a time-only change after installing AED-058 schedule configuration, use the
+[in-place schedule procedure](publishing-schedule.md). It preserves the authoritative
+deployment; rebuilding or copying state is unnecessary. The upgrade below is for
+application/image changes.
+
 ## Operator-controlled upgrade
 
 These are **owner-only steps after review/merge and green CI**. They have not been
 executed by this PR. Stop on any failed command or mismatch. Work sufficiently
-before 19:00; if incomplete, skip the day. Keep all private files outside Git and
+before the configured start; if incomplete, skip the day. Keep all private files
+outside Git and
 on protected local storage. Never edit pinned hashes or installed code in place.
 
 1. Select the reviewed source/image and a **new** destination. Inspect immutable
@@ -202,7 +211,7 @@ on protected local storage. Never edit pinned hashes or installed code in place.
    disabled, grant fresh 30-day application consent, and separately activate the
    host using the existing [cutover steps 4–5](docker-automation.md#4-generate-diagnose-and-accept-sole-docker-authority)
    with `AED_DEPLOY="$AED_NEW"`. No `run`, `kickstart`, retry or manual publication
-   is an upgrade test. Activation at/after 19:00 starts eligibility tomorrow.
+   is an upgrade test. Activation at/after the configured start makes tomorrow the first eligible day.
    The copied receipt still suppresses a second admission on its recorded date.
 
 After cutover, only the new Docker database/credentials are authoritative. Observe

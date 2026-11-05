@@ -3,7 +3,7 @@
 Local Docker Desktop on macOS is the target. AED-057 remains In Progress until
 owner-approved container publication is observed with a completed checkpoint and
 known media ID. The first supervised AED-058 scheduled post may satisfy AED-057/058/059 together. No remote deployment is
-needed. The local schedule is **19:00–19:30 Europe/London**, authorization 30 days.
+needed. The local schedule is **20:00–20:30 Europe/London**, authorization 30 days.
 This default applies to newly prepared candidates. Existing private configurations
 are not rewritten; an operator schedule change requires fresh policy authorization.
 
@@ -111,9 +111,9 @@ Only after review/merge/green CI and explicit owner consent:
 3. Record source and destination summaries; owner confirms this candidate becomes
    authoritative at cutover. Keep the Mac copy inactive from this point onward.
 4. Follow the [AED-058 activation runbook](docker-automation.md) to inspect the
-   19:00–19:30 London policy, install the disabled host trigger, authorize the
+   20:00–20:30 London policy, install the disabled host trigger, authorize the
    existing scheduler interactively and explicitly activate the host trigger.
-5. Supervise the first **automatic 19:00** invocation. Do not issue an additional
+5. Supervise the first **automatic 20:00** invocation. Do not issue an additional
    manual test post or kickstart. If any gate is incomplete, skip the day.
 6. Inspect `publication-status`, logs and the actual Instagram post. Confirm completed
    checkpoint, media known, correct canonical JPEG, exactly one queue removal,
@@ -138,7 +138,7 @@ latest state to another reviewed Docker host with new explicit authorization.
 Native Mac publishing must remain disabled. AED-054 tracks later cleanup while
 preserving historical state, Keychain items, backups and recovery evidence.
 
-See the [19:00 automation runbook](docker-automation.md) for the owner-operated
+See the [20:00 automation runbook](docker-automation.md) for the owner-operated
 cutover, legacy LaunchAgent decommissioning and first supervised scheduled post.
 No separate manual publication is a prerequisite.
 

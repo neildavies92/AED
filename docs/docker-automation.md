@@ -2,7 +2,7 @@
 
 Docker is the exclusive production runtime, including emergency/manual posting.
 macOS supplies Docker Desktop and a user LaunchAgent only. The daily policy is
-**19:00–19:30 Europe/London**, authorization lasts 30 days, and the existing engine
+**20:00–20:30 Europe/London**, authorization lasts 30 days, and the existing engine
 allows at most one publication attempt per London date. Native publication,
 scheduled runs, production staging CLI and media POSTs fail with
 `docker_publisher_required`. Native offline rendering/previews, read-only state
@@ -39,7 +39,7 @@ system timezone to be Europe/London, then checks aware London dates independentl
 `TZ` in a child's environment does not configure launchd's calendar. GMT/BST follow
 zoneinfo; a changed host timezone fails closed. Apple's [timed-job documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html)
 explains that calendar events missed during sleep may arrive on wake. Therefore
-this host admits a start only during **19:00:00–19:00:59**, rechecked after preflight.
+this host admits a start only during **20:00:00–20:00:59**, rechecked after preflight.
 Late wake/delivery is skipped, even within the application's wider 30-minute window.
 Once admitted, the existing application enforces that window before media POSTs.
 
@@ -50,6 +50,12 @@ SQLite remains the authority for publication history, manual posts earlier that
 day, unresolved outcomes and palette progression. A global named container also
 blocks overlapping Docker publishers. There is no backfill or retry loop and no
 publication timeout/force-kill. Stalled operations require inspection/reconciliation.
+
+For an existing authoritative Docker deployment, use the
+[current-state upgrade procedure](local-operations.md#operator-controlled-upgrade)
+and [in-place time changes](publishing-schedule.md). The initial Mac-to-Docker
+cutover below must not be repeated using a stale Mac source. All times below
+illustrate the default; the private configuration controls the effective time.
 
 ## Owner-only cutover and installation
 
@@ -77,7 +83,7 @@ in place. Revoke any old Mac application authorization with `make schedule-disab
 using the actual source config. Stop content/queue/render/recovery writers too.
 Do not delete Keychain items or history; AED-054 owns later cleanup.
 
-### 2. Build and prepare a new 19:00 candidate
+### 2. Build and prepare a new 20:00 candidate
 
 The old `~/Library/Application Support/AskEveryDay/aed-059-20261029` candidate has a
 20:00 policy. Keep it inactive; do not rewrite or activate it. Build the reviewed
@@ -87,7 +93,7 @@ source and select a **new** private directory:
 make setup
 make check
 AED_SOURCE='/Users/neildavies/Desktop/Projects/AED'
-AED_DEPLOY="$HOME/Library/Application Support/AskEveryDay/aed-058-1900-20261029"
+AED_DEPLOY="$HOME/Library/Application Support/AskEveryDay/aed-reviewed-2000"
 AED_TAG="ask-every-day:$(git rev-parse --short HEAD)"
 DOCKER_CONTEXT=desktop-linux make -f container/Makefile build IMAGE="$AED_TAG" REVISION="$(git rev-parse HEAD)"
 AED_IMAGE_ID="$(docker --context desktop-linux image inspect "$AED_TAG" --format '{{.Id}}')"
@@ -97,7 +103,7 @@ uv run python deployment/desktop.py --source-config "$AED_SOURCE/aed.toml" --dat
 
 The image revision must equal the reviewed commit. The helper uses coordinated
 export/restore under the existing lock; it never mounts/copies a live SQLite file
-into two active environments. It creates a disabled 19:00 policy, empty credential
+into two active environments. It creates a disabled 20:00 policy, empty credential
 storage and a matching state/assets/content snapshot. No timer is installed.
 
 Verify the bundle and compare the current source with the restored snapshot:
@@ -199,11 +205,11 @@ launchctl print "gui/$(id -u)/com.ask-every-day.docker-publisher"
 ```
 
 Installation only writes a disabled plist. `schedule-enable` requires AED-027's
-existing exact authorization challenge and shows 19:00/Europe/London, the queue,
+existing exact authorization challenge and shows 20:00/Europe/London, the queue,
 policy fingerprint and expiry. `activate` has a separate exact host challenge,
 validates the binding and authorization again, then enables/bootstrap-loads the
-agent without RunAtLoad or kickstart. Activation at/after 19:00 makes the next day
-the first eligible date. Install/activate sufficiently before 19:00; do not use
+agent without RunAtLoad or kickstart. Activation at/after 20:00 makes the next day
+the first eligible date. Install/activate sufficiently before 20:00; do not use
 kickstart or `run` as a live test. No command above intentionally starts a publication.
 
 Any image, code, Python executable, deployment config, database replacement or font
@@ -215,7 +221,7 @@ remote endpoint and exclude shell Docker/Compose overrides and `.env` loading.
 
 ## Observe acceptance, status and failures
 
-At 19:00, supervise the **automatic** launch. Inspect:
+At 20:00, supervise the **automatic** launch. Inspect:
 
 ```sh
 make docker-scheduler-status DIRECTORY="$AED_DEPLOY" HOST_ARGS=--check-credentials
@@ -230,7 +236,7 @@ context and known media/container IDs. Both rotate at 1 MiB with three backups, 
 Docker logging is also bounded. Preserve required evidence before rotation. Neither
 raw Docker/provider stderr nor tokens, capability URLs or captions enter host logs.
 
-A status of `ready_for_next_1900` requires current local checks, owner-accepted
+A status of `ready_for_next_schedule` requires current local checks, owner-accepted
 binding, valid scheduler authorization and an armed/loaded host agent with its
 persistent launchd disable override off. Disabled or
 unauthorized scheduler, unchecked credentials, inactive trigger, today's existing

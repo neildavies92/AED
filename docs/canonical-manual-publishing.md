@@ -81,7 +81,7 @@ the exact JPEG path/hash, Post ID, colour and complete caption again. Type the
 full displayed `PUBLISH ...` challenge. A flag, `yes`, stale challenge, piped stdin
 or noninteractive invocation cannot authorize it. Every post needs fresh approval.
 
-Manual approval can be given outside 19:00–19:30 Europe/London. It neither reads nor
+Manual approval can be given outside 20:00–20:30 Europe/London. It neither reads nor
 grants scheduler authorization. The scheduler policy, 30-minute window and 30-day
 authorization remain unchanged. No timer or schedule is created or enabled.
 

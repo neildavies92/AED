@@ -389,7 +389,7 @@ def test_repeated_dst_fold_and_spring_gap_obey_london_day_and_window():
     first = datetime(2026, 10, 25, 0, 35, tzinfo=UTC)
     second = first + timedelta(hours=1)
     assert first.astimezone(LONDON).fold == 0 and second.astimezone(LONDON).fold == 1
-    assert config.in_window(first) and config.in_window(second)
+    assert config.in_window(first) and not config.in_window(second)
     from ask_every_day.repository import PublicationRecord
 
     row = PublicationRecord(

@@ -12,6 +12,7 @@ import logging
 import os
 import plistlib
 import re
+import select
 import signal
 import stat
 import subprocess
@@ -30,7 +31,7 @@ CONTAINER = "aed-desktop-publisher"
 LONDON = ZoneInfo("Europe/London")
 POLICY = dict(
     timezone="Europe/London",
-    hour=19,
+    hour=20,
     minute=0,
     window_minutes=30,
     authorization_days=30,
@@ -273,9 +274,7 @@ def deployment(root: Path, docker: str) -> dict:
             or mount.get("bind", {}).get("create_host_path", True)
         ):
             raise Blocked("compose_mounts_invalid")
-    schedule = tomllib.loads((root / "config/schedule.toml").read_text())
-    if schedule != POLICY:
-        raise Blocked("policy_must_be_1900_1930_london_30_days")
+    policy(root)
     config = tomllib.loads((root / "config/aed.toml").read_text())
     if (
         config.get("database_path") != "/var/lib/aed/aed.sqlite3"
@@ -300,6 +299,68 @@ def deployment(root: Path, docker: str) -> dict:
         "configuration": {name: sha(root / name) for name in files},
         "compose": digest(model),
     }
+
+
+def policy(root: Path) -> dict:
+    """The private mounted file is the single effective daily schedule."""
+    path = root / "config/schedule.toml"
+    private(path)
+    if path.stat().st_size > 8192:
+        raise Blocked("schedule_configuration_invalid")
+    value = tomllib.loads(path.read_text())
+    if (
+        set(value) - {"effective_from"} != set(POLICY)
+        or value["timezone"] != "Europe/London"
+        or type(value["hour"]) is not int
+        or not 0 <= value["hour"] <= 23
+        or type(value["minute"]) is not int
+        or not 0 <= value["minute"] <= 59
+        or value["hour"] * 60 + value["minute"] + 30 > 1440
+        or type(value["window_minutes"]) is not int
+        or value["window_minutes"] != 30
+        or type(value["authorization_days"]) is not int
+        or value["authorization_days"] != 30
+    ):
+        raise Blocked("schedule_requires_london_single_slot_30_minutes_30_days")
+    effective = value.get("effective_from")
+    if effective is not None:
+        try:
+            if date.fromisoformat(effective).isoformat() != effective:
+                raise ValueError
+        except (ValueError, TypeError):
+            raise Blocked("schedule_effective_date_invalid") from None
+    return value
+
+
+def daily_time(value: dict) -> str:
+    return f"{value['hour']:02}:{value['minute']:02}"
+
+
+def pending(root: Path):
+    if (root / "config/schedule-change.json").exists() or (
+        root / "host/schedule-change.json"
+    ).exists():
+        raise Blocked("schedule_change_incomplete_recover_required")
+
+
+def next_slot(value: dict, now: datetime) -> datetime:
+    """Skip a nonexistent spring minute; choose the first fall occurrence only."""
+    local = now.astimezone(LONDON)
+    day = max(
+        local.date(),
+        date.fromisoformat(value.get("effective_from", local.date().isoformat())),
+    )
+    for _ in range(3):
+        candidate = datetime.combine(day, datetime.min.time(), LONDON).replace(
+            hour=value["hour"], minute=value["minute"], fold=0
+        )
+        actual = candidate.astimezone(UTC).astimezone(LONDON)
+        if actual == candidate and now.astimezone(UTC) < candidate.astimezone(
+            UTC
+        ) + timedelta(minutes=1):
+            return candidate
+        day += timedelta(days=1)
+    raise Blocked("next_schedule_unavailable")
 
 
 def launch_status(label=LABEL) -> dict:
@@ -413,6 +474,7 @@ def authorization(root: Path, settings: dict):
 
 def readiness(root: Path, settings: dict, *, credentials=False) -> dict:
     host_supported()
+    pending(root)
     fingerprint = binding(root, settings)
     competitors(root, settings["docker"])
     container_query(
@@ -457,7 +519,8 @@ def readiness(root: Path, settings: dict, *, credentials=False) -> dict:
         "revision": settings["deployment"]["revision"],
         "database": settings["deployment"]["database"],
         "timezone": "Europe/London",
-        "window": "19:00–19:30",
+        "daily_time": daily_time(policy(root)),
+        "window_minutes": 30,
         "mounts": "valid",
         "credential_check": "local_valid" if credentials else "not_requested",
         "identity_verification": "owner_must_verify_separately",
@@ -491,9 +554,15 @@ def approved(root: Path, fingerprint: str) -> bool:
 def execution_health(root: Path, report: dict, now: datetime) -> dict:
     """Describe calendar opportunities, not a promise of remote acceptance."""
     local = now.astimezone(LONDON)
-    candidate = local.replace(hour=19, minute=0, second=0, microsecond=0)
-    if local >= candidate + timedelta(minutes=1) or report.get("daily_block"):
-        candidate += timedelta(days=1)
+    value = policy(root)
+    candidate = next_slot(value, now)
+    if report.get("daily_block"):
+        candidate = next_slot(
+            value,
+            datetime.combine(
+                local.date() + timedelta(days=1), datetime.min.time(), LONDON
+            ),
+        )
     activation = root / "host/activation.json"
     receipt = root / "host/last-invocation.json"
     last_invocation = None
@@ -515,8 +584,9 @@ def execution_health(root: Path, report: dict, now: datetime) -> dict:
             )
     except (ValueError, KeyError, TypeError):
         raise Blocked("host_receipt_or_activation_invalid") from None
+    candidate = next_slot(value, candidate)
     warnings = []
-    eligible = report["status"] == "ready_for_next_1900"
+    eligible = report["status"] == "ready_for_next_schedule"
     for field in ("authorization_expires_at", "credential_expires_at"):
         value = report.get(field)
         if value is None:
@@ -588,11 +658,11 @@ def diagnose(root: Path, settings: dict, *, credentials=False, now=None):
             or report["launchagent"]["disabled"]
             else "credentials_not_checked"
             if not credentials
-            else "ready_for_next_1900"
+            else "ready_for_next_schedule"
         )
         report.update(execution_health(root, report, now or datetime.now(UTC)))
         if (
-            report["status"] == "ready_for_next_1900"
+            report["status"] == "ready_for_next_schedule"
             and report["next_eligible_at"] is None
         ):
             report["status"] = "next_run_requirements_unsatisfied"
@@ -611,6 +681,7 @@ def confirm(challenge: str):
 
 
 def plist(root: Path, python: Path) -> bytes:
+    value = policy(root)
     return plistlib.dumps(
         {
             "Label": LABEL,
@@ -623,7 +694,7 @@ def plist(root: Path, python: Path) -> bytes:
                 str(root),
             ],
             "WorkingDirectory": str(root / "host"),
-            "StartCalendarInterval": {"Hour": 19, "Minute": 0},
+            "StartCalendarInterval": {"Hour": value["hour"], "Minute": value["minute"]},
             "Disabled": True,
             "RunAtLoad": False,
             "KeepAlive": False,
@@ -676,6 +747,11 @@ def agent_path() -> Path:
 
 
 def install(root: Path, settings: dict):
+    with host_lock(root, "configuration.lock"):
+        return _install(root, settings)
+
+
+def _install(root: Path, settings: dict):
     host_supported()
     if not approved(root, binding(root, settings)):
         raise Blocked("explicit_authority_acceptance_required")
@@ -695,6 +771,11 @@ def install(root: Path, settings: dict):
 
 
 def activate(root: Path, settings: dict, now: datetime):
+    with host_lock(root, "configuration.lock"):
+        return _activate(root, settings, now)
+
+
+def _activate(root: Path, settings: dict, now: datetime):
     report = readiness(root, settings, credentials=True)
     if not approved(root, report["binding"]) or not report["authorization_valid"]:
         raise Blocked("authority_and_scheduler_authorization_required")
@@ -702,12 +783,20 @@ def activate(root: Path, settings: dict, now: datetime):
         raise Blocked("existing_launchagent_review_required")
     if agent_path().read_bytes() != plist(root, Path(settings["python"])):
         raise Blocked("launchagent_configuration_changed")
-    challenge = "ACTIVATE DOCKER DAILY 19:00 " + report["binding"][:16]
+    value = policy(root)
+    challenge = (
+        "ACTIVATE DOCKER DAILY " + daily_time(value) + " " + report["binding"][:16]
+    )
     confirm(challenge)
     if readiness(root, settings, credentials=True) != report:
         raise Blocked("activation_preview_changed")
     local = now.astimezone(LONDON)
-    first = local.date() + timedelta(days=int((local.hour, local.minute) >= (19, 0)))
+    first = local.date() + timedelta(
+        days=int((local.hour, local.minute) >= (value["hour"], value["minute"]))
+    )
+    first = max(
+        first, date.fromisoformat(value.get("effective_from", first.isoformat()))
+    )
     save(
         root / "host/activation.json",
         {"binding": report["binding"], "first_day": first.isoformat()},
@@ -738,6 +827,11 @@ def activate(root: Path, settings: dict, now: datetime):
 
 
 def disable(root: Path, settings: dict, *, uninstall=False):
+    with host_lock(root, "configuration.lock"):
+        return _disable(root, settings, uninstall=uninstall)
+
+
+def _disable(root: Path, settings: dict, *, uninstall=False):
     host_supported()
     # Stop future admissions first. Never kill or unload an active publication.
     (root / "host/activation.json").unlink(missing_ok=True)
@@ -763,8 +857,8 @@ def disable(root: Path, settings: dict, *, uninstall=False):
 
 
 @contextmanager
-def host_lock(root: Path):
-    path = root / "host/trigger.lock"
+def host_lock(root: Path, filename="trigger.lock"):
+    path = root / "host" / filename
     fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         private(path)
@@ -831,14 +925,33 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
         day = now.date().isoformat()
         try:
             host_supported()
+            pending(root)
+            value = policy(root)
+            if (
+                sha(root / "config/schedule.toml")
+                != settings["deployment"]["configuration"]["config/schedule.toml"]
+            ):
+                raise Blocked("deployment_changed_review_required")
             activation_path = root / "host/activation.json"
             if not activation_path.exists():
                 event("host_trigger_disabled", local_day=day)
                 return {"outcome": "host_disabled"}, 0
             activation = read(activation_path)
-            if day < activation["first_day"] or (now.hour, now.minute) != (19, 0):
+            if (
+                day
+                < max(
+                    activation["first_day"],
+                    value.get("effective_from", activation["first_day"]),
+                )
+                or (now.hour, now.minute) != (value["hour"], value["minute"])
+                or now.fold
+            ):
                 event("host_trigger_missed_start", local_day=day)
                 return {"outcome": "missed_start_no_backfill"}, 0
+            if agent_path().exists() and agent_path().read_bytes() != plist(
+                root, Path(settings["python"])
+            ):
+                raise Blocked("launchagent_configuration_changed")
             receipt = root / "host/last-invocation.json"
             if receipt.exists() and read(receipt)["local_day"] >= day:
                 event("host_trigger_duplicate", local_day=day)
@@ -859,8 +972,8 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
             # A delayed preflight must not dispatch a wake/catch-up publication.
             current = clock().astimezone(LONDON)
             if current.date() != now.date() or (current.hour, current.minute) != (
-                19,
-                0,
+                value["hour"],
+                value["minute"],
             ):
                 raise Blocked("start_minute_elapsed_no_backfill")
             if read(activation_path) != activation:
@@ -1009,11 +1122,418 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
             }, 1
 
 
+def schedule_show(root: Path, settings: dict, *, now=None):
+    pending(root)
+    fingerprint = binding(root, settings)
+    value = policy(root)
+    installed = agent_path().exists()
+    matches = not installed or agent_path().read_bytes() == plist(
+        root, Path(settings["python"])
+    )
+    activation = root / "host/activation.json"
+    status = launch_status()
+    try:
+        auth = authorization(root, settings)
+    except Blocked:
+        auth = {
+            "authorization_valid": False,
+            "reason": "reauthorization_or_diagnostics_required",
+        }
+    report = {
+        "status": "host_trigger_inactive",
+        "host_armed": activation.exists(),
+        "queue_count": 0,
+        "daily_block": auth.get("daily_block"),
+    }
+    health = execution_health(root, report, now or datetime.now(UTC))
+    return {
+        "daily_time": daily_time(value),
+        "timezone": value["timezone"],
+        "window_minutes": value["window_minutes"],
+        "effective_from": value.get("effective_from"),
+        "authorization_days": value["authorization_days"],
+        "schedule_file": str(root / "config/schedule.toml"),
+        "launchagent_matches": matches,
+        "launchagent": status,
+        "authority_accepted": approved(root, fingerprint),
+        "authorization": auth,
+        "next_scheduled_at": health["next_scheduled_at"],
+        "last_host_invocation": health["last_host_invocation"],
+        "mode": "nonpublishing",
+    }
+
+
+def parse_time(value: str) -> tuple[int, int]:
+    if not re.fullmatch(r"[0-2][0-9]:[0-5][0-9]", value):
+        raise Blocked("daily_time_requires_HH_MM")
+    hour, minute = map(int, value.split(":"))
+    if hour * 60 + minute + 30 > 1440:
+        raise Blocked("daily_window_must_end_before_midnight")
+    return hour, minute
+
+
+def schedule_receipt(root: Path, day: date, *, today: bool):
+    receipt = root / "host/last-invocation.json"
+    if not receipt.exists():
+        return
+    saved = read(receipt)
+    previous = date.fromisoformat(saved["local_day"])
+    outcome = saved["outcome"]
+    if outcome not in OUTCOMES | {"admitted"}:
+        raise Blocked("host_receipt_invalid")
+    if previous >= day and outcome in {"blocked", "admitted"}:
+        raise Blocked("admitted_failure_requires_operator_investigation")
+    if previous > day or (today and previous == day):
+        raise Blocked("host_already_admitted_today")
+
+
+@contextmanager
+def change_participant(root: Path, settings: dict, hour: int, minute: int, day: date):
+    command = [
+        *compose(root, settings["docker"]),
+        "-f",
+        str(root / "host/offline.compose.json"),
+        "run",
+        "--rm",
+        "--no-deps",
+        "-T",
+        "--name",
+        CONTAINER,
+        "--entrypoint",
+        "python",
+        "publisher",
+        "-m",
+        "ask_every_day.schedule_change",
+        "--hour",
+        str(hour),
+        "--minute",
+        str(minute),
+        "--effective-day",
+        day.isoformat(),
+    ]
+    process = subprocess.Popen(
+        command,
+        env=environment(settings["docker"]),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    stdout, stdin = process.stdout, process.stdin
+    assert stdout is not None and stdin is not None
+
+    def exchange(message=None):
+        if message is not None:
+            stdin.write(message + "\n")
+            stdin.flush()
+        if not select.select([stdout], [], [], 120)[0]:
+            raise Blocked("schedule_participant_timeout_inspect_container")
+        value = json.loads(stdout.readline(8192))
+        if value.get("phase") not in {"ready", "committed", "aborted"}:
+            reason = value.get("reason", "schedule_participant_failed")
+            if not isinstance(reason, str) or not re.fullmatch(
+                r"[a-z_]{1,100}", reason
+            ):
+                reason = "schedule_participant_failed"
+            raise Blocked(reason)
+        return value
+
+    try:
+        yield exchange
+    finally:
+        # EOF aborts a waiting participant. Never kill any publisher container.
+        stdin.close()
+        stdout.close()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass  # Its held lock/name blocks all further changes pending inspection.
+
+
+def reload_agent(root: Path, settings: dict, status: dict):
+    env = environment(settings["docker"])
+    target = f"gui/{os.getuid()}/{LABEL}"
+    query(["/bin/launchctl", "disable", target], env, "launchagent_disable_failed")
+    if launch_status()["running"]:
+        raise Blocked("active_publication_wait_before_schedule_change")
+    if launch_status()["loaded"]:
+        query(["/bin/launchctl", "bootout", target], env, "launchagent_unload_failed")
+    if status["loaded"]:
+        if not status["disabled"]:
+            query(
+                ["/bin/launchctl", "enable", target], env, "launchagent_enable_failed"
+            )
+        query(
+            ["/bin/launchctl", "bootstrap", f"gui/{os.getuid()}", str(agent_path())],
+            env,
+            "launchagent_bootstrap_failed",
+        )
+    elif not status["disabled"]:
+        query(["/bin/launchctl", "enable", target], env, "launchagent_enable_failed")
+    actual = launch_status()
+    if actual["loaded"] != status["loaded"] or actual["disabled"] != status["disabled"]:
+        raise Blocked("launchagent_activation_unverified")
+
+
+def change_snapshot(root: Path) -> dict:
+    names = [
+        "config/schedule.toml",
+        "host/settings.json",
+        "host/authority.json",
+        "host/activation.json",
+        f"host/{LABEL}.plist",
+    ]
+    files = {}
+    for name in names:
+        path = root / name
+        if path.exists():
+            private(path)
+            files[name] = path.read_text()
+        else:
+            files[name] = None
+    installed = agent_path()
+    if installed.exists():
+        private(installed)
+    return {
+        "files": files,
+        "installed": installed.read_text() if installed.exists() else None,
+    }
+
+
+def restore_change(root: Path, saved: dict):
+    allowed = {
+        "config/schedule.toml",
+        "host/settings.json",
+        "host/authority.json",
+        "host/activation.json",
+        f"host/{LABEL}.plist",
+    }
+    if set(saved["files"]) != allowed:
+        raise Blocked("schedule_journal_invalid")
+    for name, value in saved["files"].items():
+        if value is None:
+            (root / name).unlink(missing_ok=True)
+        else:
+            atomic(root / name, value.encode())
+    if saved["installed"] is not None:
+        atomic(agent_path(), saved["installed"].encode())
+
+
+def clear_change(root: Path):
+    (root / "config/schedule-change.json").unlink(missing_ok=True)
+    (root / "host/schedule-change.json").unlink(missing_ok=True)
+
+
+def schedule_set(
+    root: Path,
+    settings: dict,
+    value: str,
+    *,
+    today=False,
+    clock=lambda: datetime.now(UTC),
+):
+    with (
+        host_lock(root, "configuration.lock"),
+        host_lock(root),
+        event_log(root) as event,
+    ):
+        try:
+            pending(root)
+            host_supported()
+            settings = load(root)  # Re-read under lock, including a competing edit.
+            fingerprint = binding(root, settings)
+            if not approved(root, fingerprint):
+                raise Blocked("explicit_authority_acceptance_required")
+            competitors(root, settings["docker"])
+            old = policy(root)
+            hour, minute = parse_time(value)
+            local = clock().astimezone(LONDON)
+            day = local.date() + timedelta(days=0 if today else 1)
+            if (hour, minute) == (old["hour"], old["minute"]) and not today:
+                return {"changed": False, "daily_time": daily_time(old)}
+            target = datetime.combine(day, datetime.min.time(), LONDON).replace(
+                hour=hour, minute=minute, fold=0
+            )
+            if (
+                target.astimezone(UTC) <= clock().astimezone(UTC)
+                or target.astimezone(UTC).astimezone(LONDON) != target
+            ):
+                raise Blocked("new_schedule_must_be_a_future_existing_minute")
+            schedule_receipt(root, local.date(), today=today)
+            status = launch_status()
+            if status["running"]:
+                raise Blocked("active_publication_wait_before_schedule_change")
+            old_plist = plist(root, Path(settings["python"]))
+            if (
+                (root / "host" / f"{LABEL}.plist").read_bytes() != old_plist
+                or (agent_path().exists() and agent_path().read_bytes() != old_plist)
+                or (status["loaded"] and not agent_path().exists())
+            ):
+                raise Blocked("launchagent_configuration_changed")
+            activation = root / "host/activation.json"
+            if activation.exists() and read(activation)["binding"] != fingerprint:
+                raise Blocked("host_activation_changed")
+            event(
+                "schedule_change_validated",
+                previous_time=daily_time(old),
+                daily_time=value,
+                effective_day=day.isoformat(),
+            )
+            confirm(
+                f"SET DOCKER DAILY {value} Europe/London FROM {day.isoformat()} {fingerprint[:16]}"
+            )
+            if load(root) != settings or binding(root, settings) != fingerprint:
+                raise Blocked("schedule_change_preview_changed")
+            saved = change_snapshot(root)
+            with change_participant(root, settings, hour, minute, day) as exchange:
+                ready = exchange()
+                if ready.get("phase") != "ready":
+                    raise Blocked("schedule_participant_not_ready")
+                preserved = ready.get("authorization_preserved") is True
+                # Journal is a durable fail-closed barrier, never publication state.
+                save(root / "host/schedule-change.json", saved)
+                save(root / "config/schedule-change.json", {"in_progress": True})
+                commit_sent = False
+                try:
+                    new = {
+                        **old,
+                        "hour": hour,
+                        "minute": minute,
+                        "effective_from": day.isoformat(),
+                    }
+                    atomic(
+                        root / "config/schedule.toml",
+                        (
+                            f'timezone="Europe/London"\nhour={hour}\nminute={minute}\n'
+                            "window_minutes=30\nauthorization_days=30\n"
+                            f'effective_from="{day.isoformat()}"\n'
+                        ).encode(),
+                    )
+                    updated = {
+                        **settings,
+                        "deployment": deployment(root, settings["docker"]),
+                    }
+                    save(root / "host/settings.json", updated)
+                    authority = read(root / "host/authority.json")
+                    save(
+                        root / "host/authority.json",
+                        {**authority, "binding": digest(updated)},
+                    )
+                    if activation.exists():
+                        if preserved:
+                            current = read(activation)
+                            save(
+                                activation,
+                                {
+                                    **current,
+                                    "binding": digest(updated),
+                                    "first_day": day.isoformat(),
+                                },
+                            )
+                        else:
+                            activation.unlink()
+                    payload = plist(root, Path(settings["python"]))
+                    atomic(root / "host" / f"{LABEL}.plist", payload)
+                    if agent_path().exists():
+                        atomic(agent_path(), payload)
+                        reload_agent(
+                            root,
+                            updated,
+                            status
+                            if preserved
+                            else {"loaded": False, "disabled": True},
+                        )
+                    if (
+                        clock().astimezone(UTC) >= target.astimezone(UTC)
+                        or policy(root) != new
+                    ):
+                        raise Blocked("schedule_change_start_elapsed")
+                    commit_sent = True
+                    result = exchange("commit")
+                    if result.get("phase") != "committed":
+                        raise Blocked("schedule_change_commit_unverified")
+                    clear_change(root)
+                except BaseException:
+                    event("schedule_change_rollback_started")
+                    try:
+                        restore_change(root, saved)
+                        # A lost commit acknowledgement requires fresh authorization.
+                        if commit_sent:
+                            activation.unlink(missing_ok=True)
+                        if agent_path().exists():
+                            reload_agent(
+                                root,
+                                settings,
+                                status
+                                if not commit_sent
+                                else {"loaded": False, "disabled": True},
+                            )
+                        clear_change(root)
+                        event("schedule_change_rolled_back", daily_time=daily_time(old))
+                    except BaseException:
+                        activation.unlink(missing_ok=True)
+                        event(
+                            "schedule_change_rollback_failed",
+                            reason="schedule_recover_required",
+                        )
+                        raise Blocked(
+                            "schedule_rollback_incomplete_recover_required"
+                        ) from None
+                    raise
+            event(
+                "schedule_change_activated",
+                daily_time=value,
+                effective_day=day.isoformat(),
+                authorization_preserved=preserved,
+            )
+            return {
+                "changed": True,
+                "daily_time": value,
+                "timezone": "Europe/London",
+                "effective_day": day.isoformat(),
+                "authorization_preserved": preserved,
+                "reauthorization_reason": ready.get("reauthorization_reason"),
+                "publication_started": False,
+            }
+        except Blocked as error:
+            event("schedule_change_rejected", reason=str(error))
+            raise
+
+
+def schedule_recover(root: Path, settings: dict):
+    """Restore pre-change host files after interruption; never resume a trigger."""
+    with (
+        host_lock(root, "configuration.lock"),
+        host_lock(root),
+        event_log(root) as event,
+    ):
+        host_supported()
+        competitors(root, settings["docker"])
+        if launch_status()["running"]:
+            raise Blocked("active_publication_wait_before_schedule_recovery")
+        saved = read(root / "host/schedule-change.json")
+        confirm("ROLL BACK INCOMPLETE SCHEDULE CHANGE AND LEAVE HOST DISABLED")
+        restore_change(root, saved)
+        (root / "host/activation.json").unlink(missing_ok=True)
+        if agent_path().exists():
+            reload_agent(root, settings, {"loaded": False, "disabled": True})
+        clear_change(root)
+        event("schedule_change_recovered", host_enabled=False)
+        return {
+            "recovered": True,
+            "host_enabled": False,
+            "next_step": "schedule-status_then_reauthorize_if_invalid_then_activate",
+        }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
         choices=(
+            "schedule-show",
+            "schedule-set",
+            "schedule-recover",
             "prepare",
             "diagnose",
             "accept-authority",
@@ -1025,11 +1545,17 @@ def main(argv=None):
             "self-check",
         ),
     )
+    parser.add_argument("time", nargs="?")
+    parser.add_argument("--today", action="store_true")
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
     parser.add_argument("--docker", type=Path, default=Path("/usr/local/bin/docker"))
     parser.add_argument("--check-credentials", action="store_true")
     args = parser.parse_args(argv)
+    if (args.time is not None or args.today) and args.command != "schedule-set":
+        parser.error("time/--today require schedule-set")
+    if args.command == "schedule-set" and args.time is None:
+        parser.error("schedule-set requires HH:MM")
     os.umask(0o077)
     code = 0
     try:
@@ -1047,7 +1573,14 @@ def main(argv=None):
             output = prepare(root, args.python, args.docker)
         else:
             settings = load(root)
-            if args.command == "run":
+            if args.command == "schedule-show":
+                output = schedule_show(root, settings)
+            elif args.command == "schedule-set":
+                assert args.time is not None
+                output = schedule_set(root, settings, args.time, today=args.today)
+            elif args.command == "schedule-recover":
+                output = schedule_recover(root, settings)
+            elif args.command == "run":
                 output, code = run_once(root, settings)
             elif args.command == "diagnose":
                 output, code = diagnose(

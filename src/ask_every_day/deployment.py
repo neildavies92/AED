@@ -21,7 +21,7 @@ from ask_every_day.publication_recovery import backup_state, snapshot
 from ask_every_day.publish_next import CopyCatalog, preview_next
 from ask_every_day.publish_next_cli import publication_lock
 from ask_every_day.repository import open_repository
-from ask_every_day.scheduler_policy import LONDON, digest, load_schedule
+from ask_every_day.scheduler_policy import LONDON, ScheduleConfig, digest, load_schedule
 
 DATA_FILES = (
     "prompts.csv",
@@ -236,7 +236,13 @@ def restore_bundle(bundle: Path, target: Path) -> None:
             shutil.rmtree(temporary)
 
 
-def daily_report(config: AppConfig, now: datetime, window_end: int) -> dict:
+def daily_report(
+    config: AppConfig,
+    now: datetime,
+    window_end: int,
+    *,
+    schedule: ScheduleConfig | None = None,
+) -> dict:
     local = now.astimezone(LONDON)
     with open_repository(config, read_only=True) as repo:
         attempts = [snapshot(repo, row.id) for row in repo.list_publications()]
@@ -256,7 +262,12 @@ def daily_report(config: AppConfig, now: datetime, window_end: int) -> dict:
         and item.checkpoint.phase.value == "completed"
         and item.record.publication.external_id
     ]
-    due = local.hour * 60 + local.minute >= window_end
+    eligible_day = schedule is None or schedule.in_window(
+        local.replace(
+            hour=schedule.hour, minute=schedule.minute, second=0, microsecond=0, fold=0
+        )
+    )
+    due = eligible_day and local.hour * 60 + local.minute >= window_end
     healthy = not unresolved and len(successes) <= 1 and (not due or len(complete) == 1)
     return {
         "event": "daily_publication_check",
@@ -301,6 +312,7 @@ def main(argv: list[str] | None = None) -> None:
                 load_config(args.config),
                 datetime.now(UTC),
                 schedule.hour * 60 + schedule.minute + schedule.window_minutes,
+                schedule=schedule,
             )
             print(json.dumps(output))
             raise SystemExit(0 if output["healthy"] else 1)

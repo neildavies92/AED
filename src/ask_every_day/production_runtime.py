@@ -13,5 +13,7 @@ def docker_runtime() -> bool:
 
 
 def require_docker_publisher() -> None:
+    if Path("/etc/aed/schedule-change.json").exists():
+        raise DockerPublisherRequired("schedule_change_incomplete_recover_required")
     if not docker_runtime():
         raise DockerPublisherRequired("docker_publisher_required")

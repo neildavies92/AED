@@ -33,6 +33,8 @@ Run `make` or `make help` to list the available commands.
 
 | Command | Action |
 | --- | --- |
+| `make docker-schedule-show DIRECTORY=...` | Inspect the persistent Docker daily schedule |
+| `make docker-schedule-set DIRECTORY=... TIME=20:00` | Confirm a time change effective tomorrow; `TODAY=1` explicitly requests today |
 | `make schedule-preview` | Inspect the daily policy without credentials/network or opt-in |
 | `make schedule-status` | Inspect/revalidate unattended authorization |
 | `make schedule-enable` | Explicit interactive approval for future daily publications |
@@ -163,7 +165,7 @@ owner-approved cutover. `make -f deployment/Makefile help` lists offline helpers
 
 [Local Docker Desktop acceptance](docs/local-docker.md) covers AED-057 private
 production-state copies, mount checks, synthetic HTTPS staging and explicit
-19:00 Europe/London acceptance. The first supervised automated post can satisfy
+20:00 Europe/London acceptance. The first supervised automated post can satisfy
 AED-057/058/059 together; no additional manual publication is required.
 
 [Local font review](docs/font-review.md) documents the accepted Liberation Serif/Lato
@@ -174,7 +176,7 @@ Production manual publication uses the [canonical Docker workflow](docs/canonica
 including verified editorial font files and explicit fresh-state authority cutover.
 
 [Docker-only daily automation](docs/docker-automation.md) provides the macOS
-user LaunchAgent and exact owner cutover/activation runbook for **19:00–19:30
+user LaunchAgent and exact owner cutover/activation runbook for **20:00–20:30
 Europe/London**. Docker is the exclusive production publisher, including emergency
 manual posts. Native manual/scheduled/media POST entrypoints fail closed before
 staging. If Docker is unavailable, pause posting; never reactivate a native Mac
@@ -184,3 +186,5 @@ remain available. Software installation grants no publication permission.
 For existing Docker deployments, use the [local operations and immutable upgrade runbook](docs/local-operations.md) for offline health, token lifecycle, current-state migration and rollback.
 
 Optional [Discord operational notifications](docs/discord-notifications.md) report durable success, failure and reconciliation without changing publication safety.
+
+[Configurable daily time](docs/publishing-schedule.md) documents in-place changes, same-day consent, authorisation preservation and rollback.

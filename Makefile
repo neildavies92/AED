@@ -6,6 +6,7 @@ CAIRO_RUN = AED_CAIRO_FALLBACK="$(DYLD_FALLBACK_LIBRARY_PATH)" sh scripts/with-c
 .PHONY: schedule-preview schedule-run schedule-status schedule-enable schedule-disable schedule-check-credentials schedule-launchd backup-state migrate-state publication-status reconcile-publication render-next publish-next help setup test lint format format-check typecheck check prototype import-content render-assets validate-assets launch-review stage-media caption-review instagram-login instagram-auth-bootstrap instagram-auth-status instagram-logout
 
 help:
+	@echo "make docker-schedule-show|docker-schedule-set DIRECTORY=... TIME=20:00 [TODAY=1]"
 	@echo "make docker-notification-configure DIRECTORY=... Store existing webhook through hidden interactive input"
 	@echo "make docker-notification-test DIRECTORY=... Explicit Discord test; no Instagram/state access"
 	@echo "make docker-notification-disable DIRECTORY=... Disable Discord delivery"
@@ -151,3 +152,9 @@ docker-prepare-next docker-manual-preview docker-manual-publish docker-notificat
 docker-scheduler-status:
 	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
 	uv run python deployment/desktop_scheduler.py diagnose --directory "$(DIRECTORY)" $(HOST_ARGS)
+
+# Uses the installed, hash-bound host runtime; schedule edits never start publication.
+.PHONY: docker-schedule-show docker-schedule-set docker-schedule-recover
+docker-schedule-show docker-schedule-set docker-schedule-recover:
+	@test -n "$(DIRECTORY)" || (echo 'DIRECTORY must select a reviewed private deployment'; exit 1)
+	uv run python deployment/desktop_schedule.py --directory "$(DIRECTORY)" $(patsubst docker-schedule-%,%,$@) $(if $(filter docker-schedule-set,$@),"$(TIME)" $(if $(filter 1,$(TODAY)),--today,),)
