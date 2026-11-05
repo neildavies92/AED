@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import sqlite3
+import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -168,7 +169,93 @@ def initialize():
     )
 
 
+def schedule_protocol():
+    """Real subprocess protocol/lock/approval persistence; no publishing engine."""
+    from ask_every_day.scheduler_policy import (
+        ScheduleConfig,
+        authorization_preview,
+        load_inputs,
+        load_schedule,
+        read_authorization,
+        save_authorization,
+        validate_authorization,
+    )
+
+    directory = ROOT / "schedule-smoke"
+    directory.mkdir(mode=0o700)
+    (directory / "assets").mkdir()
+    config_path = directory / "aed.toml"
+    config_path.write_text(
+        'database_path="aed.sqlite3"\nassets_path="assets"\naccount_handle="@ask.every.day"\n'
+    )
+    config = load_config(config_path)
+    source = Path("/opt/aed/data")
+    inputs = load_inputs(source)
+    schedule_path = directory / "schedule.toml"
+    schedule_path.write_text("hour=19\nminute=0\n")
+    now = datetime.now(UTC)
+    with open_repository(config) as repo:
+        for post in inputs.posts:
+            repo.create_post(post)
+        repo.replace_queue([QueueEntry(inputs.posts[0].id, 1)])
+        original = authorization_preview(
+            repo, config, inputs, ScheduleConfig(hour=19), now
+        )
+        save_authorization(config, original)
+    before = digest(config.database_path)
+    day = (now + timedelta(days=1)).date().isoformat()
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "ask_every_day.schedule_change",
+            "--config",
+            str(config_path),
+            "--schedule-config",
+            str(schedule_path),
+            "--data-dir",
+            str(source),
+            "--hour",
+            "20",
+            "--minute",
+            "0",
+            "--effective-day",
+            day,
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    assert process.stdin is not None and process.stdout is not None
+    ready = json.loads(process.stdout.readline())
+    assert ready["phase"] == "ready" and ready["authorization_preserved"]
+    schedule_path.write_text(f'hour=20\nminute=0\neffective_from="{day}"\n')
+    process.stdin.write("commit\n")
+    process.stdin.flush()
+    committed = json.loads(process.stdout.readline())
+    process.stdin.close()
+    process.stdout.close()
+    assert committed["phase"] == "committed" and process.wait(timeout=30) == 0
+    with open_repository(config, read_only=True) as repo:
+        current = read_authorization(config)
+        assert current is not None and current.expires_at == original.expires_at
+        validate_authorization(
+            repo, config, inputs, load_schedule(schedule_path), current, now
+        )
+        assert len(repo.list_queue()) == 1 and not repo.list_publications()
+    assert digest(config.database_path) == before
+    # A test approval must not authorize subsequent general smoke commands.
+    (directory / "aed.sqlite3.schedule.json").unlink()
+    print(
+        json.dumps(
+            {"schedule_change_protocol_verified": True, "sqlite_unchanged": True}
+        )
+    )
+
+
 def verify():
+    schedule_protocol()
     report = json.loads((ROOT / "smoke.json").read_text())
     assert digest(ledger_path(CONFIG)) == report["palette_sha256"]
     assert {p.name: digest(p) for p in CONFIG.assets_path.iterdir()} == report["files"]

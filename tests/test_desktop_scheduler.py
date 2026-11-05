@@ -97,6 +97,15 @@ def deployment(tmp_path, monkeypatch):
                 returncode=0,
                 stdout=f'"{host.LABEL}" => {str(state.disabled).lower()}',
             )
+        if command[0] == "/bin/launchctl":
+            if command[1] == "disable":
+                state.disabled = True
+            elif command[1] == "enable":
+                state.disabled = False
+            elif command[1] == "bootout":
+                state.loaded = False
+            elif command[1] == "bootstrap":
+                state.loaded = True
         if command[:2] == ["/bin/ps", "-axo"]:
             return SimpleNamespace(returncode=0, stdout=state.native)
         if "self-check" in command:
@@ -420,9 +429,9 @@ def test_status_honours_launchd_override_and_exact_activation(deployment):
     d = deployment
     arm(d)
     host.install(d.root, d.settings)
-    d.loaded = True
+    d.loaded, d.disabled = True, False
     assert host.diagnose(d.root, d.settings, credentials=True)[0]["status"] == (
-        "ready_for_next_1900"
+        "ready_for_next_schedule"
     )
     d.disabled = True
     assert host.diagnose(d.root, d.settings, credentials=True)[0]["status"] == (
@@ -623,7 +632,7 @@ def test_health_calendar_uses_london_and_never_backfills(deployment, stamp, expe
 
 def healthy_report(**changes):
     return {
-        "status": "ready_for_next_1900",
+        "status": "ready_for_next_schedule",
         "host_armed": False,
         "queue_count": 12,
         "credential_expires_at": "2027-12-01T00:00:00+00:00",

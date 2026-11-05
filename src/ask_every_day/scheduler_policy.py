@@ -9,7 +9,7 @@ import tempfile
 import tomllib
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -37,11 +37,12 @@ def digest(value: object) -> str:
 
 @dataclass(frozen=True)
 class ScheduleConfig:
-    hour: int = 9
+    hour: int = 20
     minute: int = 0
     window_minutes: int = 30
     authorization_days: int = 30
     timezone: str = "Europe/London"
+    effective_from: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -58,9 +59,28 @@ class ScheduleConfig:
         ):
             raise ScheduleError("schedule_configuration")
 
+        if self.effective_from is not None:
+            try:
+                if (
+                    date.fromisoformat(self.effective_from).isoformat()
+                    != self.effective_from
+                ):
+                    raise ValueError
+            except (TypeError, ValueError):
+                raise ScheduleError("schedule_effective_date_invalid") from None
+
     def in_window(self, now: datetime) -> bool:
         _aware(now, "now")
         local = now.astimezone(LONDON)
+        if self.effective_from and local.date() < date.fromisoformat(
+            self.effective_from
+        ):
+            return False
+        start = local.replace(
+            hour=self.hour, minute=self.minute, second=0, microsecond=0, fold=0
+        )
+        if local.fold or start.astimezone(UTC).astimezone(LONDON) != start:
+            return False
         minute = local.hour * 60 + local.minute
         return (
             self.hour * 60 + self.minute

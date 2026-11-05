@@ -20,12 +20,12 @@ uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-c
 uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" schedule-status --data-dir /var/lib/aed/data
 ```
 
-The local Docker Desktop policy is **19:00–19:30 Europe/London**, with 30-day
+The local Docker Desktop policy is **20:00–20:30 Europe/London**, with 30-day
 authorization. The generic development `schedule.example.toml` and deferred Linux
 deployment examples do not configure this private deployment. The portable engine
 validates hours/minutes, 1–120-minute windows that cannot cross midnight, and
 1–366-day authorization. Docker Desktop's host adapter additionally requires its
-exact 19:00 policy. Late staging/polling fails closed rather than publishing outside
+single-slot policy (30-minute window and 30-day authorization). Late staging/polling fails closed rather than publishing outside
 the window; no missed-day bulk backfill is implemented.
 
 `preview` reads local SQL/approved CSV/copy/config and renders a fixed in-memory
@@ -127,7 +127,7 @@ available. The shared engine operates exclusively inside Docker.
 
 Use the [Docker-only automation runbook](docker-automation.md) for the dedicated
 `com.ask-every-day.docker-publisher` LaunchAgent, pinned image, explicit cutover,
-owner installation/activation and 19:00–19:30 Europe/London policy. This host trigger
+owner installation/activation and 20:00–20:30 Europe/London policy. This host trigger
 invokes this existing engine once; it does not supply publication authorization.
 
 ## Backups, acceptance and container integration
