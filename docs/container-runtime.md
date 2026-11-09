@@ -2,7 +2,7 @@
 
 AED-027 and AED-053 are merged and share the portable scheduler. Packaging does
 not activate publication. See [AED-056 deployment](linux-deployment.md) for the
-current host, migration, credential, UTC cron and cutover procedure. Historical
+current host, migration, credentials, systemd timers and cutover procedure. Historical
 development results below are not production acceptance. Mac state remains authoritative until owner-approved container cutover.
 All production publication uses Docker; native Mac publication is retired. AED-054 cleanup remains Backlog.
 

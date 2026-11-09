@@ -28,6 +28,7 @@ EVENTS = {
     "publication_failed",
     "publication_reconciliation_required",
     "notification_test",
+    "scheduled_watchdog",
 }
 CATEGORIES = {
     "authentication",
@@ -35,8 +36,16 @@ CATEGORIES = {
     "transient",
     "api_rejected",
     "local_infrastructure",
+    "scheduler_never_triggered",
+    "preflight_failed",
+    "publishing_failed",
+    "outcome_uncertain",
+    "notification_failed",
+    "infrastructure_unavailable",
+    "publication_missing",
 }
 ACTIONS = {
+    "scheduled_watchdog": "Inspect the hosted watchdog journal and publication-status. If the checkpoint is completed, repair notification delivery only. Reconcile uncertain media outcomes before any recovery.",
     "publication_succeeded": "Completed checkpoint confirmed. No retry required.",
     "publication_failed": "Inspect local JSONL logs and publication-status. Fix the cause; do not replay automatically.",
     "publication_reconciliation_required": "STOP. Inspect publication-status and reconcile the known attempt using the recovery runbook. Never retry a media POST blindly.",
@@ -195,6 +204,10 @@ class NotificationStore:
                 os.close(fd)
 
         return self.backend._operation(operation)
+
+    def delivered(self, key: str) -> bool:
+        raw = self.backend.read(self.service(key), "credential")
+        return raw is not None and json.loads(raw).get("delivery_result") == "delivered"
 
     def complete(self, key: str, result: dict) -> None:
         self.backend.write(self.service(key), "credential", json.dumps(result).encode())
