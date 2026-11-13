@@ -2,6 +2,7 @@
 .PHONY: help inspect export verify restore monitor visual-review
 ARGS ?=
 help:
+	@echo 'make -f deployment/Makefile palette-audit ARGS="--config /absolute/path/aed.toml"'
 	@echo 'Deployment helpers; help/setup never install or activate a host trigger.'
 	@echo 'make -f deployment/Makefile inspect|export|verify|restore|monitor|visual-review ARGS="..."'
 	@echo 'make -f deployment/Makefile desktop-prepare|desktop-run ARGS="..."'
@@ -23,3 +24,7 @@ desktop-run:
 .PHONY: desktop-scheduler
 desktop-scheduler:
 	uv run python deployment/desktop_scheduler.py $(ARGS)
+
+.PHONY: palette-audit
+palette-audit:
+	sh scripts/with-cairo.sh uv run --locked python -m ask_every_day.palette_audit $(ARGS)

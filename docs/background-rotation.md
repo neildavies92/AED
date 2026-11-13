@@ -149,3 +149,68 @@ Published ordering and matching palette metadata inside the local success
 transaction, and never rewrites attempted images. Missing/mismatched sidecars keep
 the attempt unresolved. `make backup-state` / `make migrate-state` back up SQLite
 and the palette together; see [publication recovery](publication-recovery.md).
+
+## Audit the published rotation
+
+Confirm the authoritative deployment with its operator before choosing the source.
+Audit an idle deployment or a verified coordinated snapshot. The command opens
+SQLite read-only, checks all completed publications, and prints the latest 20 in
+completion order. It reads the palette sidecar and checks the recorded JPEG hash,
+the checkpoint hash when present, and four unobstructed corner pixels on each
+available tracked JPEG. The corner check tolerates three RGB levels per channel
+for JPEG rounding. It checks canonical local assets. A discrepancy on Instagram
+itself requires separate evidence from the displayed media.
+
+From the reviewed source on the Mac, use the selected deployment's host-relative
+state configuration. This works even if the installed publisher image predates
+the audit module.
+
+```sh
+AED_DEPLOY='/absolute/path/to/confirmed-authoritative-deployment'
+make -f deployment/Makefile palette-audit \
+  ARGS="--config \"$AED_DEPLOY/state/aed.toml\""
+```
+
+To isolate the audit further, build the reviewed **audit** image once and use
+its immutable local image ID. Mount only the confirmed database/asset directory
+and its matching application config. This command does not require the
+credential mount or the installed scheduler. On Linux, use the local Docker
+daemon and the confirmed Linux deployment's directory with the same layout.
+
+```sh
+AED_AUDIT_IMAGE='sha256:REVIEWED_LOCAL_AUDIT_IMAGE_ID'
+docker run --rm --network none --read-only --user 10001:10001 \
+  --mount "type=bind,src=$AED_DEPLOY/state,dst=/var/lib/aed,readonly" \
+  --mount "type=bind,src=$AED_DEPLOY/config/aed.toml,dst=/etc/aed/aed.toml,readonly" \
+  --entrypoint python "$AED_AUDIT_IMAGE" -m ask_every_day.palette_audit \
+  --config /etc/aed/aed.toml
+```
+
+The report distinguishes explicit legacy history from missing assignments.
+Unpublished stale preparations are listed separately because queue changes can
+legitimately leave an older reservation. An unresolved attempt is also listed
+without treating it as a success. Bag numbers and slots are zero-based. The audit
+compares deterministic ordering against the currently configured palette key when
+that key matches the historical record. For older palette keys, the persisted
+bag still establishes membership, order and adjacency, but the old seed cannot
+be recovered from its hash.
+
+- `verified` (exit 0) means the tracked sequence and available expected evidence agree.
+- `incomplete` (exit 2) means canonical files are missing or no tracked successes exist.
+- `inconsistent` or `unavailable` (exit 1) requires evidence review. Preserve the current
+  state and compare a coordinated backup with the checkpoint hashes. If the ledger
+  changed during the read, repeat the audit when writers are idle. Use the recovery
+  guide for unresolved outcomes and keep historical files and ledger entries intact.
+
+The shuffled-bag generator passed long synthetic sequences and shared
+manual/scheduled tests. A separate synthetic reproduction found that the history
+validator accepted a new palette key before the preceding bag finished. The
+validator now requires the same key until slot 2 is completed. The original path
+required inconsistent persisted metadata. The generator and normal configuration
+change path already finish the current bag first. The synthetic result does not
+establish a production occurrence.
+
+The approved backgrounds differ by at most 26 RGB levels per channel and can
+look similar at grid scale. A recent slice may include a partial bag at each end
+and a legacy post may use a different colour. Inspect the full-bag counts and
+sampled JPEG colours before considering a design change.
