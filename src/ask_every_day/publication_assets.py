@@ -217,15 +217,12 @@ def _history(
         boundary = previous.background if previous else ledger.previous_background
         if current.sequence != expected_sequence or current.background == boundary:
             raise AssetError("palette_history_conflict")
-        if (
-            previous
-            and current.palette_key == previous.palette_key
-            and previous.slot < 2
-        ):
-            if (current.bag, current.slot, current.bag_number) != (
+        if previous and previous.slot < 2:
+            if (current.bag, current.slot, current.bag_number, current.palette_key) != (
                 previous.bag,
                 previous.slot + 1,
                 previous.bag_number,
+                previous.palette_key,
             ):
                 raise AssetError("palette_history_conflict")
         elif current.slot != 0 or current.bag_number != (

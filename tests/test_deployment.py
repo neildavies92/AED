@@ -104,8 +104,13 @@ def test_coordinated_bundle_restore_preserves_history_queue_assets_and_no_active
     restore_bundle(bundle, restored)
     assert not (restored / "aed.sqlite3.schedule.json").exists()
     assert (restored / "evidence/source.sqlite3.schedule.json").exists()
-    after = describe(load_config(restored / "aed.toml"), restored / "data")
+    from ask_every_day.palette_audit import audit
+
+    restored_config = load_config(restored / "aed.toml")
+    after = describe(restored_config, restored / "data")
     assert digest(after) == digest(original)
+    assert audit(restored_config) == audit(state)
+    assert audit(restored_config)["status"] == "verified"
     assert [(a["post_id"], a["status"], a["checkpoint"]) for a in after["history"]] == [
         ("AED-0395", "Published", "completed"),
         ("AED-0289", "Published", "completed"),
