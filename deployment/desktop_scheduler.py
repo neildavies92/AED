@@ -1028,6 +1028,8 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
                         "configuration",
                         "transient",
                         "api_rejected",
+                        "media_download_timeout",
+                        "media_staging",
                         "preflight",
                         "unexpected",
                     )
@@ -1064,7 +1066,8 @@ def run_once(root: Path, settings: dict, *, clock=lambda: datetime.now(UTC)):
                 if isinstance(diagnostic, dict):
                     for key in ("http_status", "meta_error_code", "meta_error_subcode"):
                         number = diagnostic.get(key)
-                        if type(number) is int and 0 <= number <= 2**31 - 1:
+                        lower = -(2**31) if key == "meta_error_code" else 0
+                        if type(number) is int and lower <= number <= 2**31 - 1:
                             details[key] = number
                 event(
                     "host_publication_failed",

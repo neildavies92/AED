@@ -456,7 +456,6 @@ def test_success_notification_waits_until_cli_releases_publication_lock(
             *args,
             **kwargs,
             client_factory=lambda _: run.client,
-            stage=run.stage,
             clock=lambda: NOW,
             sleep=Mock(),
         ),
@@ -480,6 +479,7 @@ def test_success_notification_waits_until_cli_releases_publication_lock(
         credential_factory=lambda _: run.credentials,
         canonical_assets=True,
         outcome_callback=callback,
+        stage=run.stage,
     )
     result = json.loads(capsys.readouterr().out.splitlines()[-1])
     assert result["state"] == "Published"

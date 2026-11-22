@@ -572,6 +572,12 @@ def test_launchctl_actual_override_spellings(monkeypatch, value, disabled):
     "state,category,reason",
     [
         ("no_attempt", "authentication", "preflight_failed"),
+        ("no_attempt", "media_staging", "preflight_failed"),
+        (
+            "reconciliation_required",
+            "media_download_timeout",
+            "publication_requires_reconciliation",
+        ),
         ("reconciliation_required", "transient", "publication_requires_reconciliation"),
         ("unknown", "unexpected", "container_application_failed_inspect_checkpoint"),
     ],
@@ -593,7 +599,8 @@ def test_structured_failure_keeps_certainty_and_never_retries(
                 "reason": "PRIVATE_TOKEN",
                 "diagnostics": {
                     "http_status": 400,
-                    "meta_error_code": 190,
+                    "meta_error_code": -2,
+                    "meta_error_subcode": 2207003,
                     "message": "PRIVATE_TOKEN",
                 },
             }
@@ -601,7 +608,8 @@ def test_structured_failure_keeps_certainty_and_never_retries(
     )
     result, code = host.run_once(d.root, d.settings, clock=lambda: NOW)
     assert code == 1 and result["reason"] == reason
-    assert result["failure_category"] == category and result["meta_error_code"] == 190
+    assert result["failure_category"] == category and result["meta_error_code"] == -2
+    assert result["meta_error_subcode"] == 2207003
     assert "PRIVATE_TOKEN" not in (d.root / "host/host.jsonl").read_text()
     assert (
         host.run_once(d.root, d.settings, clock=lambda: NOW)[0]["outcome"]

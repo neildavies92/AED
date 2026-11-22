@@ -8,6 +8,7 @@ import logging
 import sys
 import uuid
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 
 from ask_every_day.config import load_config
@@ -51,6 +52,8 @@ def main(argv: list[str] | None = None) -> None:
         default="preview",
         choices=(
             "preview",
+            "origin-configure",
+            "origin-probe",
             "notification-configure",
             "notification-disable",
             "notification-test",
@@ -140,6 +143,40 @@ def main(argv: list[str] | None = None) -> None:
             from ask_every_day.canonical_renderer import verify_editorial_fonts
 
             verify_editorial_fonts()
+        from ask_every_day.object_staging import (
+            OriginError,
+            configure,
+            probe,
+            stage_approved,
+        )
+
+        if args.command == "origin-configure":
+            if not (sys.stdin.isatty() and sys.stdout.isatty()):
+                raise ValueError("interactive_origin_configuration_required")
+            raw = json.dumps(
+                {
+                    "account_id": input("R2 account ID: ").strip(),
+                    "bucket": input("Private R2 bucket: ").strip(),
+                    "access_key_id": getpass.getpass("R2 access key ID (hidden): "),
+                    "secret_access_key": getpass.getpass(
+                        "R2 secret access key (hidden): "
+                    ),
+                }
+            ).encode()
+            configure(args.credential_dir, raw)
+            print('{"media_origin_configured":true}')
+            return
+        if args.command == "origin-probe":
+            try:
+                probe(args.credential_dir)
+            except OriginError as error:
+                _LOG.error(
+                    "media_probe_failed",
+                    extra={"event": "media_probe_failed", **error.diagnostics},
+                )
+                raise
+            print('{"synthetic_https_verified":true,"probe_deleted":true}')
+            return
         if args.command.startswith("notification-"):
             store = NotificationStore(args.credential_dir)
             if args.command == "notification-configure":
@@ -191,6 +228,7 @@ def main(argv: list[str] | None = None) -> None:
                 ),
                 canonical_assets=True,
                 outcome_callback=notifier,
+                stage=partial(stage_approved, directory=args.credential_dir),
             )
             return
         if args.command == "prepare-next":
@@ -272,6 +310,7 @@ def main(argv: list[str] | None = None) -> None:
                     path, args.credential_dir
                 ),
                 outcome_callback=notifier,
+                stage=partial(stage_approved, directory=args.credential_dir),
             )
             return
         if args.command.startswith("credential-"):

@@ -249,20 +249,10 @@ Include the same overlay (`-f /srv/aed/fonts.compose.yaml`) in every operator
 Compose invocation; changing fonts invalidates scheduler
 approval. Transfer canonical approved JPEGs exactly; do not re-render history.
 
-Verify `cloudflared --version` in the reviewed image. Network-isolated staging tests
-exercise loopback origin, child teardown and byte validation. On the approved target,
-run a synthetic image through the existing staging command as a separate supervised
-acceptance step, terminate it, and verify no lingering container/tunnel or open public
-origin. This exposes only the synthetic JPEG and makes no Instagram request. Real
-Quick Tunnel connectivity, external DNS and host egress cannot be proven offline.
-
-Quick Tunnels have no uptime SLA, random hostnames, occasional DNS/HTTP530 startup
-lag and a 200 in-flight request limit. Current bounded HTTP/2 readiness/exact-byte
-checks remain; do not shorten safeguards, expose the origin or blind-retry a media
-POST. A readiness failure can miss the window; record the event and diagnose DNS,
-TCP7844, TLS/443, clocks and teardown. Keep this existing path initially; recurring
-production readiness failures belong to AED-052, not a new platform in this ticket.
-[Cloudflare limitations](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+For a reviewed image containing AED-066, use the [private R2 setup and synthetic
+acceptance probe](media-incident-2026-11-22.md#owner-deployment-and-acceptance).
+The production publisher requires outbound HTTPS to the configured storage origin.
+The standalone Quick Tunnel diagnostic remains available for testing.
 
 ## Cron: installation is separate from activation
 

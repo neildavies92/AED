@@ -178,7 +178,10 @@ def test_wrong_cached_confirmation_blocks_before_credentials(run, fonts, monkeyp
     before = run.preview().asset_path.read_bytes()
     with pytest.raises(SystemExit):
         publish_next_cli.main(
-            ["--confirm"], credential_factory=factory, canonical_assets=True
+            ["--confirm"],
+            credential_factory=factory,
+            canonical_assets=True,
+            stage=run.stage,
         )
     factory.assert_not_called()
     assert not run.repo.list_publications()
@@ -201,14 +204,16 @@ def test_manual_confirmation_uses_existing_engine_outside_schedule_window(
             *args,
             **kwargs,
             client_factory=lambda _: run.client,
-            stage=run.stage,
             clock=lambda: NOW,
             sleep=Mock(),
         ),
     )
     # NOW is 21:00: manual approval is independent of the 20:00–20:30 window.
     publish_next_cli.main(
-        ["--confirm"], credential_factory=factory, canonical_assets=True
+        ["--confirm"],
+        credential_factory=factory,
+        canonical_assets=True,
+        stage=run.stage,
     )
     result = json.loads(capsys.readouterr().out.splitlines()[-1])
     assert result["state"] == "Published" and result["media_id"] == "105"
@@ -260,7 +265,10 @@ def test_manual_non_tty_refuses_before_credentials(run, fonts, monkeypatch):
     factory = Mock()
     with pytest.raises(SystemExit):
         publish_next_cli.main(
-            ["--confirm"], credential_factory=factory, canonical_assets=True
+            ["--confirm"],
+            credential_factory=factory,
+            canonical_assets=True,
+            stage=run.stage,
         )
     factory.assert_not_called()
     assert not run.repo.list_publications()

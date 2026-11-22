@@ -33,7 +33,8 @@ from ask_every_day.instagram_client import (
     PublishingQuota,
     _id,
 )
-from ask_every_day.media_staging import StagedMedia, stage_media
+from ask_every_day.media_staging import StagedMedia
+from ask_every_day.object_staging import OriginError, stage_approved
 from ask_every_day.production_runtime import require_docker_publisher
 from ask_every_day.publication_assets import (
     AssetError,
@@ -235,7 +236,7 @@ def publish_approved(
     credentials: Credentials,
     *,
     client_factory: Callable[[str], PublishingClient] = InstagramClient,
-    stage: Stage = stage_media,
+    stage: Stage = stage_approved,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     sleep: Callable[[float], None] = time.sleep,
     dispatch_guard: Callable[[int | None], None] | None = None,
@@ -245,6 +246,8 @@ def publish_approved(
     attempt_id = None
     container_id = None
     media_id = None
+    readiness: dict[str, object] = {}
+    media_dispatch: bool | None = False
     phase = "preflight"
     failure = None
     try:
@@ -271,6 +274,7 @@ def publish_approved(
         with stage(
             repository, config, plan.post.id, expected_sha256=plan.asset_sha256
         ) as media:
+            readiness = media.readiness
             if media.post_id != plan.post.id:
                 raise PublishError("staged_post_mismatch")
             if preview_next(repository, config, catalog) != plan:
@@ -292,11 +296,13 @@ def publish_approved(
             if dispatch_guard is not None:
                 dispatch_guard(attempt_id)
             phase = "create_container"
+            media_dispatch = None  # The transport may lose its response.
             container_id = _provider_id(
                 client.create_image_container(
                     account_id, media.public_url, caption=plan.caption
                 ).id
             )
+            media_dispatch = True
             phase = "record_container"
             checkpoints.container_known(attempt_id, container_id, clock())
             phase = "container_readiness"
@@ -352,12 +358,18 @@ def publish_approved(
         failure.post_id = plan.post.id
         if attempt_id is None and phase in {"preflight", "staging"}:
             failure.publication_state = "no_attempt"
+        failure.diagnostics = {**readiness, "media_post_dispatched": media_dispatch}
+        if isinstance(error, OriginError):
+            failure.diagnostics.update(error.diagnostics)
         if isinstance(error, (InstagramError, AuthError)):
             failure.diagnostics = {
+                **failure.diagnostics,
                 "http_status": error.http_status,
                 "api_operation": error.operation,
                 **error.diagnostics,
             }
+            if phase == "create_container" and error.http_status is not None:
+                failure.diagnostics["media_post_dispatched"] = True
             if isinstance(error, AuthError):
                 failure.diagnostics.setdefault("failure_category", "authentication")
     if failure is not None:

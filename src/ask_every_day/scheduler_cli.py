@@ -16,11 +16,12 @@ from ask_every_day.config import load_config
 from ask_every_day.instagram_auth import CredentialManager
 from ask_every_day.logging_config import JSONFormatter, configure_logging
 from ask_every_day.notifications import Callback, emit
+from ask_every_day.object_staging import stage_approved
 from ask_every_day.production_runtime import (
     DockerPublisherRequired,
     require_docker_publisher,
 )
-from ask_every_day.publish_next import PublishError
+from ask_every_day.publish_next import PublishError, Stage
 from ask_every_day.publish_next_cli import credential_manager, publication_lock
 from ask_every_day.repository import open_repository
 from ask_every_day.scheduler import run_daily
@@ -101,6 +102,7 @@ def main(
     *,
     credential_factory: Callable[[Path], CredentialManager] = credential_manager,
     outcome_callback: Callback | None = None,
+    stage: Stage = stage_approved,
 ) -> None:
     parser = argparse.ArgumentParser(
         description="Inspect or execute one authorized daily publication"
@@ -165,6 +167,7 @@ def main(
                             load_inputs(args.data_dir),
                             load_schedule(args.schedule_config),
                             lambda: credential_factory(args.auth_config),
+                            stage=stage,
                             reload_policy=lambda: (
                                 load_config(args.config),
                                 load_inputs(args.data_dir),
@@ -358,7 +361,9 @@ def main(
                     .date()
                     .isoformat(),
                     "publication_state": publication_state,
-                    "failure_category": diagnostics.get(
+                    "failure_category": "media_staging"
+                    if failure == "staging_failed"
+                    else diagnostics.get(
                         "failure_category",
                         "preflight"
                         if publication_state == "no_attempt"
