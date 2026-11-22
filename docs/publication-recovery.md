@@ -1,5 +1,7 @@
 # Publication recovery — AED-024
 
+For the unresolved 22 November CreateIntent with no container ID, follow the [attempt 13 evidence procedure](media-incident-2026-11-22.md#attempt-13--owner-read-only-procedure).
+
 ## Existing lifecycle and crash-window review
 
 The main baseline `bb1767b` commits Queued → Publishing, creates a container,

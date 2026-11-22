@@ -1,13 +1,12 @@
-> Production staging is Docker-only. Native `make stage-media` fails with
-> `docker_publisher_required`; use the canonical Docker manual/scheduled workflow.
-> Offline staging tests use synthetic providers and never publish.
+# Media staging
 
-# Public HTTPS media staging
+Manual and scheduled publication use a private R2 Standard bucket. Configure it and run the synthetic acceptance probe using the [AED-066 incident and operator procedure](media-incident-2026-11-22.md). The production engine requires the approved JPEG digest and verifies the full signed resource twice before beginning an attempt.
+
+## Quick Tunnel diagnostic and historical evidence
 
 AED-041 makes one existing validated JPEG temporarily fetchable without credentials.
 It is separate from `instagram_client.py`; staging never contacts Instagram.
-Quick Tunnel is for controlled first-post acceptance, manual early launch and
-local development/testing. It has no uptime guarantee and is not the unattended
+Quick Tunnel is available for development and synthetic network testing. It has no uptime guarantee and is not the unattended
 scheduler's final hosting architecture.
 
 ## Current evidence and decision — 18 October 2026
@@ -31,7 +30,10 @@ redirects, exact bytes and `image/jpeg` are this staging boundary's stricter
 checks, not newly verified Meta requirements. Do not assume Cloudflare compatibility
 with Meta has been demonstrated until the separate controlled live acceptance.
 
-## Operator commands
+## Tunnel diagnostic commands
+
+The tunnel CLI is Docker-only. Native `make stage-media` exits with
+`docker_publisher_required`. Use synthetic data for network acceptance.
 
 Prerequisites: configured `aed.toml`, imported Post, rendered canonical
 `assets_path/AED-0001.jpg`, and `cloudflared` already installed. See Cloudflare's
@@ -49,7 +51,7 @@ Or use an explicit configuration:
 uv run python -m ask_every_day.media_staging AED-0001 --config aed.toml
 ```
 
-After validating and verifying a public GET, the CLI deliberately prints the URL
+After validating and verifying two spaced public GETs, the CLI deliberately prints the URL
 once to stdout. Keep the foreground command running. Ctrl+C closes the tunnel,
 origin, sockets and temporary configuration. Keep the machine awake and the
 session open throughout a future authorized media create/status/verification
@@ -106,9 +108,9 @@ port, path, query, fragment or suffix-host tricks. Add only the generated route.
 
 Before Ready, perform a standard-library GET without proxy credentials, auth or
 cookies. Reject all redirects. Require status 200, `image/jpeg`, matching advertised
-length when present, and exact complete staged bytes, bounded to image length + 1.
-Retry readiness GETs within the startup window to tolerate initial tunnel routing
-propagation. No downstream Instagram calls or POST retries occur here.
+Content-Length, and exact complete staged bytes, bounded to image length + 1.
+Require two successful GETs three seconds apart. A transient failure resets the
+success pair and backs off from one to five seconds until the deadline. No downstream Instagram calls or POST retries occur here.
 
 Defaults: startup budget 120 seconds and fetch socket timeout 15 seconds; both must
 be finite, positive and at most 120 seconds. Read chunks check an elapsed deadline

@@ -21,7 +21,7 @@ The 19:00 Europe/London trigger, 30-minute window and 30-day consent are unchang
 
 Messages contain only constrained operational values: account, Post/attempt IDs,
 London timestamp, correlation ID, checkpoint, attempt-created certainty, category,
-HTTP status and sanitized Meta error code. No captions, provider prose, media URLs,
+HTTP status, sanitized Meta code/subcode, media operation, staging check count and duration, readiness and media POST dispatch certainty when known. No captions, provider prose, media URLs,
 credential values, headers or private file contents are included. All Discord mentions
 are disabled. One embed is bounded to 4 KiB and uses fixed operator instructions.
 

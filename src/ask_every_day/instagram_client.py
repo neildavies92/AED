@@ -103,7 +103,7 @@ def api_diagnostics(data: object, status: int, method: str) -> dict[str, object]
     error = error if isinstance(error, dict) else {}
     code = error.get("code")
     subcode = error.get("error_subcode")
-    code = code if type(code) is int and 0 <= code <= 2**31 - 1 else None
+    code = code if type(code) is int and -(2**31) <= code <= 2**31 - 1 else None
     subcode = subcode if type(subcode) is int and 0 <= subcode <= 2**31 - 1 else None
     kind = error.get("type")
     kind = (
@@ -113,7 +113,9 @@ def api_diagnostics(data: object, status: int, method: str) -> dict[str, object]
         else "UnknownProviderError"
     )
     category = (
-        "authentication"
+        "media_download_timeout"
+        if status == 400 and subcode == 2207003
+        else "authentication"
         if code == 190 or status == 401
         else "configuration"
         if code in (10, 100, 200) or status == 403
@@ -122,6 +124,7 @@ def api_diagnostics(data: object, status: int, method: str) -> dict[str, object]
         else "api_rejected"
     )
     messages = {
+        "media_download_timeout": "Meta timed out downloading the staged media.",
         "authentication": "Meta rejected authentication; verify token and account access.",
         "configuration": "Meta rejected request configuration or permissions.",
         "transient": "Meta reported a temporary service or rate-limit failure.",
