@@ -1,0 +1,9 @@
+[Unit]
+Description=AED hosted watchdog
+RequiresMountsFor=/srv/aed
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 -I /usr/local/lib/aed/trigger.py monitor
+TimeoutStartSec=55s

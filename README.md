@@ -160,7 +160,7 @@ LaunchAgent is generated separately and is never installed or activated by setup
 shared command used by the Linux container adapter.
 
 [Linux production deployment](docs/linux-deployment.md) covers AED-056 host setup,
-coordinated state migration, private credential handoff, disabled UTC cron and
+coordinated state migration, private credential handoff, independent watchdog and
 owner-approved cutover. `make -f deployment/Makefile help` lists offline helpers.
 
 [Local Docker Desktop acceptance](docs/local-docker.md) covers AED-057 private

@@ -1,0 +1,12 @@
+[Unit]
+Description=AED verified encrypted off-host backup
+RequiresMountsFor=/srv/aed
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+EnvironmentFile=/srv/aed/host/backup.env
+ExecStart=/usr/bin/python3 -I /usr/local/lib/aed/trigger.py backup
+TimeoutStartSec=25min

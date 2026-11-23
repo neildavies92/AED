@@ -1,379 +1,283 @@
-# Linux production deployment — AED-056
+# AED-056 hosted publishing runbook
 
-**Prepared, not live.** AED-027 and AED-053 are merged. No paid infrastructure,
-production credentials, state migration, cron, or live publication is authorized by
-this development ticket. AED-056 remains In Progress until the owner accepts the
-cutover and the first genuine unattended 21:00 London post has a completed durable
-checkpoint and known media ID. AED-053 also awaits runtime/visual acceptance.
-AED-055 is deferred; AED-054 cleanup starts only after verified cutover.
+The review candidate uses an Ubuntu 24.04 VPS with the existing Docker publisher
+and independent systemd watchdog. It publishes at 20:00 Europe/London, checks
+durable completion at 20:35, and verifies an encrypted off-host backup at 20:50. See the [monthly comparison](hosted-costs.md).
 
-## Host choice and costs
+## Prepare an inactive host
 
-Recommended starting point: Ubuntu **24.04 LTS**, amd64, AWS Lightsail in London,
-2 vCPU / **2 GB RAM / 60 GB SSD with IPv4**, currently **US$12/month**. The $7/1 GB
-plan may run a prebuilt image, but offers less headroom for Cairo, image decoding,
-package updates and Docker. Build/test on CI or a development machine, not the small
-production VPS. No Kubernetes, managed database, container orchestrator or registry
-is required; `docker save`/SSH/`docker load` is sufficient for this single host.
-
-Budget separately for protected persistent storage and backups. AWS explicitly
-provides encryption for **attached disks and their snapshots**; do not assume this
-proves root-disk encryption. Before credentials, verify the chosen storage's actual
-encryption controls. An encrypted attached disk mounted at `/srv/aed` is a simple
-option; at $0.10/GB-month a 20 GB disk adds $2/month. Snapshot storage is $0.05/GB-month
-(e.g. 10 GB billed adds $0.50/month). Plan roughly $15–18/month before tax, FX and
-traffic overages; exact region/size/backup choices require owner approval. Restrict
-AWS IAM, use MFA, retain SSH host-key verification and protect recovery keys. Host
-root and Docker administrators can read a running container's plaintext credentials.
-
-Prices checked 28 October 2026: [Lightsail pricing](https://aws.amazon.com/lightsail/pricing/),
-[encrypted attached storage](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-faq-block-storage.html),
-[snapshot costs](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-faq-snapshots.html).
-
-## Provision only after approval
-
-1. Owner approves provider, region, cost, SSH administrator/CIDR and encrypted
-   storage/backup plan. Create the host/disk manually; never put secrets in user-data.
-2. Verify the SSH host fingerprint independently; use a dedicated SSH key and a
-   non-root sudo administrator. Confirm a **second key-authenticated session** and
-   working provider console recovery before hardening. Keep the first session open.
-3. Mount approved encrypted storage at `/srv/aed` with persistent UUID mount and
-   restrictive permissions. Ensure boot cannot silently fall back to the root disk
-   when it is absent. Confirm `findmnt /srv/aed` and the provider encryption controls.
-4. Copy the reviewed `deployment/setup-host.sh` and invoke as root with the explicit
-   administrator CIDR. This modifies only the approved new host:
+1. Confirm the owner accepts the actual provider quote, IPv4, storage encryption
+   and backup terms. Verify encryption at rest for active storage and provider
+   backups before transferring private data. The VPS plan's backup listing alone
+   does not establish encryption. If the provider cannot confirm it, keep the
+   host synthetic and review encrypted block storage, including reboot unlock and
+   cost. Protect console access with MFA and verify the SSH host key independently.
+2. Use Ubuntu 24.04 and two working key-authenticated SSH sessions before invoking
+   the reviewed `setup-host.sh ADMIN_SSH_CIDR` on the new host. Limit provider and
+   UFW inbound IPv4/IPv6 to SSH from that source. Confirm time sync, Docker,
+   SSH recovery, available disk and storage mounts. Keep Docker access root-only.
+   Allow outbound HTTPS to Meta, R2, Discord and Healthchecks.io. The publisher
+   exposes no inbound application port. Reboot the empty host and verify SSH,
+   encrypted storage availability, Docker and time synchronisation before transfer.
+3. Build the reviewed runtime for the VPS architecture, verify CI and transfer it
+   by authenticated SSH. Compare archive SHA256, image ID, architecture and revision
+   label after `docker load`. Build from reviewed main after both the hosted and
+   Pillow security PRs are integrated. For an x86 host use an amd64 builder or
+   `docker buildx build --platform linux/amd64 --target runtime --load` with the
+   reviewed `AED_REVISION`. Verify the existing renderer and private R2 origin
+   with synthetic assets before introducing production state.
+4. Install the reviewed trigger and units without enabling timers.
 
    ```sh
-   sudo sh setup-host.sh 203.0.113.10/32
+   sudo install -m 0644 deployment/trigger.py /usr/local/lib/aed/trigger.py
+   sudo install -m 0644 deployment/systemd/aed-* /etc/systemd/system/
+   sudo systemd-analyze verify /etc/systemd/system/aed-{publish,watchdog,backup}.{service,timer}
+   sudo systemctl daemon-reload
    ```
 
-   Replace the documentation address. It installs signed Docker apt packages,
-   Compose, cron, NTP and updates; creates UID/GID 10001 and private directories;
-   disables password/root SSH and permits only the chosen SSH source through UFW.
-   No AED job/authorization is installed. Read the script first; it targets Ubuntu
-   24.04, not arbitrary existing hosts. It can be rerun without resetting AED state
-   or credentials. Package upgrades remain deliberate maintenance operations.
-5. Restrict Lightsail's IPv4 **and IPv6** ingress firewall to SSH from the approved
-   administrator source; remove default HTTP/HTTPS/world SSH rules. No media-origin,
-   Docker daemon, database or container port is exposed. Outbound DNS, HTTPS and
-   cloudflared HTTP/2 TCP 7844 must work. Docker published ports bypass some UFW rules;
-   AED Compose publishes none. Review any later port change separately.
-6. Verify `sudo sshd -T` shows password/keyboard auth off, root login off; test the
-   second session. Check security updates/reboot requirement, Docker/Compose versions,
-   `timedatectl` UTC/NTP sync, `systemctl status cron`, disk space and mounts. No reboot
-   or SSH lockout should be hidden by the automation. Enable/review normal Ubuntu
-   unattended security updates; schedule Docker/kernel maintenance outside the window.
+Use the existing [container layout](container-runtime.md) with the private parent
+`/srv/aed`. Copy `container/compose.yaml` to `/srv/aed/compose.yaml`, substitute
+the verified immutable local image ID and write that ID to `/srv/aed/image-id`.
+Keep root-owned Compose and metadata private, `config/` root:10001 mode 0750
+with 0640 files, and `state/` and `credentials/` UID/GID 10001 mode 0700
+with 0600 private files. `host/` is root 0700. The config and state mount paths
+are verified. Use only the reviewed optional fonts overlay if needed.
 
-See [Docker's Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/)
-for supported packages, signatures and firewall limitations. Docker group membership
-is root-equivalent; use controlled sudo, not broad group membership.
+Copy `deployment/schedule.toml` to `config/schedule.toml`. Preserve production
+account, palette and renderer config while setting container paths to
+`/var/lib/aed/aed.sqlite3` and `/var/lib/aed/assets`. Copy the non-secret app
+identity configuration separately. Use `--data-dir /var/lib/aed/data` in all
+operator commands to select the restored approved content.
 
-## Versioned image and deployment layout
+## Prove private R2 and backups
 
-From the clean, reviewed commit after merge and green application/container CI:
+Create two private R2 Standard buckets, with separate bucket-scoped Object Read &
+Write keys. The media bucket serves a signed GET for the approved immutable JPEG.
+Keep public development URLs off. Retain objects for uncertain attempts, including
+after restart, using the [incident retention procedure](media-incident-2026-11-22.md).
+Use hidden prompts and the existing UID 10001 credential store:
 
 ```sh
-git status --porcelain
-git rev-parse HEAD
-make -f container/Makefile build IMAGE=ask-every-day:REVIEWED_COMMIT
-make -f container/Makefile test
-make -f container/Makefile smoke IMAGE=ask-every-day:REVIEWED_COMMIT
-make -f container/Makefile audit
-docker image inspect ask-every-day:REVIEWED_COMMIT --format '{{.Id}} {{.Architecture}} {{index .Config.Labels "org.opencontainers.image.revision"}}'
-docker save -o /private/approved-transfer/aed-image.tar ask-every-day:REVIEWED_COMMIT
+sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -it publisher origin-configure
+sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher origin-probe
 ```
 
-Replace `REVIEWED_COMMIT` with the full commit, not an unreviewed tag. Build on the
-**target architecture**: for an amd64 Lightsail host use the amd64 CI/build machine
-or `docker buildx build --platform linux/amd64 --load --target runtime --build-arg
-AED_REVISION=COMMIT -t ask-every-day:COMMIT .`, then run the same tests there.
-Record the source commit, image ID, architecture and archive SHA256 through a trusted
-channel; labels document provenance but are not a cryptographic attestation. Build
-only the verified clean checkout. Verify the archive checksum after SSH transfer,
-load it on the host and compare **all three** inspect values. No automatic pull/build.
+Require both synthetic HTTPS verification and deletion of the probe. This is
+independent of Meta credentials. Include the reviewed fonts overlay on all Compose
+commands if installed.
 
-Copy `container/compose.yaml` to `/srv/aed/compose.yaml`; replace its image with the
-verified immutable `sha256:...` local image ID. Save exactly that ID plus newline to
-`/srv/aed/image-id` (root 0600). The host trigger refuses a different Compose image.
-Keep Compose root-owned 0600. Leave its default command `preview` and `pull_policy:
-never`. Never run the test target as production.
+Restic encrypts the application backup before upload. Keep its password in an
+offline password manager as well as a root-only 0600 file on the protected host.
+Create `/srv/aed/host/backup.env` via a private root editor, mode 0600. Its
+systemd EnvironmentFile contains these four settings with actual values:
 
-| Host path | Ownership/mode | Purpose |
-| --- | --- | --- |
-| `/srv/aed` | root 0700 | Trusted deployment parent on approved encrypted disk |
-| `compose.yaml`, `image-id` | root 0600 | Reviewed immutable image and mount configuration |
-| `config/` | root:10001 0750, files 0640 | Non-secret app/auth/schedule config, RO mount |
-| `state/` | 10001:10001 0700, files 0600 | SQLite, palette, assets, content, scheduler log/approval |
-| `credentials/` | 10001:10001 0700, files 0600 | Writable atomic FileCredentialStore |
-| `backups/`, `logs/` | root 0700 | Protected transfer bundles and bounded host results |
-| `/usr/local/lib/aed/trigger.py` | root 0644 | Reviewed host trigger; invoke with `/usr/bin/python3` |
+```text
+RESTIC_REPOSITORY=s3:https://ACCOUNT_ID.r2.cloudflarestorage.com/BACKUP_BUCKET/aed-backups
+RESTIC_PASSWORD_FILE=/srv/aed/host/restic-password
+AWS_ACCESS_KEY_ID=BACKUP_BUCKET_KEY_ID
+AWS_SECRET_ACCESS_KEY=BACKUP_BUCKET_SECRET
+```
 
-Use the transferred `aed.toml` palette/renderer/account settings, changing only
-`database_path="/var/lib/aed/aed.sqlite3"` and `assets_path="/var/lib/aed/assets"`.
-Copy `deployment/schedule.toml`: Europe/London, 21:00, 30-minute window, 30-day grant.
-`instagram-auth.toml` contains only the existing non-secret Instagram App ID and
-`redirect_uri="https://localhost:8765/oauth/instagram/callback"`; no TLS keys are
-needed for headless refresh. Do not copy the source OAuth private key or App Secret.
+Create a second Healthchecks.io cron check at `50 20 * * *`, Europe/London, grace
+25 minutes, with Discord integration. Place its UUID ping URL in
+`/srv/aed/host/backup-healthchecks-url` (root 0600). Exercise an intentional failed
+or missed check with disposable resources. Successful verification sends a normal
+ping, failed verification sends `/fail`, and host disappearance triggers a missed
+ping.
 
-The bundle includes approved CSVs. The host trigger always passes
-`--data-dir /var/lib/aed/data`; use that same path for preview and every operator
-scheduler command. This preserves the transferred content rather than silently
-selecting a newer image's dataset. Different content requires policy review.
-
-## Fresh coordinated state transfer
-
-The Mac DB remains authoritative until cutover. Do not reset history or requeue
-AED-0395/AED-0289. Stop all writers (including manual rendering, content import and
-queue regeneration); the publication lock alone cannot coordinate unrelated tools.
-After owner approval, revoke Mac unattended authorization and unload its LaunchAgent;
-confirm no publishing process/tunnel is active. Preserve historical Mac state and Keychain evidence. If preparation misses the
-window, pause posting. Native Mac publication is retired; never activate it as fallback.
-
-On the Mac, from the reviewed code with the **actual production config**:
+Initialize once on the approved empty repository using the configured environment.
 
 ```sh
-make -f deployment/Makefile inspect ARGS='--config /absolute/production/aed.toml --data-dir /absolute/production/data'
-make -f deployment/Makefile export ARGS='--config /absolute/production/aed.toml --data-dir /absolute/production/data --target /private/approved-transfer/current-bundle'
-make -f deployment/Makefile verify ARGS='--bundle /private/approved-transfer/current-bundle'
+sudo systemd-run --wait --collect --property=EnvironmentFile=/srv/aed/host/backup.env /usr/bin/restic init
 ```
 
-The target must not exist. Export holds the shared publication lock, uses SQLite's
-backup API, checks schema 3/integrity/FKs, unresolved checkpoints, all history/queue
-and canonical palette asset hashes, copies all PNG/JPEGs and the five approved CSVs,
-and compares before/copied/after summaries. It preserves timestamps, media IDs,
-checkpoints, queue positions, palette bag/sequence and canonical bytes. Hashes cover
-every file. Enabled schedule authorization is retained **only under `evidence/`**,
-never installed alongside the destination DB. No credentials are included. Stop
-writers as directed; hashes detect transfer corruption, not a malicious operator
-who replaces the manifest. Transfer over authenticated SSH to trusted private storage.
-
-Recovery logs in the DB directory named `scheduler.jsonl*` are included; additionally
-retain any Mac log location (typically `output/scheduler.jsonl*`) and independently
-captured AED-024 response evidence in the protected handover archive. Do not print
-raw provider responses or tokens. Copy these only with writers stopped and preserve
-their checksums separately. The bundle is not an automatic arbitrary-file collector.
-
-Verify the manifest SHA256 via an independent trusted comparison after transfer.
-On Linux use the reviewed image with **network disabled**, a private staging bind
-owned by UID10001, and the explicit deployment module:
+Run the service first against disposable AED data and again after verifying the
+coherent production transfer. On the inactive candidate, an empty state mount can
+be seeded with the repository smoke fixture:
 
 ```sh
-sudo docker run --rm --network none --read-only --user 10001:10001 \
-  --mount type=bind,src=/srv/aed/transfer,dst=/transfer \
-  --entrypoint python sha256:VERIFIED_IMAGE_ID -m ask_every_day.deployment \
-  verify --bundle /transfer/current-bundle
-sudo docker run --rm --network none --read-only --user 10001:10001 \
-  --mount type=bind,src=/srv/aed/transfer,dst=/transfer \
-  --entrypoint python sha256:VERIFIED_IMAGE_ID -m ask_every_day.deployment \
-  restore --bundle /transfer/current-bundle --target /transfer/restored
+AED_IMAGE="$(sudo cat /srv/aed/image-id)"
+sudo docker run --rm --network none --read-only -i \
+  --mount type=bind,src=/srv/aed/state,dst=/var/lib/aed \
+  --entrypoint sh "$AED_IMAGE" -ec 'umask 077; cp -R /opt/aed/data /var/lib/aed/data; python - initialize' < container/smoke_case.py
+sudo systemctl start aed-backup.service
+sudo journalctl -u aed-backup.service -n 30
 ```
 
-Restore refuses an existing target; do not point it at live state. It validates a
-complete copy before publishing the new directory. With all containers/triggers
-stopped, preserve the old state directory under a timestamped private name and move
-the verified restored directory to `/srv/aed/state` on the same filesystem. Fix only
-ownership to 10001:10001; never relax private modes. Verify actual source and Linux
-summaries match, specifically **AED-0395 and AED-0289 Published**, attempt 2 completed
-with media known for AED-0289 (preserve any legitimate legacy checkpoint for 0395),
-no unresolved attempt, next Post ID/position/colour/sequence and canonical SHA256.
-If source changed since export, discard the candidate and create a **fresh** bundle.
-No date or hard-coded Post ID decides next publication.
+Use the synthetic state only for acceptance, then archive it outside the live mount
+before installing the transferred state. Rename the empty or synthetic state on the
+same filesystem while all timers are inactive. Retain the source Mac state.
+Require `backup_verified` and a green external check.
+The job exports SQLite, palette, assets, content and application evidence under
+the normal application lock and takes the latest host invocation receipt under the
+host lock. It uploads through restic, restores that exact snapshot into a temporary
+directory, verifies the application manifest and compares its receipt. Credentials
+are recovered separately through protected copies or rotated/reissued at disaster
+recovery; keep current credential recovery material in protected storage. Keep
+manual writers quiescent during backups. An unresolved attempt blocks the normal
+migration export and raises a backup alert. Preserve its evidence on the source
+and use the separately documented recovery backup if needed.
 
-## Explicit credential handoff and acceptance
+Retention is owner-controlled. Review storage monthly and apply restic
+retention only after a verified fresh snapshot, keeping at least 14 daily and
+eight weekly snapshots where available. Do not apply a bucket lifecycle rule to
+restic data objects as it can invalidate retained snapshots.
 
-Nothing reads Keychain automatically. Two operator-authorized paths are available:
+## Configure the off-host watchdog
 
-- Existing `credential-bootstrap`: hidden single-line version-1 JSON from an
-  independently approved source. Strict codec/app/account/scopes/expiry validation;
-  local bootstrap does not prove current provider identity.
-- If the only current credential is in Mac Keychain, the new **explicit** handoff
-  command asks for exact TTY confirmation **before constructing/accessing Keychain**:
+Create a Healthchecks.io cron check named **AED hosted watchdog missing or failed
+— inspect VPS and publication-status**. Use `35 20 * * *`, timezone Europe/London
+and 10 minutes of grace. Connect its Discord integration and test delivery
+separately from AED's webhook. An email integration can cover Discord outages.
+Install its UUID ping URL through a private editor into
+`/srv/aed/host/healthchecks-url`, root 0600. Treat the URL as a secret.
+Configure the existing private AED Discord webhook and verify it using the
+[notification-test command](discord-notifications.md). Test a missing check with
+a disposable check before switching on production. [Healthchecks documentation](https://healthchecks.io/docs/)
 
-  ```sh
-  uv run python -m ask_every_day.credential_handoff \
-    --auth-config /absolute/production/instagram-auth.toml \
-    --destination /private/encrypted-transfer/instagram-credential
-  ```
+The watchdog timer is separate from the publisher and reads SQLite checkpoints
+and Discord receipts. When it finds a problem it sends the existing Discord
+channel a classification, safe attempt context and recovery instructions.
+A normal off-host ping means completion was verified or the watchdog delivered
+an actionable alert. Its body records the classification. When evidence or
+direct delivery is unavailable it sends `/fail` with the safe classification.
+The external check then alerts independently through its integration. Read the
+safe classification in the check's ping timeline. When the
+VPS, network or watchdog disappears, the missing ping triggers the off-host
+alert. A missing ping alone cannot identify which component is down.
 
-  The parent must be trusted encrypted storage, destination new. It exports only
-  the current validated, unexpired credential to a 0700 directory/0600 file via the
-  existing codec; no token/App Secret reaches stdout, argv or environment. It never
-  refreshes, publishes, deletes the Mac credential or exports the App Secret. This
-  is a **separate owner-approved operation**, not part of setup, tests or cron.
+| Watchdog result | Operator action |
+| --- | --- |
+| `scheduler_never_triggered` | Check timer status, boot history, clock and host journal. |
+| `infrastructure_unavailable` | Inspect Docker, disk and container start. Check the external ping timeline if the host is unreachable. |
+| `preflight_failed` or `publication_missing` | Inspect approval, queue, network readiness and scheduler JSONL. |
+| `publishing_failed` | Read the definitive closed checkpoint and correct its cause. |
+| `outcome_uncertain` | Stop and use the [reconciliation runbook](publication-recovery.md). |
+| `notification_failed` | Publication is durably completed. Repair only notification delivery. |
 
-Quiesce credential refresh/rotation during the authorized handoff; reverify the
-Linux identity and expiry immediately before cutover. Copy the directory by authenticated `scp -p -r`/SFTP over SSH with no terminal
-recording/session logging of secret content. Provision an administrator-owned 0700
-incoming directory first; after validation move the credential file into the empty
-Linux credential directory and `chown 10001:10001`, mode 0600. Do not `cat`/echo it or
-place it in clipboard/chat/history. The destination must remain encrypted at rest.
-Keep credentials out of general state bundles. Maintain a separately encrypted,
-access-controlled credential backup; refresh means this copy can become stale.
+## Transfer and activate with the owner
 
-Owner-authorized nonpublishing checks:
+1. Confirm which Docker deployment is authoritative using the **installed** host
+   script's `diagnose` and the [attempt 13 evidence procedure](media-incident-2026-11-22.md#attempt-13--owner-read-only-procedure).
+   Use the installed job and pinned image to identify the source, then run:
 
-```sh
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher credential-status
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher schedule-check-credentials
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher credential-verify
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher credential-status
-```
+   ```sh
+   uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" publication-status
+   uv run python deployment/desktop-compose.py --directory "$AED_DEPLOY" reconcile --attempt-id 13
+   ```
 
-`credential-verify` explicitly performs identity GETs and, only when eligible under
-existing policy, refreshes/persists the token. It creates no media and sends no
-media POST. It must identify the exact existing professional `ask.every.day` account
-and bound user ID; missing/expired/malformed/wrong identity fails. Repeat status in a
-new container; use synthetic tests to prove refresh durability without forcing a
-real refresh or changing timestamps. Only an authorized provider re-login/rotation
-replaces an expired credential. Never extend local expiry by editing JSON.
-Deleting local files does not revoke Meta's grant or securely erase snapshots.
+   Last known evidence is AED-0148 in `Publishing/create_intent`, revision 1,
+   container and media ID unknown. HTTP 400 / 2207003 establishes a download
+   timeout. Escalate the original timestamp, app/account, operation, code and
+   any independently captured trace to Meta. Without authoritative correlated
+   evidence and a supported resolution, keep cutover paused. Never replay,
+   requeue or close the attempt based on the HTTP code or the public feed.
+   Verify the actual latest completed attempt and queue head after reconciliation.
+2. Follow the [coordinated export/restore and freshness checks](local-operations.md#operator-controlled-upgrade)
+   using that Docker deployment's current `state/aed.toml` and `state/data`.
+   The owner disables/unloads the old LaunchAgent, waits for all writers to finish
+   and reconciles any uncertainty before export. Retain the old configuration,
+   host logs, latest admission receipt and original approval as evidence.
+   Transfer the verified bundle by SSH and restore to an empty private directory
+   with the reviewed deployment module, running offline. On the VPS, with an existing
+   private transfer directory accessible to UID 10001 and a new restore target:
 
-## Offline acceptance, visual review and staging
+   ```sh
+   AED_IMAGE="$(sudo cat /srv/aed/image-id)"
+   sudo docker run --rm --network none --read-only \
+     --mount type=bind,src=/srv/aed/transfer,dst=/transfer \
+     --entrypoint python "$AED_IMAGE" -m ask_every_day.deployment \
+     verify --bundle /transfer/current-bundle
+   sudo docker run --rm --network none --read-only \
+     --mount type=bind,src=/srv/aed/transfer,dst=/transfer \
+     --entrypoint python "$AED_IMAGE" -m ask_every_day.deployment \
+     restore --bundle /transfer/current-bundle --target /transfer/restored
+   ```
 
-Run `make -f deployment/Makefile visual-review` on Mac after container smoke to
-regenerate the comparison. Run `make setup`, `make check`, and container `build`, `test`, `smoke`, `audit` on
-reviewed code. Native tests include common scheduler authorization, repeated daily
-attempts, restarts, DST, unresolved outcomes, credential refresh and new migration
-checks. The disposable smoke runs network-none, recreates containers and verifies
-SQL/checkpoints/queue/palette/assets/credentials and coordinated restore. It never
-mounts production paths. Confirm one-shot exit status, bounded retained logs and
-non-root/read-only runtime on the real host with **synthetic data first**.
+   Compare the manifest's canonical state with a fresh source inspection before
+   promotion. Equality includes digests binding media IDs and checkpoint state,
+   queue, palette and every canonical file. From the Mac, with SSH identity and
+   source path already verified:
 
-Review the generated `output/aed-056-review/index.html`: same Post/background,
-Mac and Linux JPEGs, 1080×1350. Linux fallback Georgia→DejaVu Serif and
-Arial→Liberation Sans differ visibly. **Owner visual approval remains required.**
-If parity is necessary, lawfully obtain matching font files/versions, mount them
-read-only using `container/fonts.compose.yaml`, check `fc-match` and regenerate the
-comparison. Do not add proprietary fonts to Git or layers. The host trigger automatically includes `/srv/aed/fonts.compose.yaml` if present.
-Include the same overlay (`-f /srv/aed/fonts.compose.yaml`) in every operator
-Compose invocation; changing fonts invalidates scheduler
-approval. Transfer canonical approved JPEGs exactly; do not re-render history.
+   ```sh
+   uv run python -m ask_every_day.deployment inspect --config "$AED_DEPLOY/state/aed.toml" --data-dir "$AED_DEPLOY/state/data" > source-recheck.json
+   ssh "$AED_VPS" 'sudo cat /srv/aed/transfer/current-bundle/manifest.json' > target-manifest.json
+   uv run python -c 'import json; assert json.load(open("source-recheck.json")) == json.load(open("target-manifest.json"))["state"]'
+   ```
 
-For a reviewed image containing AED-066, use the [private R2 setup and synthetic
-acceptance probe](media-incident-2026-11-22.md#owner-deployment-and-acceptance).
-The production publisher requires outbound HTTPS to the configured storage origin.
-The standalone Quick Tunnel diagnostic remains available for testing.
+   Keep these reports private. The target bundle must have passed its local
+   verification and restoration. Move the verified restored directory into the
+   empty state location with UID/GID 10001 before any writer starts.
+3. With owner approval, transfer the **current Docker** FileCredentialStore and
+   Discord receipts over authenticated SSH to the protected host, outside the
+   general state bundle. Retain the private files and set UID/GID 10001. Copy
+   the source `host/last-invocation.json` to the target host directory unchanged
+   and verify its checksum. Carry the old approval in protected evidence.
+   The new runtime and deployment binding require fresh application approval.
+4. Verify the offline previews, canonical fonts, exact next asset and credentials.
+   The owner explicitly performs the existing identity GET check before cutover.
+   Verify that no Mac LaunchAgent, old Linux cron or other host can publish.
+5. Require a verified VPS backup and R2 probe. On the VPS before the target minute, review both authorisations,
+   then enable the timers. The `arm` challenge attests sole authority and pins
+   the reviewed configuration and SQLite identity. It does not start a container.
 
-## Cron: installation is separate from activation
+   ```sh
+   sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -it publisher schedule-enable --data-dir /var/lib/aed/data
+   sudo python3 -I /usr/local/lib/aed/trigger.py arm
+   sudo python3 -I /usr/local/lib/aed/trigger.py show
+   sudo systemctl enable --now aed-publish.timer aed-watchdog.timer aed-backup.timer
+   systemctl list-timers 'aed-*'
+   ```
 
-Install the reviewed trigger root-owned 0644 at `/usr/local/lib/aed/trigger.py`.
-Keep `deployment/aed.cron.disabled` **outside `/etc/cron.d`** during preparation.
-The template has both jobs commented. It uses UTC host cron, covers 20:00 and 21:00 UTC
-(London 21:00 in BST/GMT), and the standard-library wrapper filters to 21:00–21:30 London.
-The existing scheduler independently enforces its actual 21:00–21:30 policy.
-There is no CRON_TZ assumption, internal container cron, catch-up or new publisher.
+   Include the reviewed fonts overlay on operator Compose calls if installed.
+   At or after the slot, arming sets first eligibility tomorrow. A copied same-day
+   admission receipt blocks a second launch even after fresh authorisation.
+   Once enabled, the VPS owns the authoritative state. Verify the first unattended
+   post with a completed checkpoint, known media ID, queue and palette advance,
+   and off-host watchdog ping. Repeat for seven consecutive unattended days. Use `journalctl -u aed-publish.service -u aed-watchdog.service`
+   and the persistent scheduler JSONL to compare evidence. Bound journald disk usage
+   and preserve incident logs before rotation.
 
-Verify **on the actual target** `dpkg-query -W cron`, `timedatectl`,
-`readlink -f /etc/localtime`, `systemctl status cron`, and `man 5 crontab`. Ubuntu 24.04's package is [cron 3.0pl1](https://packages.ubuntu.com/noble/cron),
-not necessarily Cronie; online manpages can select a different package. After owner
-approval to change host cron, first install a temporary harmless one-minute `logger`
-probe with UTC timestamp, observe `journalctl -u cron`/`journalctl -t aed-cron-probe`,
-then remove it. Do not use `schedule-run` as a test of enabled policy.
+## Change time, renew consent and recover
 
-Root `flock` spans each container lifetime; the existing per-DB lock remains intact.
-A fixed `aed-daily` container name also blocks an orphan after wrapper death. There
-is no automatic removal/restart of a stuck container; inspect SQL/checkpoints first.
-Do not force-stop a possibly in-flight POST and assume it failed. An uncertain outcome
-requires AED-024 reconciliation. Separate database copies are never coordinated by
-these locks: **exactly one environment** must be allowed to publish.
+Stop only the publisher timer and wait for any active attempt. Edit private
+`config/schedule.toml` hour/minute with its existing permissions. Update the
+off-host cron check to 35 minutes after the new London start (wrap at midnight).
+Review application consent with `schedule-enable`, rerun `arm` and inspect
+`show` before restarting the timer. Plan such changes outside the publishing and
+watchdog windows. The minute gate uses London time and skips spring gaps and
+the second occurrence of autumn's repeated minute. Prefer an evening slot to
+avoid ambiguous watchdog deadlines around clock changes. Keep the 30-minute
+publishing window and 30-day consent. Time changes require no image rebuild.
+Application approval expires after 30 days and can also become invalid after a
+queue, content or renderer change. Renew with the existing TTY challenge.
+The smallest follow-up is an expiry warning seven days before renewal. Longer
+consent requires a separate owner decision.
 
-After the cutover checklist and explicit owner approval:
+The host records one admission before Docker preflight and rejects late or
+repeated dispatch. The existing DB lock and checkpoints cover the media flow.
+No automatic recovery reopens a consumed day. A confirmed preflight failure
+can be repaired for the next slot. An operator can separately assess manual
+recovery using current state and evidence, without clearing receipts or
+replaying an uncertain POST.
 
-```sh
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -it publisher schedule-enable --data-dir /var/lib/aed/data
-```
+For maintenance or rollback, stop future timer activations, wait for current
+work and use explicit reconciliation if needed. Back up current state using
+the coordinated export and the verified encrypted off-host repository. Separately protect
+refreshable credentials, host receipts and approval evidence. Test restoration
+into a fresh inactive directory. Standard VPS backups run daily, so their
+restore point can predate a remote publication. After storage loss keep
+publishing paused until the latest remote outcome and receipts are reconciled.
+Any rollback to Docker Desktop must restore the **latest authoritative state**,
+then explicitly grant fresh approval and activate only one host.
 
-Review/type the exact TTY challenge; no piped approval. Verify `schedule-status`.
-Only then copy the reviewed cron template to `/etc/cron.d/aed` root 0644 and uncomment
-its two job lines. No code in this ticket does this automatically. Stop future jobs
-by removing `/etc/cron.d/aed`; revoke using `schedule-disable`, which does not interrupt
-an already running operation. Inspect/wait for active operations before transferring
-or rolling back. Do not delete a lock inode or mutate history to clear a block.
+### Go/no-go before enabling the host
 
-## Daily operation, monitoring, backup and recovery
-
-At21:35 London the second host trigger invokes offline `monitor`. It exits1 for a
-missing successful completed checkpoint/media ID after the window, duplicate daily
-successes or unresolved attempts. It exits0 for one verified completion. The report
-reads SQLite, never Meta. The host log records safe summaries and exit status with
-1 MiB × 4 bounded rotation, private 0600; application `state/scheduler.jsonl` preserves
-safe returned IDs with the existing 1 MiB × 4 rotation. Docker logs from `--rm` disappear,
-so they are **not** the recovery record. Failures also write a fixed local journal
-message. Review journal retention on the host (e.g. `SystemMaxUse=100M` / `MaxRetentionSec=14day`).
-
-Until the owner chooses an external alert destination, the minimum monitoring
-procedure is an **owner daily21:40 London check**: SSH reachability, fresh dated
-host result, `publisher monitor`, `publication-status`, and visual Instagram result.
-A host-down or cron-not-running condition cannot alert from inside that host;
-missing fresh heartbeat is itself actionable. No email/Slack integration or delivery
-claim is made. Configure an independently monitored heartbeat later if unattended
-operator notification is required; do not treat local journaling as a delivered alert.
-
-```sh
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher monitor
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher publication-status
-sudo docker compose -f /srv/aed/compose.yaml run --rm --no-deps -T publisher schedule-status --data-dir /var/lib/aed/data
-sudo journalctl -t aed --since today
-```
-
-On failure, stop future triggers, preserve logs/IDs before rotation, inspect the exact
-attempt. Do not reset/delete/requeue. Linux `publisher reconcile --attempt-id N` uses
-existing AED-024 reports; `--remote` explicitly authorizes read-only provider evidence.
-`--resolve published --evidence /var/lib/aed/evidence.json --confirm` uses the same exact
-interactive challenge and independently captured response mapping; `-it` is required.
-Use the [recovery guide](publication-recovery.md) for terminal-failure evidence. The
-container adapter injects FileCredentialStore into the **same** reconciliation engine.
-No recovery command sends an Instagram media POST. Preserve unresolved state if the
-mapping is uncertain; image/caption similarity is insufficient evidence.
-
-After each successful day and before updates, stop triggers/writers and export a new
-coordinated bundle using the deployment module under the same lock. Protect/encrypt
-and copy it off-host over SSH; retain 7 daily / 4 weekly copies or an owner-reviewed policy.
-Copy current private credential/config/response evidence separately to approved
-encrypted backup storage. Test restore to a fresh inactive directory, never overwrite
-live state. Cloud snapshots alone are crash-consistent, not a substitute for the
-coordinated application bundle. Never use a pre-publication backup to forget a later
-remote post.
-
-For an update: stop cron, ensure no active operation, revoke authorization, make a
-current bundle/credential backup, verify new reviewed image/CI, keep the old image,
-change the pinned imageID/Compose, run offline preview/status/monitor/render checks,
-then explicitly reauthorize and restore only one cron. No unattended image auto-update.
-For rollback: stop the new trigger and finish/reconcile any operation, then migrate
-the **latest current** state to a compatible reviewed Docker runtime. Do not resurrect
-a stale database. Revalidate paths/fonts/config/credentials and grant a new policy
-only on the selected host. Preserve the other host disabled until acceptance.
-
-## Cutover gates — in this order
-
-1. Latest reviewed code merged; both main commit CI green; correct immutable image.
-2. Owner accepts VPS/network/storage, credentials, Linux typography and staging.
-3. Owner authorizes disabling/unloading Mac LaunchAgent and revoking Mac schedule.
-4. Confirm no Mac writer/publisher/tunnel is active; retain historical Mac evidence.
-5. Create a **fresh** coordinated production backup after the latest real post.
-6. Transfer/verify complete state, 0395/0289 history/checkpoints, current next entry, palette and assets.
-7. Run Linux nonpublishing preview/status/credential/render/restore checks.
-8. Confirm no other authorized active publisher/cron/LaunchAgent exists.
-9. Owner types the fresh Linux `schedule-enable` challenge for 21:00–21:30 London.
-10. Owner explicitly activates the single reviewed Linux cron.
-11. Observe first genuine unattended 21:00 post; completed checkpoint, known media ID,
-    correct asset, queue advance, palette and durable daily guard/logs.
-12. Preserve current-state rollback until owner accepts; only then close 056/053 and
-    consider 054 cleanup. If not ready by 21:00, keep Linux disabled and pause posting.
-
-## Development validation — 28 October 2026
-
-Base `9c03d8a1de54e4337b74b477bc8bc45de5ed1069`: both main CI workflows green.
-`make setup` passed. Final `make check`: **1,387 tests passed**, Ruff lint and
-format passed, Pyright zero errors/warnings. Native Linux suites, network-none
-recreation/refresh/disabled-scheduler/log-retention/migration smoke, and image
-secret-exclusion audit passed; the arm64 audit inspected **6,154 layer files**.
-`sh -n deployment/setup-host.sh` and `git diff --check` passed. The shell was not
-executed against a production host; Ubuntu install, SSH/firewall/cron semantics,
-storage encryption and real target egress remain operator acceptance.
-
-Two Mac/Linux JPEG pairs were inspected at 1080×1350: readable, unclipped, preserved
-colours/highlights/layout, visibly different typography. Owner approval is pending.
-No paid resource, real credential read/export/transfer, production DB write, Mac
-scheduler change, public staging test, live provider call or scheduled publication
-was performed. The PR's CI records the final native test count and amd64 audit.
+- Owner approved the actual quote, at-rest protection and the sole VPS cutover.
+- Attempt 13 and any other uncertain outcomes have conclusive, reviewed resolution.
+- One reviewed image includes the hosted work, R2 integration and Pillow security fix.
+- SSH, clock, encrypted mounts and Docker survived a reboot on the inactive host.
+- R2 synthetic probe and both independent Discord alert paths passed.
+- Latest source and restored state reports match, and the exact admission receipt is preserved.
+- The latest backup restored and verified successfully. The Mac and other publishers are inactive.
+- Fresh time-limited application approval and host attestation are in place. Keep the incident and hosted ticket open until all seven production checks succeed.
