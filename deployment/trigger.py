@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -335,8 +336,8 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def monitor_url():
-    path = ROOT / "host/healthchecks-url"
+def monitor_url(name="healthchecks-url"):
+    path = ROOT / "host" / name
     if (
         path.is_symlink()
         or not path.is_file()
@@ -353,8 +354,8 @@ def monitor_url():
     return url
 
 
-def ping(report, alert_delivered):
-    url = monitor_url()
+def ping(report, alert_delivered, *, name="healthchecks-url"):
+    url = monitor_url(name)
     endpoint = (
         url if report in {"completed", "not_due"} or alert_delivered else url + "/fail"
     )
@@ -420,8 +421,145 @@ def monitor(schedule, now):
     return 0 if report in {"completed", "not_due"} else 1
 
 
+def bundle_command(command, folder=None):
+    """Use the pinned image and the existing coordinated deployment CLI offline."""
+    mounts = []
+    args = []
+    if command in {"export", "inspect"}:
+        mounts = [
+            "--mount",
+            f"type=bind,src={ROOT / 'config'},dst=/etc/aed,readonly",
+            "--mount",
+            f"type=bind,src={ROOT / 'state'},dst=/var/lib/aed"
+            + ("" if command == "export" else ",readonly"),
+        ]
+        args = ["--config", "/etc/aed/aed.toml", "--data-dir", DATA]
+    if folder is not None:
+        suffix = ",readonly" if command == "verify" else ""
+        mounts += ["--mount", f"type=bind,src={folder},dst=/transfer{suffix}"]
+        args += ["--target" if command == "export" else "--bundle", "/transfer/bundle"]
+    return [
+        "/usr/bin/docker",
+        "--host",
+        "unix:///var/run/docker.sock",
+        "run",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--user",
+        "10001:10001",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        *mounts,
+        "--entrypoint",
+        "python",
+        (ROOT / "image-id").read_text().strip(),
+        "-m",
+        "ask_every_day.deployment",
+        command,
+        *args,
+    ]
+
+
+def checked(command):
+    return subprocess.run(
+        command, check=True, capture_output=True, text=True, timeout=300
+    ).stdout
+
+
+def backup():
+    """Snapshot under host admission lock and verify an exact off-host restore."""
+    name = "backup-healthchecks-url"
+    monitor_url(name)
+    operation = "preflight"
+    try:
+        verify_image()
+        # The timer receives these values from a root-private systemd EnvironmentFile.
+        if not re.fullmatch(
+            r"s3:https://[0-9a-f]{32}\.r2\.cloudflarestorage\.com/[a-z0-9-]+/aed-backups",
+            os.environ.get("RESTIC_REPOSITORY", ""),
+        ) or not all(
+            os.environ.get(key)
+            for key in (
+                "RESTIC_PASSWORD_FILE",
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+            )
+        ):
+            raise ValueError("backup_configuration")
+        with tempfile.TemporaryDirectory(dir=ROOT / "backups") as directory:
+            local = Path(directory)
+            payload = local / "payload"
+            payload.mkdir(mode=0o700)
+            os.chown(payload, 10001, 10001)
+            operation = "snapshot"
+            with (ROOT / "host/publish.lock").open("a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                checked(bundle_command("export", payload))
+                receipt = read("last-invocation.json")
+                if receipt:
+                    shutil.copyfile(
+                        ROOT / "host/last-invocation.json",
+                        payload / "last-invocation.json",
+                    )
+            operation = "upload"
+            messages = checked(
+                [
+                    "/usr/bin/restic",
+                    "backup",
+                    "--json",
+                    "--tag",
+                    "aed-state",
+                    str(payload),
+                ]
+            )
+            snapshots = [
+                item["snapshot_id"]
+                for line in messages.splitlines()
+                if (item := json.loads(line)).get("message_type") == "summary"
+            ]
+            if len(snapshots) != 1 or not re.fullmatch(r"[a-f0-9]{64}", snapshots[0]):
+                raise ValueError("backup_snapshot_unverified")
+            operation = "restore_verify"
+            restore = local / "restored"
+            checked(
+                [
+                    "/usr/bin/restic",
+                    "restore",
+                    snapshots[0],
+                    "--target",
+                    str(restore),
+                    "--verify",
+                ]
+            )
+            recovered = restore / payload.relative_to("/")
+            checked(bundle_command("verify", recovered))
+            if (payload / "bundle/manifest.json").read_bytes() != (
+                recovered / "bundle/manifest.json"
+            ).read_bytes():
+                raise ValueError("backup_manifest_changed")
+            old = payload / "last-invocation.json"
+            new = recovered / "last-invocation.json"
+            if old.exists() != new.exists() or (
+                old.exists() and old.read_bytes() != new.read_bytes()
+            ):
+                raise ValueError("backup_receipt_changed")
+    except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError):
+        event("backup_failed", operation=operation)
+        ping("backup_failed", False, name=name)
+        return 1
+    event("backup_verified")
+    ping("backup_verified", True, name=name)
+    return 0
+
+
 def main(command):
     try:
+        if command == "backup":
+            return backup()
         schedule = policy()
         now = datetime.now(UTC)
         if command == "show":
@@ -453,6 +591,7 @@ def main(command):
         elif command == "arm":
             monitor_url()
             verify_image()
+            checked(bundle_command("inspect"))
             fingerprint = binding()
             challenge = "AUTHORIZE SOLE LINUX HOST " + fingerprint[:16]
             if (
@@ -461,6 +600,7 @@ def main(command):
                 or input(challenge + "\n> ") != challenge
             ):
                 raise ValueError("confirmation_required")
+            checked(bundle_command("inspect"))
             if binding() != fingerprint:
                 raise ValueError("deployment_changed")
             local = datetime.now(UTC).astimezone(LONDON)

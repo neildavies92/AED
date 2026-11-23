@@ -191,3 +191,97 @@ def test_watchdog_attributes_late_slot_to_previous_day():
     assert (
         trigger.watch_day(now, {"hour": 23, "minute": 30}).isoformat() == "2026-11-06"
     )
+
+
+def test_cannot_arm_unresolved_attempt_before_owner_confirmation(host, monkeypatch):
+    from subprocess import CalledProcessError
+
+    trigger.ROOT.joinpath("host/authority.json").unlink()
+    monkeypatch.setattr(trigger, "monitor_url", Mock())
+    monkeypatch.setattr(trigger, "verify_image", Mock())
+    inspect = Mock(side_effect=CalledProcessError(1, ["private"]))
+    monkeypatch.setattr(trigger, "checked", inspect)
+    confirm = Mock()
+    monkeypatch.setattr("builtins.input", confirm)
+    assert trigger.main("arm") == 1
+    assert inspect.call_args.args[0][-5:] == [
+        "inspect",
+        "--config",
+        "/etc/aed/aed.toml",
+        "--data-dir",
+        trigger.DATA,
+    ]
+    confirm.assert_not_called()
+    assert trigger.read("authority.json") == {}
+
+
+@pytest.mark.parametrize("failure", [None, "export", "upload", "restore", "receipt"])
+def test_backup_requires_remote_restore_and_matching_receipt(
+    host, monkeypatch, failure
+):
+    import shutil
+    from subprocess import CalledProcessError
+
+    root = trigger.ROOT
+    (root / "backups").mkdir()
+    trigger.record(
+        "last-invocation.json", {"local_day": "2026-11-06", "outcome": "published"}
+    )
+    monkeypatch.setattr(trigger, "verify_image", Mock())
+    monkeypatch.setattr(trigger, "monitor_url", Mock())
+    monkeypatch.setattr(trigger.os, "chown", Mock())
+    ping = Mock()
+    monkeypatch.setattr(trigger, "ping", ping)
+    monkeypatch.setenv(
+        "RESTIC_REPOSITORY",
+        f"s3:https://{'a' * 32}.r2.cloudflarestorage.com/test/aed-backups",
+    )
+    for key in ("RESTIC_PASSWORD_FILE", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"):
+        monkeypatch.setenv(key, "SYNTHETIC")
+    monkeypatch.setattr(
+        trigger, "bundle_command", lambda command, folder: [command, str(folder)]
+    )
+    operations = []
+    payload = root
+
+    def checked(command):
+        nonlocal payload
+        if command[0] == "export":
+            operation = "export"
+            payload = Path(command[1])
+        elif command[0] == "verify":
+            operation = "verify"
+        else:
+            operation = "upload" if command[1] == "backup" else "restore"
+        operations.append(operation)
+        if failure == operation:
+            raise CalledProcessError(1, command, stderr="PRIVATE")
+        if operation == "export":
+            (payload / "bundle").mkdir()
+            (payload / "bundle/manifest.json").write_text("{}")
+        elif operation == "upload":
+            assert (
+                json.loads((payload / "last-invocation.json").read_text())["outcome"]
+                == "published"
+            )
+            return json.dumps({"message_type": "summary", "snapshot_id": "a" * 64})
+        elif operation == "restore":
+            assert command[2] == "a" * 64 and "--verify" in command
+            target = Path(command[4]) / payload.relative_to("/")
+            shutil.copytree(payload, target)
+            if failure == "receipt":
+                (target / "last-invocation.json").write_text("{}")
+        return ""
+
+    monkeypatch.setattr(trigger, "checked", checked)
+    assert trigger.backup() == int(failure is not None)
+    expected = ["export", "upload", "restore", "verify"]
+    assert operations == (
+        expected[: expected.index(failure) + 1] if failure in expected else expected
+    )
+    ping.assert_called_once_with(
+        "backup_verified" if failure is None else "backup_failed",
+        failure is None,
+        name="backup-healthchecks-url",
+    )
+    assert list((root / "backups").iterdir()) == []

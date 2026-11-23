@@ -1,0 +1,10 @@
+[Unit]
+Description=AED daily off-host backup
+
+[Timer]
+OnCalendar=*-*-* 20:50:00 Europe/London
+AccuracySec=1s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

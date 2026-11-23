@@ -10,7 +10,7 @@ python3 -c 'import ipaddress,sys; ipaddress.ip_network(sys.argv[1], strict=False
 # Keep UTC host time; application scheduling is Europe/London.
 apt-get update
 apt-get upgrade -y
-apt-get install -y ca-certificates curl ufw python3 logrotate unattended-upgrades
+apt-get install -y ca-certificates curl ufw python3 logrotate unattended-upgrades restic
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 chmod 0644 /etc/apt/keyrings/docker.asc
