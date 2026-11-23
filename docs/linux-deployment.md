@@ -83,13 +83,12 @@ Create a second Healthchecks.io cron check at `50 20 * * *`, Europe/London, grac
 `/srv/aed/host/backup-healthchecks-url` (root 0600). Exercise an intentional failed
 or missed check with disposable resources. Successful verification sends a normal
 ping, failed verification sends `/fail`, and host disappearance triggers a missed
-ping. 
+ping.
+
 Initialize once on the approved empty repository using the configured environment.
 
 ```sh
 sudo systemd-run --wait --collect --property=EnvironmentFile=/srv/aed/host/backup.env /usr/bin/restic init
-sudo systemctl start aed-backup.service
-sudo journalctl -u aed-backup.service -n 30
 ```
 
 Run the service first against disposable AED data and again after verifying the
@@ -100,12 +99,15 @@ be seeded with the repository smoke fixture:
 AED_IMAGE="$(sudo cat /srv/aed/image-id)"
 sudo docker run --rm --network none --read-only -i \
   --mount type=bind,src=/srv/aed/state,dst=/var/lib/aed \
-  --entrypoint python "$AED_IMAGE" - initialize < container/smoke_case.py
+  --entrypoint sh "$AED_IMAGE" -ec 'umask 077; cp -R /opt/aed/data /var/lib/aed/data; python - initialize' < container/smoke_case.py
+sudo systemctl start aed-backup.service
+sudo journalctl -u aed-backup.service -n 30
 ```
 
 Use the synthetic state only for acceptance, then archive it outside the live mount
 before installing the transferred state. Rename the empty or synthetic state on the
-same filesystem while all timers are inactive. Retain the source Mac state. Require `backup_verified` and a green external check.
+same filesystem while all timers are inactive. Retain the source Mac state.
+Require `backup_verified` and a green external check.
 The job exports SQLite, palette, assets, content and application evidence under
 the normal application lock and takes the latest host invocation receipt under the
 host lock. It uploads through restic, restores that exact snapshot into a temporary
