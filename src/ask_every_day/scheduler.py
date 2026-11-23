@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from ask_every_day.canonical_renderer import verify_editorial_fonts
 from ask_every_day.domain import AppConfig, PublicationStatus
 from ask_every_day.instagram_client import InstagramClient
-from ask_every_day.media_staging import stage_media
+from ask_every_day.object_staging import stage_approved
 from ask_every_day.production_runtime import require_docker_publisher
 from ask_every_day.publication_assets import prepare_next_asset
 from ask_every_day.publish_next import (
@@ -51,7 +51,7 @@ def run_daily(
     *,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     client_factory: Callable[[str], PublishingClient] = InstagramClient,
-    stage: Stage = stage_media,
+    stage: Stage = stage_approved,
     sleep: Callable[[float], None] = time.sleep,
     reload_policy: Callable[[], tuple[AppConfig, ApprovedInputs, ScheduleConfig]]
     | None = None,

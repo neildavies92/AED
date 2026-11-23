@@ -22,6 +22,7 @@ from ask_every_day.instagram_auth import CredentialManager, InstagramAuthClient
 from ask_every_day.instagram_auth_cli import load_auth_config
 from ask_every_day.logging_config import configure_logging
 from ask_every_day.notifications import Callback, emit
+from ask_every_day.object_staging import stage_approved
 from ask_every_day.production_runtime import (
     DockerPublisherRequired,
     require_docker_publisher,
@@ -30,6 +31,7 @@ from ask_every_day.publication_service import PublicationService, PublicationSta
 from ask_every_day.publish_next import (
     CopyCatalog,
     PublishError,
+    Stage,
     preview_next,
     publish_approved,
 )
@@ -67,6 +69,7 @@ def main(
     credential_factory: Callable[[Path], CredentialManager] | None = None,
     canonical_assets: bool = False,
     outcome_callback: Callback | None = None,
+    stage: Stage = stage_approved,
 ) -> None:
     parser = argparse.ArgumentParser(
         description="Preview or approve one Instagram post"
@@ -192,6 +195,7 @@ def main(
                     answer,
                     manager,
                     dispatch_guard=guard,
+                    stage=stage,
                 )
                 with open_repository(config) as reopened:
                     stored = reopened.get_publication(result.attempt_id)

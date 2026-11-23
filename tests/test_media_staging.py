@@ -496,6 +496,7 @@ def test_default_readiness_budget_handles_cached_dns_failure(
             with module.stage_media(repository, config, "AED-0001"):
                 pytest.fail("Unresolved provider became ready")
         assert elapsed == 120
+    assert len(attempts) <= 28
     assert attempts[0] == 5
     assert stopped == [True]
     assert not any(t.name == "aed-media-origin" for t in threading.enumerate())

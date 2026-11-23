@@ -483,3 +483,24 @@ def test_fresh_processes_reuse_canonical_bytes_and_persisted_assignment(
     assert (config.assets_path / "AED-0001.jpg").read_bytes() == before
     assert (config.assets_path / "AED-0001.jpg").stat().st_mtime_ns == stamp
     assert preview(repo, config)[1] == json.loads(first.stdout)["asset_sha256"]
+
+
+def test_history_rejects_new_palette_key_before_previous_bag_finishes(setup):
+    repo, config = setup
+    first = prepare(repo, config)
+    success(repo)
+    second = prepare(repo, config)
+    success(repo, 1)
+    state = ledger(config)
+    changed = replace(
+        second.assignment,
+        bag_number=1,
+        slot=0,
+        bag=(first.assignment.bag[1], first.assignment.bag[0], first.assignment.bag[2]),
+        palette_key="f" * 64,
+    )
+    assert changed.background != first.assignment.background
+    state.assets["AED-0002"] = replace(second, assignment=changed)
+    assets._save_ledger(config, state)
+    with pytest.raises(AssetError, match="palette_history_conflict"):
+        preview(repo, config)

@@ -35,6 +35,20 @@ CATEGORIES = {
     "configuration",
     "transient",
     "api_rejected",
+    "media_download_timeout",
+    "dns",
+    "tls",
+    "connect",
+    "timeout",
+    "http_status",
+    "byte_mismatch",
+    "content_type",
+    "content_length",
+    "read_deadline",
+    "invalid_media",
+    "origin_unavailable",
+    "object_request",
+    "worker_unavailable",
     "local_infrastructure",
     "scheduler_never_triggered",
     "preflight_failed",
@@ -79,6 +93,8 @@ class Notice:
     attempt_created: str = "unknown"
     dedup_key: str = field(default_factory=lambda: uuid.uuid4().hex, repr=False)
 
+    diagnostics: dict = field(default_factory=dict, repr=False)
+
     def payload(self) -> dict:
         if self.event not in EVENTS or self.timestamp.utcoffset() is None:
             raise ValueError("notification_invalid")
@@ -122,8 +138,42 @@ class Notice:
         }
         if type(self.http_status) is int and 100 <= self.http_status <= 599:
             fields["HTTP status"] = str(self.http_status)
-        if type(self.meta_error_code) is int and 0 <= self.meta_error_code <= 2**31 - 1:
+        if (
+            type(self.meta_error_code) is int
+            and -(2**31) <= self.meta_error_code <= 2**31 - 1
+        ):
             fields["Meta error code"] = str(self.meta_error_code)
+        for key, label in (
+            ("meta_error_subcode", "Meta error subcode"),
+            ("attempt_count", "Public GETs"),
+            ("elapsed_ms", "Staging ms"),
+        ):
+            value = self.diagnostics.get(key)
+            if type(value) is int and 0 <= value < 2**31:
+                fields[label] = str(value)
+        operation = self.diagnostics.get("api_operation") or self.diagnostics.get(
+            "operation"
+        )
+        if operation in (
+            "public_verify",
+            "create_image_container",
+            "publish_container",
+            "origin_configuration",
+            "object_upload",
+            "validate_source",
+            "media_staging",
+        ):
+            fields["Operation"] = str(operation)
+        previous = self.diagnostics.get("last_probe_failure")
+        if isinstance(previous, str) and previous in CATEGORIES:
+            fields["Last probe failure"] = previous
+        for key, label in (
+            ("origin_ready", "Origin ready"),
+            ("media_post_dispatched", "Instagram media POST dispatched"),
+        ):
+            value = self.diagnostics.get(key)
+            if type(value) is bool:
+                fields[label] = "yes" if value else "no"
         action = ACTIONS[self.event]
         if self.event == "publication_failed" and category == "authentication":
             action += (
@@ -394,4 +444,5 @@ class PublicationNotifier:
             diagnostics.get("meta_error_code"),
             created,
             f"{event}:{identity}",
+            diagnostics,
         )

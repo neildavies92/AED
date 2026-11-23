@@ -32,6 +32,7 @@ _TEXT_FIELDS = frozenset(
         "error_type",
         "failure_category",
         "tunnel_transport",
+        "last_probe_failure",
     }
 )
 _INTEGER_FIELDS = frozenset(
@@ -73,7 +74,9 @@ _INTEGER_FIELDS = frozenset(
     }
 )
 
-_BOOLEAN_FIELDS = frozenset({"connector_registered"})
+_BOOLEAN_FIELDS = frozenset(
+    {"connector_registered", "origin_ready", "media_post_dispatched"}
+)
 _PROVIDER_ID_FIELDS = frozenset({"container_id", "media_id"})
 
 

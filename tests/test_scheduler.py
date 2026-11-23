@@ -180,10 +180,23 @@ def test_manual_success_counts_even_when_authorized_after_it(run, inputs, schedu
 
 
 def test_manual_success_consumption_is_an_allowed_prefix(run, inputs, schedule):
+    from ask_every_day.palette_audit import audit
+
     authorization = authorize(run, inputs, schedule)
     run.publish()
     validate_authorization(run.repo, run.config, inputs, schedule, authorization, NOW)
     assert execute(run, inputs, schedule).outcome == "already_published_today"
+    run.client.create_image_container.return_value = Container("106")
+    run.client.publish_container.return_value = PublishedMedia("107")
+    assert (
+        execute(run, inputs, schedule, now=NOW + timedelta(days=1)).outcome
+        == "published"
+    )
+    report = audit(run.config)
+    assert report["status"] == "verified"
+    first, second = report["latest_publications"]
+    assert (first["sequence"], second["sequence"]) == (1, 2)
+    assert first["background"] != second["background"]
 
 
 @pytest.mark.parametrize(

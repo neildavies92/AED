@@ -58,7 +58,6 @@ def command(run, inputs, schedule, monkeypatch):
             f,
             clock=lambda: NOW,
             client_factory=lambda _: run.client,
-            stage=run.stage,
             sleep=Mock(),
             **kwargs,
         ),
@@ -76,7 +75,7 @@ def command(run, inputs, schedule, monkeypatch):
             monkeypatch.setattr(sys.stdout, "isatty", lambda: tty)
             if answer is not None:
                 monkeypatch.setattr("builtins.input", answer)
-            cli.main(args, credential_factory=factory)
+            cli.main(args, credential_factory=factory, stage=run.stage)
 
     return Command()
 

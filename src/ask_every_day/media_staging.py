@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import ExitStack, closing, contextmanager
 from dataclasses import asdict, dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -102,6 +102,9 @@ def _classify_failure(error: BaseException) -> _VerifyFailure:
 class StagedMedia:
     post_id: str
     public_url: str = field(repr=False)
+    readiness: dict[str, object] = field(
+        default_factory=dict, repr=False, compare=False
+    )
 
 
 def _timeout(value: float) -> None:
@@ -465,8 +468,7 @@ def _verify(url: str, data: bytes, timeout: float) -> None:
             raise _VerificationError(
                 "content_type", "Public fetch did not return image/jpeg"
             )
-        length = response.headers.get("Content-Length")
-        if length is not None and length != str(len(data)):
+        if response.headers.get_all("Content-Length") != [str(len(data))]:
             raise _VerificationError(
                 "content_length", "Public fetch length differs from the staged JPEG"
             )
@@ -484,6 +486,71 @@ def _verify(url: str, data: bytes, timeout: float) -> None:
             raise _VerificationError(
                 "byte_mismatch", "Public fetch bytes differ from the staged JPEG"
             )
+
+
+def wait_for_media(
+    url: str,
+    data: bytes,
+    started: float,
+    deadline: float,
+    fetch_timeout: float,
+    metrics: dict[str, object],
+    observe: Callable[[], None] = lambda: None,
+    retry_log: Callable[[], None] = lambda: None,
+) -> None:
+    """Require two complete GETs on fresh connections, separated by three seconds."""
+    attempts = 0
+    previous_success = False
+    backoff = 1.0
+    next_log = started
+    metrics["operation"] = "public_verify"
+    while (remaining := deadline - time.monotonic()) > 0:
+        observe()
+        attempts += 1
+        metrics["attempt_count"] = attempts
+        try:
+            _verify(url, data, min(fetch_timeout, remaining))
+        except Exception as error:
+            failure = _classify_failure(error)
+            metrics.update(asdict(failure))
+            metrics["elapsed_ms"] = int((time.monotonic() - started) * 1000)
+            if time.monotonic() >= next_log:
+                retry_log()
+                next_log = time.monotonic() + 10
+            if failure.failure_category in {
+                "content_length",
+                "content_type",
+                "byte_mismatch",
+            } or (
+                failure.http_status is not None
+                and 300 <= failure.http_status < 500
+                and failure.http_status not in {408, 425, 429}
+            ):
+                raise StagingError("Public HTTPS resource rejected") from None
+            previous_success = False
+            delay = backoff
+            backoff = min(backoff * 2, 5.0)
+        else:
+            observe()
+            if previous_success and time.monotonic() < deadline:
+                metrics["elapsed_ms"] = int((time.monotonic() - started) * 1000)
+                if previous := metrics.pop("failure_category", None):
+                    metrics["last_probe_failure"] = previous
+                    for field_name in (
+                        "error_type",
+                        "errno",
+                        "http_status",
+                        "provider_error_code",
+                    ):
+                        metrics.pop(field_name, None)
+                metrics["origin_ready"] = True
+                return
+            previous_success = True
+            delay = 3.0
+        time.sleep(min(delay, max(0, deadline - time.monotonic())))
+    metrics["elapsed_ms"] = int((time.monotonic() - started) * 1000)
+    category = metrics.get("failure_category", "stability_interval")
+    raise StagingError(f"Public HTTPS readiness timed out (last failure: {category})")
 
 
 def _close(stack: ExitStack) -> None:
@@ -542,22 +609,8 @@ def stage_media(
     stack = ExitStack()
     diagnostic = "Media staging failed; check tunnel availability and public fetch"
     started = time.monotonic()
-    attempts = 0
     tunnel_state = _TunnelState(started)
-    last_failure: _VerifyFailure | None = None
-    next_retry_log = 0.0
-    tunnel_ready_ms: int | None = None
-
-    def readiness_context() -> dict[str, object]:
-        return {
-            "operation": "public_verify",
-            "attempt_count": attempts,
-            "elapsed_ms": int((time.monotonic() - started) * 1000),
-            "tunnel_ready_ms": tunnel_ready_ms,
-            **tunnel_state.snapshot(),
-            **(asdict(last_failure) if last_failure else {}),
-        }
-
+    metrics: dict[str, object] = {"attempt_count": 0, "operation": "tunnel_start"}
     try:
         deadline = started + startup_timeout
         port, route = stack.enter_context(_origin(data))
@@ -565,38 +618,30 @@ def stage_media(
             _tunnel(port, max(0.001, deadline - time.monotonic()), tunnel_state)
         )
         public_url = _provider_url(base) + route
-        tunnel_ready_ms = int((time.monotonic() - started) * 1000)
-        while True:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                category = last_failure.failure_category if last_failure else "unknown"
-                raise StagingError(
-                    f"Public HTTPS readiness timed out (last failure: {category})"
-                )
-            verified = False
-            attempts += 1
-            try:
-                _verify(public_url, data, min(fetch_timeout, remaining))
-                verified = True
-            except Exception as error:
-                last_failure = _classify_failure(error)
-                if time.monotonic() >= next_retry_log:
-                    logger.info(
-                        "media_staging_readiness_retry",
-                        extra={
-                            "event": "media_staging_readiness_retry",
-                            **context,
-                            **readiness_context(),
-                        },
-                    )
-                    next_retry_log = time.monotonic() + 10
-            if verified:
-                break
+        metrics["tunnel_ready_ms"] = int((time.monotonic() - started) * 1000)
+
+        def observe() -> None:
+            metrics.update(tunnel_state.snapshot())
             if process.poll() is not None:
                 raise StagingError("Tunnel stopped during public verification")
-            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
-        if process.poll() is not None:
-            raise StagingError("Tunnel stopped during public verification")
+
+        wait_for_media(
+            public_url,
+            data,
+            started,
+            deadline,
+            fetch_timeout,
+            metrics,
+            observe,
+            lambda: logger.info(
+                "media_staging_readiness_retry",
+                extra={
+                    "event": "media_staging_readiness_retry",
+                    **context,
+                    **metrics,
+                },
+            ),
+        )
     except Exception as error:
         failure = True
         if isinstance(error, (StagingError, DockerPublisherRequired)):
@@ -605,7 +650,7 @@ def stage_media(
         _close(stack)
         raise
     if failure:
-        failure_context = readiness_context()
+        failure_context = {**metrics, **tunnel_state.snapshot()}
         try:
             _close(stack)
         finally:
@@ -622,7 +667,7 @@ def stage_media(
     try:
         logger.info(
             "media_staging_ready",
-            extra={"event": "media_staging_ready", **context, **readiness_context()},
+            extra={"event": "media_staging_ready", **context, **metrics},
         )
         yield StagedMedia(post_id, public_url)
     finally:

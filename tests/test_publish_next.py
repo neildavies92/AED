@@ -516,7 +516,7 @@ def command(run, monkeypatch):
         monkeypatch.setattr(sys.stdout, "isatty", lambda: interactive)
         if answer is not None:
             monkeypatch.setattr("builtins.input", answer)
-        return cli.main()
+        return cli.main(stage=run.stage)
 
     return cli, execute
 
@@ -588,7 +588,6 @@ def test_complete_mocked_cli_publication_reopens_database(
             answer,
             credentials,
             client_factory=lambda _: run.client,
-            stage=run.stage,
             clock=lambda: NOW,
             sleep=Mock(),
             **guards,
